@@ -165,6 +165,14 @@ def storage_db(data, db_input, gen_type):
         lm = LoadManager(db_input, suite="NAS") # Add suite selection
         lm.import_from_db(host="mongodb+srv://cslab:bQt5TU6zQsu_LZ@storehouse.om2d9c0.mongodb.net", 
                           dbname="storehouse")
+
+        for name in ["bt.D.484", "sp.D.484", "bt.E.2025", "cg.E.2048", "ft.E.2048", "lu.E.2048", "sp.E.2025"]:
+            try:
+                del lm.loads[name]
+            except Exception:
+                print("Exception")
+                pass
+
         new_data["load-manager"] = jsonpickle.encode( lm )
         new_data["generator"] = jsonpickle.encode( mapping[gen_type](lm) )
     elif ctx.triggered_id == "generator-type":

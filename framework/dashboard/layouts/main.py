@@ -6,7 +6,9 @@ import jsonpickle
 import inspect
 import base64
 from numpy import average as avg
+from numpy import median as med
 import zipfile
+from concurrent.futures import ProcessPoolExecutor
 
 from layouts.elements.generator import elem_generator
 from layouts.elements.cluster import elem_cluster
@@ -31,7 +33,7 @@ main_data = {"figures": dict(), "list of jobs": dict(), "runs": 0}
 main_layout = dbc.Container([
 
     # STORE
-    dcc.Store(id="main-store", data=main_data, storage_type="session"),
+    dcc.Store(id="main-store", data=main_data, storage_type="memory"),
 
     # EXPORT FIGURES MODAL
     dbc.Modal([
@@ -52,7 +54,7 @@ main_layout = dbc.Container([
                     ], class_name="my-2")
                 ]),
             dbc.Row([
-                dbc.Select(["jpg", "png", "svg", "pdf", "html"], "jpg",
+                dbc.Select(["jpg", "png", "svg", "pdf", "html", "json"], "jpg",
                            id="figures-format")
                 ]),
             dbc.Row([
@@ -122,6 +124,26 @@ main_layout = dbc.Container([
             style={"height": "45%"})
 
     ], class_name="flex-row h-100", fluid=True, style={"height": "100vh"})
+
+
+def parallel_experiments(par_inp):
+
+    num, generator, gen_input, nodes, ppn, schedulers = par_inp
+    
+    # Create set of jobs
+    jobs_set = generator.generate_jobs_set(gen_input)
+
+    # Create an experiment based on the above
+    exp = Experiment(jobs_set, nodes, ppn, schedulers)
+    exp.set_default("Default Scheduler")
+    
+    # Fire the simulation for this experiment
+    exp.run()
+
+    # Draw the figures
+    figures = exp.plot()
+
+    return {f"exp{num}": jsonpickle.encode(jobs_set)}, {f"exp{num}": figures}
 
 @callback(
         Output(component_id="main-store", component_property="data"),
@@ -210,30 +232,56 @@ def cb_run_simulation(n1, n2,
             nodes = nodes_inp["props"]["children"][0]["props"]["value"]
             ppn = ppn_inp["props"]["children"][0]["props"]["value"]
 
-        # Get the scheduling algorithms
+        # Get the scheduling classes
         schedulers = [jsonpickle.decode( sched_data[number] )
                       for number in sched_checks]
 
+        # Calculate the number of parallel processes based on experiments
+        parallel_procs = int( os.cpu_count() / len(schedulers) )
+        if parallel_procs == 0:
+            parallel_procs = 1
+
+        # Create a parallel executor
+        executor = ProcessPoolExecutor(max_workers=os.cpu_count())
+
+        futures = list()
         for i in range(num_of_exps):
-            # Create set of jobs
-            jobs_set = generator.generate_jobs_set(gen_input)
-            # Store the list of jobs
-            main_data["list of jobs"].update({f"exp{i}":
-                                              jsonpickle.encode(jobs_set )
-                                              })
+            futures.append(executor.submit(parallel_experiments, (i, generator, 
+                                                                  gen_input, 
+                                                                  nodes, ppn,
+                                                                  schedulers))
+                           )
 
-            # Create an experiment based on the above
-            exp = Experiment(jobs_set, nodes, ppn, schedulers)
-            exp.set_default("Default Scheduler")
-            
-            # Fire the simulation for this experiment
-            exp.run()
+        executor.shutdown(wait=True)
 
-            # Draw the figures
-            figures = exp.plot()
+        for future in futures:
 
-            # For each figure save them under a specific experiment number
-            main_data["figures"].update({f"exp{i}": figures})
+            res = future.result()
+
+            jobs_dict, figures_dict = res
+            main_data["list of jobs"].update(jobs_dict)
+            main_data["figures"].update(figures_dict)
+
+        # for i in range(num_of_exps):
+        #     # Create set of jobs
+        #     jobs_set = generator.generate_jobs_set(gen_input)
+        #     # Store the list of jobs
+        #     main_data["list of jobs"].update({f"exp{i}":
+        #                                       jsonpickle.encode(jobs_set )
+        #                                       })
+
+        #     # Create an experiment based on the above
+        #     exp = Experiment(jobs_set, nodes, ppn, schedulers)
+        #     exp.set_default("Default Scheduler")
+        #     
+        #     # Fire the simulation for this experiment
+        #     exp.run()
+
+        #     # Draw the figures
+        #     figures = exp.plot()
+
+        #     # For each figure save them under a specific experiment number
+        #     main_data["figures"].update({f"exp{i}": figures})
 
         # Create the tabs
         tabs = list()
@@ -297,11 +345,52 @@ def cb_run_simulation(n1, n2,
             y=y_val,
             mode="lines+markers",
             marker=dict(color="black"), 
-            name="Average makespan Speedup"
+            name="Average Makespan Speedup"
         ))
 
-        fig.layout = main_data["figures"]["exp0"]["Speedups"].layout
+        fig.add_hline(y=1, line_color="black", line_dash="dot")
+
+        layout = main_data["figures"]["exp0"]["Speedups"].layout
+        layout.annotations = []
+        fig.layout = layout
         fig.layout.title = f"""<b>Average makespan and per job speedups for {num_of_exps} experiments with {len( jsonpickle.decode(main_data['list of jobs']['exp0']) )} jobs each</b>"""
+
+        # Show AvgMakespanSpeedup statically on plot
+        for i, y in enumerate(y_val):
+            fig.add_annotation(text=f"<b>{round(y, 3)}</b>", 
+                               font=dict(size=14),
+                               x=i, 
+                               y=y,
+                               arrowcolor="black")
+
+            # max_y = max(new_boxes[i]["y"])
+            # min_y = min(new_boxes[i]["y"])
+            # mean_y = avg(new_boxes[i]["y"])
+            # med_y = med(new_boxes[i]["y"])
+
+            # fig.add_annotation(text=f"<b>{round(max_y, 3)}</b>",
+            #                    font=dict(color="gray"),
+            #                    x=i, 
+            #                    y=max_y, 
+            #                    arrowcolor="gray")
+
+            # fig.add_annotation(text=f"<b>{round(min_y, 3)}</b>",
+            #                    font=dict(color="gray"),
+            #                    x=i, 
+            #                    y=min_y, 
+            #                    arrowcolor="gray")
+
+            # fig.add_annotation(text=f"<b>{round(mean_y, 3)}</b>",
+            #                    font=dict(color="gray"),
+            #                    x=i-0.02, 
+            #                    y=mean_y, 
+            #                    arrowcolor="gray")
+
+            # fig.add_annotation(text=f"<b>{round(med_y, 3)}</b>", 
+            #                    font=dict(color="gray"),
+            #                    x=i-0.1, 
+            #                    y=med_y, 
+            #                    arrowcolor="gray")
 
         # Save all experiments speedups figure
         main_data["figures"].update({"all": fig})
@@ -341,13 +430,19 @@ def cb_run_simulation(n1, n2,
         Output(component_id="download-figures", component_property="data"),
         Input(component_id="export-figures-btn", component_property="n_clicks"),
         Input(component_id="save-figures-btn", component_property="n_clicks"),
+        State(component_id="app-store", component_property="data"),
         State(component_id="main-store", component_property="data"),
         State(component_id="figures-height", component_property="value"),
         State(component_id="figures-width", component_property="value"),
         State(component_id="figures-format", component_property="value"),
         prevent_initial_call=True
         )
-def save_figures(n1, n2, main_data, fig_height, fig_width, fig_format):
+def save_figures(n1, n2, 
+                 app_data, 
+                 main_data, 
+                 fig_height, 
+                 fig_width, 
+                 fig_format):
 
     if ctx.triggered_id == "export-figures-btn":
         return True, None
@@ -356,7 +451,11 @@ def save_figures(n1, n2, main_data, fig_height, fig_width, fig_format):
         if not os.path.exists("./results"):
             os.mkdir("./results")
 
-        run_dir = f"./results/run{main_data['runs']}"
+        session_dir = f"./results/{app_data['sid']}"
+        if not os.path.exists(session_dir):
+            os.mkdir(session_dir)
+
+        run_dir = f"{session_dir}/run{main_data['runs']}"
         if not os.path.exists(run_dir):
             os.mkdir(run_dir)
 
@@ -375,9 +474,15 @@ def save_figures(n1, n2, main_data, fig_height, fig_width, fig_format):
 
                 fig = go.Figure(fig_dict)
 
-                fig.write_image(f"{run_dir}/{fig_name}.{fig_format}",
-                                height=fig_height, width=fig_width,
-                                format=fig_format)
+                if fig_format == "html":
+                    fig.write_html(f"{run_dir}/{fig_name}.html")
+                elif fig_format == "json":
+                    fig.write_json(f"{run_dir}/{fig_name}.json")
+                else:
+                    fig.write_image(f"{run_dir}/{fig_name}.{fig_format}",
+                                    height=fig_height, width=fig_width,
+                                    format=fig_format)
+
                 compressed.write(f"{run_dir}/{fig_name}.{fig_format}", 
                                  f"{run_dir}/{fig_name}.{fig_format}",
                                  zipfile.ZIP_DEFLATED)
@@ -397,9 +502,14 @@ def save_figures(n1, n2, main_data, fig_height, fig_width, fig_format):
 
                 fig = go.Figure(fig)
 
-                fig.write_image(f"{fig_dir}/{fig_name}.{fig_format}",
-                                height=fig_height, width=fig_width,
-                                format=fig_format)
+                if fig_format == "html":
+                    fig.write_html(f"{fig_dir}/{fig_name}.html")
+                elif fig_format == "json":
+                    fig.write_json(f"{fig_dir}/{fig_name}.json")
+                else:
+                    fig.write_image(f"{fig_dir}/{fig_name}.{fig_format}",
+                                    height=fig_height, width=fig_width,
+                                    format=fig_format)
                 
                 compressed.write(f"{fig_dir}/{fig_name}.{fig_format}",
                                  f"{fig_dir}/{fig_name}.{fig_format}",
@@ -407,31 +517,37 @@ def save_figures(n1, n2, main_data, fig_height, fig_width, fig_format):
 
         compressed.close()
 
-        return False, dcc.send_file(f"./results/run{main_data['runs']}/figures.zip")
+        zip_uri = f"{run_dir}/figures.zip"
+        return False, dcc.send_file(zip_uri)
     else:
         return False, None
 
 @callback(
         Output(component_id="download-jobs", component_property="data"),
         Input(component_id="export-jobs", component_property="n_clicks"),
+        State(component_id="app-store", component_property="data"),
         State(component_id="main-store", component_property="data"),
         prevent_initial_call=True
         )
-def save_list_of_jobs(n, main_data):
+def save_list_of_jobs(n, app_data, main_data):
 
     if not os.path.exists("./results"):
         os.mkdir("./results")
 
-    run_dir = f"./results/run{main_data['runs']}"
+    session_dir = f"./results/{app_data['sid']}"
+    if not os.path.exists(session_dir):
+        os.mkdir(session_dir)
+
+    run_dir = f"{session_dir}/run{main_data['runs']}"
     if not os.path.exists(run_dir):
         os.mkdir(run_dir)
 
     # Delete zip file if it already exists
-    if os.path.exists(f"./results/run{main_data['runs']}/lists-of-jobs.zip"):
-        os.unlink(f"./results/run{main_data['runs']}/lists-of-jobs.zip")
+    if os.path.exists(f"{run_dir}/lists-of-jobs.zip"):
+        os.unlink(f"{run_dir}/lists-of-jobs.zip")
 
     # Create a zip file
-    compressed = zipfile.ZipFile(f"./results/run{main_data['runs']}/lists-of-jobs.zip", mode="a")
+    compressed = zipfile.ZipFile(f"{run_dir}/lists-of-jobs.zip", mode="a")
 
     for exp_name, encoded_jobs_set in main_data["list of jobs"].items():
 
@@ -450,4 +566,4 @@ def save_list_of_jobs(n, main_data):
 
     compressed.close()
 
-    return dcc.send_file(f"./results/run{main_data['runs']}/lists-of-jobs.zip")
+    return dcc.send_file(f"{run_dir}/lists-of-jobs.zip")

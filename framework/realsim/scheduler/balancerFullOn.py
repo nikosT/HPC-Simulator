@@ -184,7 +184,7 @@ class BalancerFullOn(Scheduler):
         # Count how many pairs
         for job_id in self.pairs_matrix.keys():
             for cojob_id in self.pairs_matrix[job_id].keys():
-                if self.pmatrix_get_speedup(job_id, cojob_id) > 1:
+                if self.pmatrix_get_speedup(job_id, cojob_id) > 0.9:
                     self.ranks[job_id] += 1
                     self.ranks[cojob_id] += 1
     
@@ -205,7 +205,9 @@ class BalancerFullOn(Scheduler):
         # If no pair is capable then put this possible pairing
         # to the lowest in list
         if rank == 0:
-            rank = 1
+            return -1
+        else:
+            rank = rank / len( self.cluster.waiting_queue )
 
         # Find out if they have the same cores
         # A possible pair should rise higher when they have the 
@@ -284,7 +286,7 @@ class BalancerFullOn(Scheduler):
 
             fit_jobs = list(filter(
                 lambda job: 
-                avg([job.get_speedup(unit[0]), unit[0].get_speedup(job)]) > 1,
+                avg([job.get_speedup(unit[0]), unit[0].get_speedup(job)]) > 0.9,
                 fit_jobs
             ))
 
@@ -381,7 +383,7 @@ class BalancerFullOn(Scheduler):
     def wq_sort(self, job: Job):
 
         s = job.get_max_speedup() # max speedup
-        r = self.ranks[job.job_id] # rank
+        r = self.ranks[job.job_id] / len(self.cluster.waiting_queue) # rank
         r = 1 if r == 0 else r
         c = self.cluster.free_cores / job.num_of_processes # cores
         c = 1 if c == 0 else c
@@ -422,9 +424,9 @@ class BalancerFullOn(Scheduler):
 
             wq = list(filter(
                 lambda cojob:
-                #self.pmatrix_get_speedup(job.job_id, cojob.job_id) >= 1, wq
-                job.get_speedup(cojob) > 0.9 and cojob.get_speedup(job) > 0.9,
-                wq
+                self.pmatrix_get_speedup(job.job_id, cojob.job_id) >= 0.9, wq
+                #job.get_speedup(cojob) > 0.9 and cojob.get_speedup(job) > 0.9,
+                #wq
             ))
 
             # If empty, no pair can be made continue to the next job

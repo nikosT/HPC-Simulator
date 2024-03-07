@@ -1,6 +1,6 @@
 from typing import TypeVar
 import plotly.graph_objects as go
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
 import os
 import sys
 
@@ -33,7 +33,7 @@ class Experiment:
                  schedulers):
 
         self.num_of_jobs = len(inp)
-        self.executor = ProcessPoolExecutor()
+        self.executor = ThreadPoolExecutor(max_workers=len(schedulers))
         self.sims = dict()
         self.futures = dict()
         self.results = dict()
@@ -122,10 +122,17 @@ class Experiment:
 
         fig.add_trace(
                 go.Scatter(x=list(range(len(speedups))), 
-                           y=speedups, mode="lines+markers",
+                           y=speedups, mode="lines+markers+text",
                            marker=dict(color="black"), name="Makespan Speedup"
                 )
         )
+
+        for x in range(len(speedups)):
+            fig.add_annotation(text=f"<b>{round(speedups[x], 3)}</b>",
+                               x=x,
+                               y=speedups[x],
+                               arrowcolor="black")
+
 
         fig.add_hline(y=1, line_color="black", line_dash="dot")
 

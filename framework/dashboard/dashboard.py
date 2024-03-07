@@ -1,4 +1,4 @@
-import shutil
+from uuid import uuid4
 from dash import Dash, Output, dcc, html, callback
 import dash_bootstrap_components as dbc
 
@@ -25,6 +25,10 @@ app = Dash(__name__,
 app.config.suppress_callback_exceptions = True
 
 app.layout = dbc.Container([
+        dcc.Store(id="app-store", 
+                  storage_type="session", 
+                  data=dict(sid=str(uuid4()))
+                  ),
         main_layout
         ], fluid=True, class_name="mh-100", id="layout")
 
