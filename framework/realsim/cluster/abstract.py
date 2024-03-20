@@ -3,12 +3,11 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
-from realsim.jobs import Job
+from realsim.jobs import Job, EmptyJob
 from realsim.jobs.utils import deepcopy_list
 from realsim.scheduler.scheduler import Scheduler
 from realsim.logger.logger import Logger
 
-from typing import List
 import math
 
 
@@ -32,11 +31,11 @@ class AbstractCluster(abc.ABC):
         self.logger: Logger
 
         # The generated jobs are first deployed here
-        self.waiting_queue: List[Job] = list()
+        self.waiting_queue: list[Job] = list()
         # The queue of jobs that are executing
-        self.execution_list: List[List[Job]] = list()
+        self.execution_list: list[list[Job]] = list()
         # Finished jobs' ids list
-        self.finished_jobs: List[int] = list()
+        self.finished_jobs: list[int] = list()
 
         # Important counters #
 
@@ -55,7 +54,14 @@ class AbstractCluster(abc.ABC):
         self.logger = logger
         self.logger.assign_cluster(self)
 
-    def deploy_to_waiting_queue(self, job_set: List[Job]) -> None:
+    def half_node_cores(self, job: Job) -> int:
+        return int(math.ceil(job.num_of_processes / (self.cores_per_node / 2)) * (self.cores_per_node / 2))
+
+    def full_node_cores(self, job: Job) -> int:
+        return int(math.ceil(job.num_of_processes / self.cores_per_node) * self.cores_per_node)
+
+
+    def deploy_to_waiting_queue(self, job_set: list[Job]) -> None:
         """Used to initialize the waiting queue of a cluster
         or to append more jobs to the queue. It also overrides
         the job ids of the jobs
@@ -75,11 +81,55 @@ class AbstractCluster(abc.ABC):
                 self.id_counter += 1
                 self.waiting_queue.append(job)
 
-    def half_node_cores(self, job: Job) -> int:
-        return int(math.ceil(job.num_of_processes / (self.cores_per_node / 2)) * (self.cores_per_node / 2))
+    def filled_xunits(self) -> list[list[Job]]:
+        """Return all the executing units that have no empty space. All the
+        binded cores are completely filled.
+        """
 
-    def full_node_cores(self, job: Job) -> int:
-        return int(math.ceil(job.num_of_processes / self.cores_per_node) * self.cores_per_node)
+        filled_units: list[list[Job]] = list()
+
+        for unit in self.execution_list:
+
+            filled = True
+
+            for job in unit:
+                if type(job) == EmptyJob:
+                    filled = False
+                    break
+
+            if filled:
+                filled_units.append(unit)
+
+        return filled_units
+
+
+    def nonfilled_xunits(self) -> list[list[Job]]:
+        """Return all the execution units that have empty space. All the
+        binded cores are not filled.
+        """
+
+        nonfilled_units: list[list[Job]] = list()
+
+        for execution_unit in self.execution_list:
+
+            # We don't care about compact jobs
+            if len(execution_unit) == 1:
+                continue
+
+            # At least one has to be non empty and at least one empty
+            non_empty = 0
+            empty = 0
+            for job in execution_unit:
+                if type(job) == EmptyJob:
+                    empty += 1
+                    break
+                else:
+                    non_empty += 1
+
+            if non_empty > 0 and empty > 0:
+                nonfilled_units.append(execution_unit)
+
+        return nonfilled_units
 
     @abc.abstractmethod
     def next_state(self) -> None:
@@ -105,7 +155,7 @@ class AbstractCluster(abc.ABC):
 
                 # If scheduler deployed jobs to execution list
                 # then go to the next simulation loop
-                if self.scheduler.deploying():
+                if self.scheduler.deploy():
                     return
 
                 self.logger.jobs_start()
@@ -135,6 +185,9 @@ class AbstractCluster(abc.ABC):
         self.makespan = 0
         self.execution_list = list()
 
+        # Setup scheduling algorithms
+        self.scheduler.setup()
+
         # Reset counters for an experiment
         self.logger.init_logger()
 
@@ -151,7 +204,7 @@ class AbstractCluster(abc.ABC):
 
                 # If scheduler deployed jobs to execution list
                 # then go to the next simulation loop
-                if self.scheduler.deploying():
+                if self.scheduler.deploy():
                     continue
 
                 self.logger.jobs_start()

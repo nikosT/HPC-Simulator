@@ -10,7 +10,10 @@ class CompactScheduler(Scheduler):
     def __init__(self):
         Scheduler.__init__(self)
 
-    def deploying(self) -> bool:
+    def setup(self):
+        pass
+
+    def deploy(self) -> bool:
 
         # Did we deploy any job?
         deployed = False

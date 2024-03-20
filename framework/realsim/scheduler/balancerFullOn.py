@@ -26,6 +26,9 @@ class BalancerFullOn(Scheduler):
         Scheduler.__init__(self)
         self.ranks = dict()
 
+    def setup(self):
+        pass
+
     def assign_cluster(self, cluster: ClusterExhaustive):
         """This method is called from a cluster instance
         when it is created. It can also be used to reassign
@@ -562,7 +565,7 @@ class BalancerFullOn(Scheduler):
 
         return ll_num, ll_avg_speedup
 
-    def deploying(self):
+    def deploy(self):
         """The specifications for the Balancer are as following:
 
         - If any job has 0 ranking then deploy it as compact.

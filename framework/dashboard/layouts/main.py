@@ -285,13 +285,13 @@ def cb_run_simulation(n1, n2,
 
         # Create the tabs
         tabs = list()
-        for exp_name, fig_dict in main_data["figures"].items():
-            for fig_name, fig in fig_dict.items():
-                tabs.append(dbc.Tab([
-                    dcc.Graph(figure=fig, 
-                              style={"height": "80vh"})
-                    ], label=f"[{exp_name}] {fig_name}", 
-                                    class_name="flex-nowrap"))
+        # for exp_name, fig_dict in main_data["figures"].items():
+        #     for fig_name, fig in fig_dict.items():
+        #         tabs.append(dbc.Tab([
+        #             dcc.Graph(figure=fig, 
+        #                       style={"height": "80vh"})
+        #             ], label=f"[{exp_name}] {fig_name}", 
+        #                             class_name="flex-nowrap"))
 
         # Create the overall speedups
         new_makespan_line = dict()
@@ -415,12 +415,12 @@ def cb_run_simulation(n1, n2,
                     )
                     continue
 
-                for fig_name, fig in fig_dict.items():
-                    tabs.append(dbc.Tab([
-                        dcc.Graph(figure=fig, 
-                                  style={"height": "80vh"})
-                        ], label=f"[{exp_name}] {fig_name}",
-                                        class_name="flex-nowrap"))
+                # for fig_name, fig in fig_dict.items():
+                #     tabs.append(dbc.Tab([
+                #         dcc.Graph(figure=fig, 
+                #                   style={"height": "80vh"})
+                #         ], label=f"[{exp_name}] {fig_name}",
+                #                         class_name="flex-nowrap"))
             return main_data, True, tabs
     else:
         return main_data, False, []

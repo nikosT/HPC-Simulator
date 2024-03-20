@@ -1,7 +1,6 @@
 from __future__ import annotations
-import abc
-from typing import List, TypeVar, Generic, TYPE_CHECKING
-from numpy import average as avg, floating
+from abc import ABC, abstractmethod
+from typing import TypeVar, Generic, TYPE_CHECKING
 import os
 import sys
 
@@ -12,18 +11,16 @@ sys.path.append(os.path.abspath(
         )
     ))
 
-from realsim.jobs import Job, EmptyJob
-from realsim.jobs.utils import deepcopy_list
+from realsim.jobs import Job
 from realsim.logger.logger import Logger
 
 if TYPE_CHECKING:
     from realsim.cluster.abstract import AbstractCluster
-import realsim.jobs.utils as jutils
 
 Cluster = TypeVar("Cluster", bound="AbstractCluster")
 
 
-class Scheduler(abc.ABC, Generic[Cluster]):
+class Scheduler(ABC, Generic[Cluster]):
     """Scheduler provides a base class for scheduling methods. When creating an
     instance of Cluster a scheduler must always be provided and a reference to
     the cluster should also be provided to the scheduler instance. This way both
@@ -36,7 +33,13 @@ class Scheduler(abc.ABC, Generic[Cluster]):
     # Describe the philosophy of the scheduler
     description = "The abstract base class for all scheduling algorithms"
 
-    def assign_cluster(self, cluster: Cluster):
+    def __init__(self):
+        # Variable to check whether the new constructed execution list
+        # from the scheduler is any different from the previous execution list
+        # of the cluster
+        self.deploying = False
+
+    def assign_cluster(self, cluster: Cluster) -> None:
         """This method is called from a cluster instance
         when it is created. It can also be used to reassign
         the scheduler to other clusters. It is essential for
@@ -44,27 +47,26 @@ class Scheduler(abc.ABC, Generic[Cluster]):
         """
         self.cluster = cluster
 
-    def assign_logger(self, logger: Logger):
+    def assign_logger(self, logger: Logger) -> None:
         self.logger = logger
 
-    def pop(self, queue: List[Job]):
+    def pop(self, queue: list[Job]) -> Job:
         """Get and remove an object from a queue
         """
         obj = queue[0]
         queue.remove(obj)
         return obj
 
-    def backfill(self) -> None:
-        """Rearrange jobs in waiting queue. Don't know 
-        if a backfill algorithm will be used
+    @abstractmethod
+    def setup(self) -> None:
+        """Basic setup of scheduling algorithm before the start of the
+        simulation
         """
         pass
 
-    @abc.abstractmethod
-    def deploying(self) -> bool:
-        """
-        Deploying jobs from the waiting queue to the execution list
+    @abstractmethod
+    def deploy(self) -> bool:
+        """Abstract method to deploy the new execution list to the cluster
         """
         return False
-
 

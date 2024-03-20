@@ -5,6 +5,7 @@ import dash_bootstrap_components as dbc
 import importlib
 import os
 import sys
+from glob import glob
 
 import jsonpickle
 
@@ -21,8 +22,9 @@ def check_schedulers():
             os.path.dirname(__file__), "../../../realsim/scheduler")
 
     modules = [
-            f"realsim.scheduler.{module}".replace(".py", "")
-            for module in os.listdir(schedulers_pack_dir)
+            f"realsim.scheduler.{module}".replace(".py", "").replace("/", ".")
+            for module in glob("**/*.py", root_dir=schedulers_pack_dir,
+                               recursive=True)
             if ".py" in module
     ]
 

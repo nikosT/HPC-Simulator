@@ -9,7 +9,6 @@ from realsim.cluster.abstract import AbstractCluster
 from realsim.jobs import Job, EmptyJob
 from realsim.jobs.utils import deepcopy_list
 
-from typing import List
 import math
 
 class ClusterShallow(AbstractCluster):
@@ -38,7 +37,7 @@ class ClusterShallow(AbstractCluster):
         self.makespan += min_rem_time
 
         # Create a new execution list
-        execution_list: List[List[Job]] = list()
+        execution_list: list[list[Job]] = list()
 
         # Remove the smallest remaining time and if a job hits zero
         # then substitute it with an EmptyJob instance
