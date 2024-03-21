@@ -70,6 +70,18 @@ classDiagram
     }
 
     class UserDefinedRanksCoscheduler{
+
+        + name : str
+        + description : str
+        + threshold : float
+        + engine : Optional[scikit-model]
+        + ranks_threshold : float
+        + fragmentation : float
+
+        --] xunits_order(self, list[Job]) : float
+        --] xunits_candidates_order(self, Job, Job) : float
+        --] waiting_queue_order(self, list[Job]) : float
+        --] wjob_candidates_order(self, Job, Job) : float
         
     }
 
@@ -94,10 +106,36 @@ classDiagram
     }
 
     class UserDefinedDampenedCoscheduler{
+
+        + name : str
+        + description : str
+        + threshold : float
+        + engine : Optional[scikit-model]
+        + fragmentation : float
+
+        --] xunits_order(self, list[Job]) : float
+        --] xunits_candidates_order(self, Job, Job) : float
+        --] waiting_queue_order(self, list[Job]) : float
+        --] wjob_candidates_order(self, Job, Job) : float
         
     }
 
     class BalancingDampenedCoscheduler{
+
+        + name : str
+        + description : str
+        + threshold : float
+        + engine : Optional[scikit-model]
+        + ll_avg_speedup : float
+        + ll_xunits_num : int
+        + fragmentation : float
+
+        + xunit_avg_speedup(list[Job]) : float
+        + after_deployment(self, list[Job]) : None
+        + xunits_order(self, list[Job]) : float
+        + xunits_candidates_order(self, Job, Job) : float
+        + waiting_queue_order(self, list[Job]) : float
+        + wjob_candidates_order(self, Job, Job) : float
         
     }
 

@@ -16,25 +16,24 @@ schedulers_path = os.path.join(
         os.path.dirname(__file__), "../realsim/scheduler"
 )
 
-stored_modules_paths = [] # stored paths for each module
+stored_modules: dict[str, dict[str, str]] = dict() # stored paths for each module
 abstract: dict[str, dict] = dict() # abstract scheduler subclasses
 concrete: dict[str, dict] = dict() # concrete scheduler subclasses
-underconstruction = dict() # files that are under construction
 
 while 1:
 
     # Get modules names
     modules_paths = glob("**/*.py", root_dir=schedulers_path, recursive=True)
 
+    # Get all the paths stored in our dictionary
+    stored_paths = [m_dict["path"] for _, m_dict in stored_modules.items()]
+
     # Get new modules' paths if any
-    diff_mod_paths = [path for path in modules_paths if path not in
-                      stored_modules_paths]
+    diff_mod_paths = [path for path in modules_paths 
+                      if path not in stored_paths]
 
     # If new module found
     if diff_mod_paths != []:
-
-        # Extend the old modules paths
-        stored_modules_paths.extend(diff_mod_paths)
 
         modules_names = list(map(lambda path: 
                                  path.replace("/", ".").replace(".py", ""), 
@@ -43,7 +42,7 @@ while 1:
                              )
 
         modules_names = list(map(lambda path: 
-                                 f"realsim.scheduler.{path}", modules_names))
+        f"realsim.scheduler.{path}", modules_names))
 
         # Dynamically import new modules
         dyn_modules = []
@@ -90,7 +89,7 @@ while 1:
                         )
 
     for mod, mod_dict in concrete.items():
-        if mod_dict["last modified"] != os.path.getmtime(mod_dict["last modified"]):
+        if mod_dict["last modified"] != os.path.getmtime(mod_dict["path"]):
             # invalidate_caches()
             reload(mod)
             for _, class_obj in inspect.getmembers(module, inspect.isclass):
