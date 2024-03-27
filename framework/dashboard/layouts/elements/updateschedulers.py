@@ -1,12 +1,12 @@
-import inspect
-from importlib import import_module, invalidate_caches, reload
-from glob import glob
-from time import sleep
 import os
 import sys
+from importlib import import_module, invalidate_caches, reload
+from inspect import getmembers, getmro, isclass, isabstract
+from glob import glob
 
+# realsim
 sys.path.append(os.path.abspath(os.path.join(
-    os.path.dirname(__file__), "../"
+    os.path.dirname(__file__), "../../../"
 )))
 
 from realsim.scheduler.scheduler import Scheduler
@@ -37,18 +37,18 @@ def hierarchy(classes):
     return class_hierarchy
 
 def is_subclass(cls, default_cls):
-    for cl in inspect.getmro(cls):
+    for cl in getmro(cls):
         if cl == default_cls:
             return True
     return False
 
 schedulers_path = os.path.abspath(os.path.join(
-    os.path.dirname(__file__), "../realsim/scheduler"
+    os.path.dirname(__file__), "../../../realsim/scheduler"
 ))
 
-stored_modules: dict[str, dict] = dict()
+def update_schedulers(stored_modules):
 
-while 1:
+    changed = False
 
     invalidate_caches()
 
@@ -65,6 +65,9 @@ while 1:
 
     # Import new modules if any
     if new_files != []:
+
+        # Changed by new module, by removing a module, by code change
+        changed = True
 
         modules_names = list(map(
             lambda filepath:
@@ -90,10 +93,10 @@ while 1:
 
             classes = [class_obj 
                        for _, class_obj 
-                       in inspect.getmembers(module, inspect.isclass)]
+                       in getmembers(module, isclass)]
 
             subclasses = list(
-                    filter(lambda cls: issubclass(cls, Scheduler), classes)
+                    filter(lambda cls: is_subclass(cls, Scheduler), classes)
             )
 
             class_hierarchy = hierarchy(subclasses)
@@ -103,8 +106,15 @@ while 1:
                 # The last class object is the class defined in the module
                 class_obj = class_hierarchy[-1]
 
+                # If defined class_obj already exists then store the module with
+                # None class object pointing to
+                for _, mod_dict in stored_modules.items():
+                    if class_obj == mod_dict["classobj"]:
+                        mod_dict["classobj"].name += " [Duplicate]"
+                        break
+
                 # If abstract not viewable from dashboard
-                if inspect.isabstract(class_obj):
+                if isabstract(class_obj):
                     stored_modules[module.__name__]["classobj"] = class_obj
                 # If concrete viewable from dashboard
                 else:
@@ -119,6 +129,7 @@ while 1:
 
         if not os.path.exists(mod_dict["abspath"]):
             to_be_removed.append(mod_name)
+            changed = True
             continue
 
         if os.path.getmtime(mod_dict["abspath"]) != mod_dict["lastmod"]:
@@ -131,6 +142,8 @@ while 1:
 
     if code_changed:
 
+        changed = True
+
         for mod_name, mod_dict in stored_modules.items():
 
             if mod_name == "realsim.scheduler.scheduler":
@@ -141,7 +154,7 @@ while 1:
 
             classes = [class_obj 
                        for _, class_obj 
-                       in inspect.getmembers(module, inspect.isclass)]
+                       in getmembers(module, isclass)]
 
             subclasses = list(
                     filter(lambda cls: is_subclass(cls, Scheduler), classes)
@@ -159,10 +172,9 @@ while 1:
                 stored_modules[mod_name]["classobj"] = class_obj
                 stored_modules[mod_name]["lastmod"] = os.path.getmtime(stored_modules[mod_name]["abspath"])
 
-    for key, values in stored_modules.items():
-        print(f"[{key}]", end="\t")
-        print(values["lastmod"], values["classobj"])
+                if isabstract(class_obj):
+                    stored_modules[mod_name]["viewable"] = False
+                else:
+                    stored_modules[mod_name]["viewable"] = True
 
-    print()
-
-    sleep(4)
+    return changed

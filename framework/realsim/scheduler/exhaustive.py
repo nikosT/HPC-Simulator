@@ -23,8 +23,8 @@ class CoschedulerExhaustive(Scheduler, abc.ABC):
     name = "Exhaustive Co-Scheduler"
     description = "Exhaustive coupling co-scheduling base class for ExhaustiveCluster"
 
-    def __init__(self):
-        Scheduler.__init__(self)
+    #def __init__(self):
+    #    Scheduler.__init__(self)
 
     def assign_cluster(self, cluster: ClusterExhaustive):
         """This method is called from a cluster instance

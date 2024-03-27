@@ -75,8 +75,6 @@ class RanksCoscheduler(Coscheduler, ABC):
 
         # Deploy any job that has 0 ranking in compact allocation policy
         for job in waiting_queue:
-            if self.ranks[job.job_id] == 0:
-                print(job.job_id)
             if self.ranks[job.job_id] == 0 and self.cluster.full_node_cores(job) <= self.cluster.free_cores:
 
                         job.binded_cores = self.cluster.full_node_cores(job)

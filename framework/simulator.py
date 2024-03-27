@@ -1,4 +1,3 @@
-from typing import TypeVar
 import plotly.graph_objects as go
 from concurrent.futures import ThreadPoolExecutor
 import os
@@ -10,19 +9,65 @@ sys.path.append(os.path.abspath(os.path.join(
 
 from realsim.jobs import Job
 from realsim.cluster.exhaustive import ClusterExhaustive
-from realsim.scheduler.balancerFullOn import BalancerFullOn
-from realsim.scheduler.compact import CompactScheduler
-from realsim.scheduler.random import RandomScheduler
 from realsim.logger.logger import Logger
 
-Scheduler = TypeVar("Scheduler", CompactScheduler, RandomScheduler, BalancerFullOn)
+
+STATIC = "static"
+DYNAMIC = "dynamic"
+
 
 def run_sim(core):
-    cluster, scheduler, logger = core
-    cluster.run()
+
+    sim_type, generator, gen_inp, cluster, scheduler, logger = core
+
+    cluster.deploy_to_waiting_queue(generator.generate_jobs_set(gen_inp))
+
+    cluster.setup()
+    scheduler.setup()
+    logger.setup()
+
+    # If the simulation is static
+    if sim_type == STATIC:
+
+        # The stopping condition is for the waiting queue and the execution list
+        # to become empty
+        while cluster.waiting_queue != [] and cluster.execution_list != []:
+            cluster.step()
+
+    # If the simulation is dynamic
+    elif sim_type == DYNAMIC:
+
+        sim_timer = 0
+
+        # The stopping condition will either not exist or it will be based on a
+        # real world countdown
+        while 1:
+
+            cluster.step()
+
+            # Caclulate how much time passed for a step in order to deploy the
+            # new batch of jobs
+            diff_time = cluster.makespan - (generator.timer + sim_timer)
+            if diff_time >= 0:
+
+                # Calculate how many batches of gen_inp jobs the generator
+                # should have deployed to the cluster's waiting queue
+                for _ in range(int(diff_time / generator.timer)):
+                    cluster.deploy_to_waiting_queue(
+                            generator.generate_jobs_set(gen_inp)
+                    )
+
+            # Get the current time in the simulation
+            sim_timer = cluster.makespan
+
     return cluster, scheduler, logger
 
-class Experiment:
+class Simulation:
+    """The entry point of a simulation for scheduling and scheduling algorithms.
+    A user can decide whether the simulation will be 'static' be creating a bag
+    of jobs at the beginning or 'dynamic' by continiously adding more jobs to
+    the the waiting queue of a cluster.
+    """
 
     def __init__(self, 
                  # set of jobs
@@ -154,7 +199,5 @@ class Experiment:
         figures["Speedups"] = fig
 
         return figures
-        #fig.show()
-        # fig.write_image(f"resources_usage/boxplots.pdf", format="pdf")
 
 

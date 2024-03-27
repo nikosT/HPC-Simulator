@@ -12,7 +12,7 @@ from concurrent.futures import ProcessPoolExecutor
 
 from layouts.elements.generator import elem_generator
 from layouts.elements.cluster import elem_cluster
-from layouts.elements.schedulers import elem_schedulers
+from layouts.elements.schedulers import elem_schedulers, stored_modules
 
 # TODO: Get specs from DB rather than SPECS python file
 import os
@@ -156,19 +156,19 @@ def parallel_experiments(par_inp):
         State(component_id="generator-options", component_property="children"),
         State(component_id="cluster-store", component_property="data"),
         State(component_id="cluster-options", component_property="children"),
-        State(component_id="schedulers-checkboxes", component_property="value"),
         State(component_id="schedulers-store", component_property="data"),
+        State(component_id="selected-schedulers", component_property="value"),
         State(component_id="num-of-experiments", component_property="value"),
         prevent_initial_call=True
         )
-def cb_run_simulation(n1, n2, 
+def CB_run_simulation(n1, n2, 
                       main_data,
                       gen_data, 
                       gen_opts, 
                       cluster_data,
                       cluster_opts,
-                      sched_checks, 
                       sched_data,
+                      sched_selected, 
                       num_of_exps):
 
     if ctx.triggered_id == "run-simulation":
@@ -233,8 +233,8 @@ def cb_run_simulation(n1, n2,
             ppn = ppn_inp["props"]["children"][0]["props"]["value"]
 
         # Get the scheduling classes
-        schedulers = [jsonpickle.decode( sched_data[number] )
-                      for number in sched_checks]
+        schedulers = [stored_modules[sched_data[idx]["module"]]["classobj"]
+                      for idx in sched_selected]
 
         # Calculate the number of parallel processes based on experiments
         parallel_procs = int( os.cpu_count() / len(schedulers) )
@@ -285,13 +285,13 @@ def cb_run_simulation(n1, n2,
 
         # Create the tabs
         tabs = list()
-        # for exp_name, fig_dict in main_data["figures"].items():
-        #     for fig_name, fig in fig_dict.items():
-        #         tabs.append(dbc.Tab([
-        #             dcc.Graph(figure=fig, 
-        #                       style={"height": "80vh"})
-        #             ], label=f"[{exp_name}] {fig_name}", 
-        #                             class_name="flex-nowrap"))
+        for exp_name, fig_dict in main_data["figures"].items():
+            for fig_name, fig in fig_dict.items():
+                tabs.append(dbc.Tab([
+                    dcc.Graph(figure=fig, 
+                              style={"height": "80vh"})
+                    ], label=f"[{exp_name}] {fig_name}", 
+                                    class_name="flex-nowrap"))
 
         # Create the overall speedups
         new_makespan_line = dict()

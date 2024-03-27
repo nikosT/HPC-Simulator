@@ -2,8 +2,10 @@
 import abc
 from numpy.random import seed, randint, random_sample
 from time import time_ns
-from typing import TypeVar, Generic
+from typing import Any, TypeVar, Generic
+from collections.abc import Callable
 from .__init__ import *
+from math import inf
 
 T = TypeVar("T")
 
@@ -13,8 +15,19 @@ class AbstractGenerator(abc.ABC, Generic[T]):
     name = "Abstract Generator"
     description = "Abstract base class for all generators"
 
-    def __init__(self, load_manager: LoadManager):
+    def __init__(self, 
+                 load_manager: LoadManager, 
+                 timer: Callable[[], float] = lambda: inf):
         self.load_manager = load_manager
+        self._timer = timer
+
+    @property
+    def timer(self):
+        return self._timer()
+
+    @timer.setter
+    def timer(self, timer: Callable[[], float]):
+        self._timer = timer
 
     def generate_job(self, idx: int, load: Load):
         seed(time_ns() % (2**32))

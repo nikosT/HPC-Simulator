@@ -139,90 +139,58 @@ class AbstractCluster(abc.ABC):
     def free_resources(self) -> None:
         pass
 
-    def run_step(self):
-        """Used mainly for debugging purposes
-        """
-        # Simulation loop
-        if self.waiting_queue != [] or self.execution_list != []:
+    def setup(self):
+        self.free_cores = self.total_cores
+        self.makespan = 0
+        self.execution_list = list()
 
-            # This is definite
-            # If broken then the simulation loop has problems
-            if self.free_cores < 0 or self.free_cores > self.total_cores:
-                raise RuntimeError(f"Free cores: {self.free_cores}")
-            
-            # Check if there are any jobs left waiting
-            if self.waiting_queue != []:
+    def step(self):
+        # This is definite
+        # If broken then the simulation loop has problems
+        if self.free_cores < 0 or self.free_cores > self.total_cores:
+            raise RuntimeError(f"Free cores: {self.free_cores}")
+        
+        # Check if there are any jobs left waiting
+        if self.waiting_queue != []:
 
-                # If scheduler deployed jobs to execution list
-                # then go to the next simulation loop
-                if self.scheduler.deploy():
-                    return
+            # If scheduler deployed jobs to execution list
+            # then go to the next simulation loop
+            if self.scheduler.deploy():
+                return
 
-                self.logger.jobs_start()
+            self.logger.evt_jobs_executing()
 
-                # If the scheduler didn't deploy jobs then
-                # the execution list is full and we have to
-                # execute some
+            # If the scheduler didn't deploy jobs then
+            # the execution list is full and we have to
+            # execute some
+            self.next_state()
+            # Free the resources
+            self.free_resources()
+
+        # If there aren't any jobs left on the waiting queue
+        else:
+            # Check if there is any job left in the execution queue
+            if self.execution_list != []:
+
+                self.logger.evt_jobs_executing()
+
                 self.next_state()
-                # Free the resources
                 self.free_resources()
-
-            # If there aren't any jobs left on the waiting queue
-            else:
-                # Check if there is any job left in the execution queue
-                if self.execution_list != []:
-
-                    self.logger.jobs_start()
-
-                    self.next_state()
-                    self.free_resources()
 
     def run(self):
         """The simulation loop
         """
 
-        self.free_cores = self.total_cores
-        self.makespan = 0
-        self.execution_list = list()
+        # Setup cluster
+        self.setup()
 
         # Setup scheduling algorithms
         self.scheduler.setup()
 
         # Reset counters for an experiment
-        self.logger.init_logger()
+        self.logger.setup()
 
         # Simulation loop
         while self.waiting_queue != [] or self.execution_list != []:
-
-            # This is definite
-            # If broken then the simulation loop has problems
-            if self.free_cores < 0 or self.free_cores > self.total_cores:
-                raise RuntimeError(f"Free cores: {self.free_cores}")
-            
-            # Check if there are any jobs left waiting
-            if self.waiting_queue != []:
-
-                # If scheduler deployed jobs to execution list
-                # then go to the next simulation loop
-                if self.scheduler.deploy():
-                    continue
-
-                self.logger.jobs_start()
-
-                # If the scheduler didn't deploy jobs then
-                # the execution list is full and we have to
-                # execute some
-                self.next_state()
-                # Free the resources
-                self.free_resources()
-
-            # If there aren't any jobs left on the waiting queue
-            else:
-                # Check if there is any job left in the execution queue
-                if self.execution_list != []:
-
-                    self.logger.jobs_start()
-
-                    self.next_state()
-                    self.free_resources()
+            self.step()
 

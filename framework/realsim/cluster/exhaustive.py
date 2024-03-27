@@ -39,6 +39,10 @@ class ClusterExhaustive(AbstractCluster):
         # Increase the overall cluster runtime
         self.makespan += min_rem_time
 
+        # Increase the waiting/queued time of each job in the waiting queue
+        for job in self.waiting_queue:
+            job.queued_time += min_rem_time
+
         # Create a new execution list
         execution_list: list[list[Job]] = list()
 
@@ -59,7 +63,7 @@ class ClusterExhaustive(AbstractCluster):
                     job.remaining_time -= min_rem_time
                     if job.remaining_time == 0:
                         # Record in logger
-                        self.logger.job_finish(job)
+                        self.logger.evt_job_finishes(job)
                         # Convert to an empty job
                         job = EmptyJob(job)
 
