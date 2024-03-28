@@ -1,4 +1,4 @@
-from dash import Output, Input, State, dcc, html, callback, clientside_callback
+from dash import Output, Input, State, dcc, html, callback, clientside_callback, ClientsideFunction
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 import json
@@ -77,38 +77,10 @@ def CB_update_schedulers(store_data, n_intervals):
         raise PreventUpdate
 
 clientside_callback(
-        """
-        function showMsg(data) {
-            options = [];
-            selected = [];
-            for (i = 0; i < data.length; i++) {
-                item = {
-                    'label': data[i].name,
-                    'value': i,
-                    'disabled': data[i].disabled,
-                };
-
-                options.push(item);
-
-                if (data[i].selected) {
-                    selected.push(i)
-                }
-            }
-
-            child = {
-                'type': 'Checklist',
-                'namespace': 'dash_bootstrap_components',
-                'props': {
-                    'id': 'selected-schedulers',
-                    'options': options,
-                    'value': selected,
-                }
-            };
-
-            return child;
-
-        }
-        """,
+        ClientsideFunction(
+            namespace="clientside",
+            function_name="create_schedulers_checklist"
+        ),
         Output("schedulers-container", "children"),
         Input("schedulers-store", "data")
 )
@@ -121,7 +93,7 @@ elem_schedulers = dbc.Container([
     dcc.Store(id="schedulers-store", data=list(), storage_type="local"),
 
     dbc.Row([
-        dbc.Col([dbc.CardImg(src="../../static/images/scheduler.svg")], width=2),
+        dbc.Col([dbc.CardImg(src="../../assets/static/images/scheduler.svg")], width=2),
         dbc.Col([
             dbc.Row([html.H4("Schedulers")], class_name="py-1"),
             dbc.Row([html.P("""Select which scheduling algorithms will

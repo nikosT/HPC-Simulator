@@ -20,7 +20,7 @@ elem_cluster = dbc.Container([
     dcc.Store(id="cluster-store", data=cluster_store, storage_type="session"),
 
     dbc.Row([
-        dbc.Col([dbc.CardImg(src="../../static/images/cluster.svg")], width=2),
+        dbc.Col([dbc.CardImg(src="../../assets/static/images/cluster.svg")], width=2),
         dbc.Col([
             dbc.Row([html.H4("Cluster")], class_name="py-1"),
             dbc.Row([html.P("""Select by name or manually the specifications of

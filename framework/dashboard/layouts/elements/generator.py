@@ -65,7 +65,7 @@ elem_generator = dbc.Container([
     dcc.Store(id="generator-store", storage_type="session"),
 
     dbc.Row([
-        dbc.Col([dbc.CardImg(src="../../static/images/generator.svg")], width=2),
+        dbc.Col([dbc.CardImg(src="../../assets/static/images/generator.svg")], width=2),
         dbc.Col([
             dbc.Row([html.H4("Generator")], class_name="py-1"),
             dbc.Row([html.P("""Select the loads from which the jobs will be
