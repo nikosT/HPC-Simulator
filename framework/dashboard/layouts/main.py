@@ -13,6 +13,7 @@ from concurrent.futures import ProcessPoolExecutor
 from layouts.elements.generator import elem_generator
 from layouts.elements.cluster import elem_cluster
 from layouts.elements.schedulers import elem_schedulers, stored_modules
+from layouts.elements.run import elem_run
 
 # TODO: Get specs from DB rather than SPECS python file
 import os
@@ -94,31 +95,7 @@ main_layout = dbc.Container([
 
     dbc.Row([
         dbc.Col([ elem_schedulers ], class_name="p-3"),
-        dbc.Col([
-            dbc.Row([
-                dbc.InputGroup([
-                    dbc.InputGroupText("Number of experiments"),
-                    dbc.Input(type="number", min=1, value=1, id="num-of-experiments")
-                ]),
-            ]),
-            dbc.Row([
-                dbc.Col([
-                    dbc.Button("Run simulation",
-                               id="run-simulation",
-                               style={"width": "100%", "height": "45vh",
-                                      "border-radius": "10px"}
-                               )
-                    ], width=6),
-                dbc.Col([
-                    dbc.Button("View results",
-                               id="view-results",
-                               class_name="btn-success",
-                               style={"width": "100%", "height": "45vh",
-                                      "border-radius": "10px"}
-                               )
-                    ], width=6),
-                ])
-            ])
+        dbc.Col([ elem_run ])
         ], class_name="d-flex align-items-center justify-content-center align-self-strech")
 
     ], class_name="flex-row h-100", fluid=True, style={"height": "100vh"})
