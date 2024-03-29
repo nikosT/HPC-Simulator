@@ -20,15 +20,13 @@ elem_cluster = dbc.Container([
     dcc.Store(id="cluster-store", data=cluster_store, storage_type="session"),
 
     dbc.Row([
-        dbc.Col([dbc.CardImg(src="../../assets/static/images/cluster.svg")], width=2),
+        dbc.Col([dbc.CardImg(src="../../assets/static/images/cluster.svg")], width=1),
         dbc.Col([
-            dbc.Row([html.H4("Cluster")], class_name="py-1"),
-            dbc.Row([html.P("""Select by name or manually the specifications of
-                            the cluster.""")]),
+            dbc.Row([html.H5("Cluster"),
+                     html.P("""Select by name or manually the specifications of
+                            the cluster.""")])
             ], width=10)
-    ], align="center"),
-
-    html.Hr(),
+    ], class_name="element-header sticky-top"),
 
     dbc.Row([
         dbc.Button("To manual configuration", id="to-manual-btn")
@@ -40,9 +38,7 @@ elem_cluster = dbc.Container([
 
     dbc.Container(id="cluster-options")
 
-    ], style={"background-color": "lightgray", 
-              "border-radius": "10px",
-              "height": "45vh"})
+    ], class_name="element")
 
 @callback(
         Output(component_id="cluster-store", component_property="data"),

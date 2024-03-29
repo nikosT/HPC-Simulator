@@ -1,0 +1,23 @@
+.element {
+	background-color: lightgray;
+	border-radius: 10px;
+	border-style: solid;
+	border-width: 2px;
+	border-color: lightskyblue;
+	height: 45vh;
+	overflow-y: scroll;
+	flex-direction: column;
+}
+
+.element-header {
+	background-color: lightskyblue;
+	border-top-right-radius: 10px;
+	border-top-left-radius: 10px;
+}
+
+.element-item {
+	border-style: solid;
+	border-width: 2px;
+	border-color: lightskyblue;
+	flex: ;
+}

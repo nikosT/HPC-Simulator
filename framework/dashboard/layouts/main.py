@@ -88,13 +88,12 @@ main_layout = dbc.Container([
 
     # DASHBOARD
     dbc.Row([
-        dbc.Col([ elem_generator ], class_name="py-3", width=6),
-        dbc.Col([ elem_cluster ], class_name="p-3 align-self-strech", width=6),
-        ], class_name="align-items-center justify-content-center h-50",
-            style={"height": "45%"}),
+        dbc.Col([ elem_generator ], class_name="py-3"),
+        dbc.Col([ elem_cluster ], class_name="p-3 d-flex align-items-strech align-self-strech"),
+        ], className="d-flex align-items-center justify-content-center"),
 
     dbc.Row([
-        dbc.Col([ elem_schedulers ], class_name="p-3", width=6),
+        dbc.Col([ elem_schedulers ], class_name="p-3"),
         dbc.Col([
             dbc.Row([
                 dbc.InputGroup([
@@ -120,8 +119,7 @@ main_layout = dbc.Container([
                     ], width=6),
                 ])
             ])
-        ], class_name="align-items-center justify-content-center", 
-            style={"height": "45%"})
+        ], class_name="d-flex align-items-center justify-content-center align-self-strech")
 
     ], class_name="flex-row h-100", fluid=True, style={"height": "100vh"})
 

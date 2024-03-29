@@ -3,7 +3,6 @@ import pymongo
 from pymongo.server_api import ServerApi
 import importlib
 import jsonpickle
-import inspect
 
 from dash import Input, Output, State, callback, dcc, html, ctx
 from dash.exceptions import PreventUpdate
@@ -34,6 +33,9 @@ machines = list(set([
     doc["_id"]["machine"] for doc in collection.find({})
 ]))
 machines.sort()
+suites = list(set([
+    doc["_id"]["suite"] for doc in collection.find({})
+]))
 
 input_from_db = dbc.Select(machines, machines[0], id="db-input")
 input_from_folder = dbc.Button("Upload directory", id="folder-input", 
@@ -65,18 +67,17 @@ elem_generator = dbc.Container([
     dcc.Store(id="generator-store", storage_type="session"),
 
     dbc.Row([
-        dbc.Col([dbc.CardImg(src="../../assets/static/images/generator.svg")], width=2),
+        dbc.Col([dbc.CardImg(src="../../assets/static/images/generator.svg")], width=1),
         dbc.Col([
-            dbc.Row([html.H4("Generator")], class_name="py-1"),
-            dbc.Row([html.P("""Select the loads from which the jobs will be
-                            created and the type of generator.""")]),
-            ], width=10)
-    ], align="center"),
+            dbc.Row([html.P("Generator", className="h5"), html.P("""Select the 
+            workloads from which the jobs will be created and the type of
+            generator""")]),
+            ])
+    ], className="d-flex element-header sticky-top"), 
 
-    html.Hr(),
-    
-    dbc.Row([ dbc.Label("Loads") ], class_name="py-1"),
     dbc.Row([
+
+        html.Span("Workloads", className="h6"),
 
         dbc.Col([ 
                  dbc.Button([html.I(className="bi bi-database")],
@@ -88,23 +89,22 @@ elem_generator = dbc.Container([
                             id="folder-input-btn"),
         ], style={"display": "none"}, id="folder-input-display"),
 
-        dbc.Col([ input_from_db ], width=10, id="input-type")
+        dbc.Col([ input_from_db ], width=5, id="input-type")
 
-    ], class_name="d-flex"),
+    ], class_name="py-2"),
 
-    dbc.Row([ dbc.Label("Generator") ], class_name="py-1"),
-    dbc.Row([ gen_names_opt ], class_name="px-3"),
+    dbc.Row([ html.Span("Generator", className="h6"),
+             gen_names_opt ], class_name="element-item py-2"),
 
-    dbc.Row([ dbc.Label("Options") ]),
     dbc.Row([
+        html.Span("Options", className="h6"),
         dbc.Spinner([
             dbc.Container(id="generator-options", 
-                          style={"overflow": "scroll", 
-                                 "height": "10vh"})
+                          style={"overflow": "scroll"})
                     ], color="primary")
-        ], class_name="pb-2")
+        ], class_name="element-item py-2 d-flex align-self-strech")
 
-    ], style={"background-color": "lightgray", "border-radius": "10px"})
+    ], class_name="element d-flex align-items-strech")
 
 @callback(
         Output(component_id="input-type", component_property="children"),
@@ -162,16 +162,16 @@ def storage_db(data, db_input, gen_type):
         new_data = data
 
     if ctx.triggered_id == "db-input":
-        lm = LoadManager(db_input, suite="NAS") # Add suite selection
+        lm = LoadManager(db_input) # Add suite selection
         lm.import_from_db(host="mongodb+srv://cslab:bQt5TU6zQsu_LZ@storehouse.om2d9c0.mongodb.net", 
                           dbname="storehouse")
 
-        for name in ["bt.D.484", "sp.D.484", "bt.E.2025", "cg.E.2048", "ft.E.2048", "lu.E.2048", "sp.E.2025"]:
-            try:
-                del lm.loads[name]
-            except Exception:
-                print("Exception")
-                pass
+        #for name in ["bt.D.484", "sp.D.484", "bt.E.2025", "cg.E.2048", "ft.E.2048", "lu.E.2048", "sp.E.2025"]:
+        #    try:
+        #        del lm.loads[name]
+        #    except Exception:
+        #        print("Exception")
+        #        pass
 
         new_data["load-manager"] = jsonpickle.encode( lm )
         new_data["generator"] = jsonpickle.encode( mapping[gen_type](lm) )
