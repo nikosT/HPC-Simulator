@@ -38,7 +38,7 @@ elem_cluster = dbc.Container([
 
     dbc.Container(id="cluster-options")
 
-    ], class_name="element")
+    ], class_name="element d-flex align-items-strech")
 
 @callback(
         Output(component_id="cluster-store", component_property="data"),

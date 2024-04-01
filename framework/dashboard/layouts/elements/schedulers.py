@@ -1,7 +1,9 @@
-from dash import Output, Input, State, dcc, html, callback, clientside_callback, ClientsideFunction
+from dash import MATCH, Output, Input, State, dcc, html, callback, clientside_callback, ClientsideFunction
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 from .updateschedulers import update_schedulers
+from inspect import signature
+
 
 stored_modules: dict[str, dict] = dict()
 
@@ -14,7 +16,7 @@ def CB_update_schedulers(store_data, n_intervals):
 
     # If there is a new scheduling python module then re-issue the names of the
     # algorithms
-    if update_schedulers(stored_modules):
+    if update_schedulers(stored_modules) or (store_data == [] and stored_modules != dict()):
 
         data = list()
 
@@ -22,12 +24,18 @@ def CB_update_schedulers(store_data, n_intervals):
 
             if mod_dict["viewable"]:
 
+                # Hyperparameters name and type
+                hyperparams: dict[str, str] = dict()
+                for name, param in signature(mod_dict["classobj"]).parameters.items():
+                    hyperparams[name] = str(param.annotation)
+
                 if "Default" in mod_dict["classobj"].name:
                     data.insert(0, {
                         "name": mod_dict["classobj"].name,
                         "module": mod_name,
                         "selected": True,
-                        "disabled": True
+                        "disabled": True,
+                        "hyperparams": hyperparams
                     })
                 
                 elif "Random" in mod_dict["classobj"].name:
@@ -37,7 +45,8 @@ def CB_update_schedulers(store_data, n_intervals):
                             "name": mod_dict["classobj"].name,
                             "module": mod_name,
                             "selected": True,
-                            "disabled": False
+                            "disabled": False,
+                            "hyperparams": hyperparams
                         })
 
                     else:
@@ -45,12 +54,13 @@ def CB_update_schedulers(store_data, n_intervals):
                             "name": mod_dict["classobj"].name,
                             "module": mod_name,
                             "selected": True,
-                            "disabled": False
+                            "disabled": False,
+                            "hyperparams": hyperparams
                         })
 
                 else:
                     # Check if the scheduler existed in the previous data stored
-                    # and if holds true check wether it was selected
+                    # and if holds true check whether it was selected
                     index = None
                     for i, sched_dict in enumerate(store_data):
                         if mod_dict["classobj"].name in sched_dict:
@@ -61,7 +71,8 @@ def CB_update_schedulers(store_data, n_intervals):
                         "name": mod_dict["classobj"].name,
                         "module": mod_name,
                         "selected": store_data[index] if index is not None else False,
-                        "disabled": False
+                        "disabled": False,
+                        "hyperparams": hyperparams
                     })
 
         return data
@@ -81,12 +92,21 @@ clientside_callback(
         Input("schedulers-store", "data")
 )
 
+clientside_callback(
+        ClientsideFunction(
+            namespace="clientside",
+            function_name="show_scheduler_hyperparameters"
+        ),
+        Output({'type': 'schedulers-collapse', 'index': MATCH}, 'is_open'),
+        Input({'type': 'schedulers-checkboxes', 'index': MATCH}, 'value')
+)
+
 
 elem_schedulers = dbc.Container([
 
     dcc.Interval(id="update-schedulers", interval=10000),
 
-    dcc.Store(id="schedulers-store", data=list(), storage_type="local"),
+    dcc.Store(id="schedulers-store", data=list()),
 
     dbc.Row([
         dbc.Col([dbc.CardImg(src="../../assets/static/images/scheduler.svg")], width=1),

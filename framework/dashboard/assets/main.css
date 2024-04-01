@@ -1,5 +1,5 @@
 .element {
-	background-color: lightgray;
+	background-color: rgba(185, 184, 184, 0.44);
 	border-radius: 10px;
 	border-style: solid;
 	border-width: 2px;
@@ -7,6 +7,8 @@
 	height: 45vh;
 	overflow-y: scroll;
 	flex-direction: column;
+	backdrop-filter: blur(8px);
+	-webkit-backdrop-filter: blur(8px);
 }
 
 .element-header {
@@ -20,5 +22,13 @@
 	border-width: 2px;
 	border-color: lightskyblue;
 	flex: 1;
+}
+
+#bg-video {
+	position: fixed;
+	right: 0;
+	bottom: 0;
+	min-width: 100%;
+	min-height: 100%;
 }
 

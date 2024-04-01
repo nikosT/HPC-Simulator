@@ -30,6 +30,9 @@ app.layout = dbc.Container([
                   storage_type="session", 
                   data=dict(sid=str(uuid4()))
                   ),
+        # html.Video(id='bg-video',
+        #            src="https://videos.pexels.com/video-files/1085656/1085656-hd_1280_720_25fps.mp4",
+        #            loop="loop", muted="muted", autoPlay="autoPlay"),
         main_layout
         ], fluid=True, class_name="mh-100", id="layout")
 

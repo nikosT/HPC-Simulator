@@ -1,5 +1,6 @@
 import os
 import sys
+from typing import Optional
 
 sys.path.append(os.path.abspath(os.path.join(
     os.path.dirname(__file__), "../../../../"
@@ -7,7 +8,7 @@ sys.path.append(os.path.abspath(os.path.join(
 
 from realsim.jobs.jobs import Job
 from realsim.jobs.utils import deepcopy_list
-from realsim.scheduler.coscheduler import Coscheduler
+from realsim.scheduler.coscheduler import Coscheduler, ScikitModel
 
 from numpy import average as avg
 from abc import ABC
@@ -20,9 +21,9 @@ class RanksCoscheduler(Coscheduler, ABC):
     to default scheduling"""
 
     def __init__(self, 
-                 threshold: int = 1, 
-                 engine=None,
-                 ranks_threshold: int = 1):
+                 threshold: float = 1, 
+                 engine: Optional[ScikitModel] = None,
+                 ranks_threshold: float = 1):
 
         # If the ranks_threshold is lower than threshold then the co-scheduler
         # would hint that there are more neighbors than the actual number of

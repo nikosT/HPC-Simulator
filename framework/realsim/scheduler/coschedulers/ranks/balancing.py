@@ -1,12 +1,13 @@
 import os
 import sys
+from typing import Optional
 
 sys.path.append(os.path.abspath(os.path.join(
     os.path.dirname(__file__), "../../../../"
 )))
 
 from realsim.jobs import Job, EmptyJob
-from .ranks import RanksCoscheduler
+from .ranks import RanksCoscheduler, ScikitModel
 
 from numpy import average as avg
 
@@ -24,7 +25,10 @@ class BalancingRanksCoscheduler(RanksCoscheduler):
     methodology uses the `ranks` deploying architecture.
     """
 
-    def __init__(self, threshold: int = 1, engine=None, ranks_threshold=1):
+    def __init__(self, 
+                 threshold: float = 1, 
+                 engine: Optional[ScikitModel] = None, 
+                 ranks_threshold: float = 1):
         self.ll_avg_speedup = 0
         self.ll_xunits_num = 0
         self.fragmentation = 0

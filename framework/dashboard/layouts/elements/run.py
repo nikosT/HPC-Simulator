@@ -17,20 +17,22 @@ elem_run = dbc.Container([
             dbc.InputGroupText("Number of experiments"),
             dbc.Input(type="number", min=1, value=1, id="num-of-experiments")
             ]),
-        ], class_name="py-1"),
+        ], class_name="element-item m-1 p-2"),
     dbc.Row([
         dbc.Col([
             dbc.Button("Run simulation",
                        id="run-simulation",
-                       style={"width": "100%", "border-radius": "10px"}
+                       style={"width": "100%", "border-radius": "10px",
+                              "height": "100%"}
                        )
             ], width=6),
         dbc.Col([
             dbc.Button("View results",
                        id="view-results",
                        class_name="btn-success",
-                       style={"width": "100%", "border-radius": "10px"}
+                       style={"width": "100%", "border-radius": "10px",
+                              "height": "100%"}
                        )
             ], width=6),
-        ], class_name="py-1")
-    ], class_name="element")
+        ], class_name="element-item m-1 p-2")
+    ], class_name="element d-flex align-items-strech")

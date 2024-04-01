@@ -12,13 +12,17 @@ sys.path.append(os.path.abspath(
     os.path.join(os.path.dirname(__file__), '../../../')
 ))
 
-import math
 from api.loader import Load
 from realsim.scheduler.scheduler import Scheduler
-from realsim.cluster.exhaustive import ClusterExhaustive
 from realsim.jobs import Job, EmptyJob
 from realsim.jobs.utils import deepcopy_list
 from numpy import average as avg
+from typing import Protocol
+
+
+class ScikitModel(Protocol):
+    def predict(self, X):
+        pass
 
 
 class Coscheduler(Scheduler, ABC):
@@ -30,7 +34,9 @@ class Coscheduler(Scheduler, ABC):
     name = "Abstract Co-Scheduler"
     description = "Exhaustive coupling co-scheduling base class for ExhaustiveCluster"
 
-    def __init__(self, threshold: int = 1, engine=None):
+    def __init__(self, 
+                 threshold: float = 1, 
+                 engine: Optional[ScikitModel] = None):
         self.threshold = threshold
         self.engine = engine
         self.heatmap: dict[str, dict] = dict()
