@@ -70,15 +70,15 @@ class Simulation:
     """
 
     def __init__(self, 
-                 # set of jobs
-                 inp: list[Job],
+                 # input jobs
+                 inp,
                  # cluster
                  nodes: int, ppn: int,
-                 # scheduler algorithms
-                 schedulers):
+                 # scheduler algorithms bundled with inputs
+                 schedulers_bundle):
 
         self.num_of_jobs = len(inp)
-        self.executor = ThreadPoolExecutor(max_workers=len(schedulers))
+        self.executor = ThreadPoolExecutor(max_workers=len(schedulers_bundle))
         self.sims = dict()
         self.futures = dict()
         self.results = dict()
