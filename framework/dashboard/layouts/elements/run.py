@@ -14,6 +14,7 @@ sys.path.append(os.path.abspath(os.path.join(
     os.path.dirname(__file__), "../../../"
 )))
 from realsim.cluster.exhaustive import ClusterExhaustive
+from realsim.simulator import Simulation
 
 from .generator import mapping
 from .schedulers import stored_modules
@@ -171,6 +172,7 @@ def parallel_experiments(par_inp):
             sim_time = float(simulation_stop_condition[condition]["Stop time"])
             gen_time = float(simulation_stop_condition[condition]["Generator time"])
 
+    sim = Simulation(generator, gen_inp)
     # Create an experiment based on the above
     exp = Experiment(jobs_set, nodes, ppn, schedulers)
     exp.set_default("Default Scheduler")

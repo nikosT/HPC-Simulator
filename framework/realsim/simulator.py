@@ -1,7 +1,9 @@
+from time import time
 import plotly.graph_objects as go
 from concurrent.futures import ThreadPoolExecutor
 import os
 import sys
+from queue import Queue
 
 sys.path.append(os.path.abspath(os.path.join(
     os.path.dirname(__file__), "../"
@@ -12,22 +14,16 @@ from realsim.cluster.exhaustive import ClusterExhaustive
 from realsim.logger.logger import Logger
 
 
-STATIC = "static"
-DYNAMIC = "dynamic"
-
-
 def run_sim(core):
 
-    sim_type, generator, gen_inp, cluster, scheduler, logger = core
-
-    cluster.deploy_to_waiting_queue(generator.generate_jobs_set(gen_inp))
+    sim_type, stop_condition, cluster, scheduler, logger, sets_hook, index_hook = core
 
     cluster.setup()
     scheduler.setup()
     logger.setup()
 
     # If the simulation is static
-    if sim_type == STATIC:
+    if sim_type == "Static":
 
         # The stopping condition is for the waiting queue and the execution list
         # to become empty
@@ -35,30 +31,50 @@ def run_sim(core):
             cluster.step()
 
     # If the simulation is dynamic
-    elif sim_type == DYNAMIC:
+    elif sim_type == "Dynamic":
 
-        sim_timer = 0
+        condition = list(stop_condition.keys())[0]
 
-        # The stopping condition will either not exist or it will be based on a
-        # real world countdown
-        while 1:
+        if condition == "Time":
 
-            cluster.step()
+            # These are real-world timers
+            start_time = time()
+            stop_time = stop_condition[condition]["Stop time"]
 
-            # Caclulate how much time passed for a step in order to deploy the
-            # new batch of jobs
-            diff_time = cluster.makespan - (generator.timer + sim_timer)
-            if diff_time >= 0:
+            # These are simulation based timers
+            sim_timer = 0
+            generator_timer = stop_condition[condition]["Generator time"]
 
-                # Calculate how many batches of gen_inp jobs the generator
-                # should have deployed to the cluster's waiting queue
-                for _ in range(int(diff_time / generator.timer)):
-                    cluster.deploy_to_waiting_queue(
-                            generator.generate_jobs_set(gen_inp)
-                    )
+            # The stopping condition will either not exist or it will be based on a
+            # real world countdown
+            while time() < start_time + stop_time:
 
-            # Get the current time in the simulation
-            sim_timer = cluster.makespan
+                cluster.step()
+
+                # Caclulate how much time passed for a step in order to deploy the
+                # new batch of jobs
+                diff_time = cluster.makespan - (generator_timer + sim_timer)
+                if diff_time >= 0:
+
+                    # Calculate how many bags of should be consumed
+                    step = int(diff_time / generator_timer)
+                    index_hook += step
+
+                    for _ in range(step):
+                        jobs_set = sets_hook.get()
+
+                    # Calculate how many batches of gen_inp jobs the generator
+                    # should have deployed to the cluster's waiting queue
+                    for _ in range(int(diff_time / generator_timer)):
+                        cluster.deploy_to_waiting_queue(
+                                generator.generate_jobs_set(gen_inp)
+                        )
+
+                # Get the current time in the simulation
+                sim_timer = cluster.makespan
+
+        else:
+            pass
 
     return cluster, scheduler, logger
 
@@ -70,27 +86,35 @@ class Simulation:
     """
 
     def __init__(self, 
-                 # input jobs
-                 inp,
+                 # generator bundle
+                 generator, gen_inp, simulation_type, stop_condition,
                  # cluster
                  nodes: int, ppn: int,
                  # scheduler algorithms bundled with inputs
                  schedulers_bundle):
 
-        self.num_of_jobs = len(inp)
+        # self.num_of_jobs = len(inp)
+        self.generator = generator
+        self.gen_inp = gen_inp
+        self.common_list = list()
+        self.sets_hooks = dict()
+        self.index_hooks = dict()
         self.executor = ThreadPoolExecutor(max_workers=len(schedulers_bundle))
         self.sims = dict()
         self.futures = dict()
         self.results = dict()
 
-        for scheduler_class in schedulers:
+        start_jobs_set = generator.generate_jobs_set(gen_inp)
+        self.common_list.append(start_jobs_set)
+
+        for sched_class, hyperparams in schedulers_bundle:
 
             # Setup cluster
             cluster = ClusterExhaustive(nodes, ppn)
-            cluster.deploy_to_waiting_queue(inp)
+            cluster.deploy_to_waiting_queue(start_jobs_set)
 
             # Setup scheduler
-            scheduler = scheduler_class()
+            scheduler = sched_class(**hyperparams)
 
             # Setup logger
             logger = Logger()
@@ -101,7 +125,21 @@ class Simulation:
             cluster.assign_logger(logger)
             scheduler.assign_logger(logger)
 
-            self.sims[scheduler.name] = (cluster, scheduler, logger)
+            # Sets of jobs hook
+            sets_hook = Queue()
+            self.sets_hooks[scheduler.name] = sets_hook
+
+            # Index hook
+            index_hook = 0
+            self.index_hooks[scheduler.name] = index_hook
+
+            self.sims[scheduler.name] = (simulation_type,
+                                         stop_condition,
+                                         cluster, 
+                                         scheduler, 
+                                         logger,
+                                         sets_hook,
+                                         index_hook)
 
     def set_default(self, name):
         self.default = name
@@ -110,6 +148,15 @@ class Simulation:
         for policy, sim in self.sims.items():
             print(policy, "submitted")
             self.futures[policy] = self.executor.submit(run_sim, sim)
+
+        running = False
+        for future in self.futures.values():
+            running |= future.running()
+            if running:
+                break
+        
+        while running:
+
 
     def plot(self):
 

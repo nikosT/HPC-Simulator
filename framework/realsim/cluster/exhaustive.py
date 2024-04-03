@@ -32,7 +32,7 @@ class ClusterExhaustive(AbstractCluster):
 
         assert min_rem_time >= 0
 
-        if min_rem_time == math.inf:
+        if min_rem_time == math.inf and self.waiting_queue != []:
             print(f"Infinity : {self.waiting_queue} {self.execution_list}")
             raise RuntimeError("Execution list is empty but the waiting queue still has jobs.")
 

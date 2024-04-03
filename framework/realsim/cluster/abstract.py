@@ -67,19 +67,14 @@ class AbstractCluster(abc.ABC):
         the job ids of the jobs
         """
         copy = deepcopy_list(job_set)
-        # Check if waiting_queue is empty
-        if self.waiting_queue == []:
-            # If it initializes then restart counter
+
+        if self.makespan == 0:
             self.id_counter = 0
-            self.waiting_queue = copy
-            for job in self.waiting_queue:
-                job.job_id = self.id_counter
-                self.id_counter += 1
-        else:
-            for job in copy:
-                job.job_id = self.id_counter
-                self.id_counter += 1
-                self.waiting_queue.append(job)
+
+        for job in copy:
+            job.job_id = self.id_counter
+            job.queued_time = self.makespan
+            self.id_counter += 1
 
     def filled_xunits(self) -> list[list[Job]]:
         """Return all the executing units that have no empty space. All the
