@@ -150,38 +150,34 @@ clientside_callback(
 
 )
 
-def parallel_experiments(par_inp):
+def parallel_simulations(par_inp):
+
+    print("INTO parallel_simulations")
 
     # num, generator, gen_input, nodes, ppn, schedulers = par_inp
     num, generator_bundle, cluster_bundle, schedulers_bundle = par_inp
 
     # Unpack generator bundle
-    generator, gen_input, simulation_type, simulation_stop_condition = generator_bundle
+    lm, gen_class, gen_input, simulation_type, simulation_stop_condition = generator_bundle
+    generator = gen_class(lm)
 
     # Unpack cluster bundle
     nodes, ppn = cluster_bundle
 
-    # Create set of jobs for the simulation
-    if simulation_type == "Static":
-        jobs_set = generator.generate_jobs_set(gen_input)
-    elif simulation_type == "Dynamic":
-        
-        condition = list(simulation_stop_condition.keys())[0]
-        
-        if condition == "Time":
-            sim_time = float(simulation_stop_condition[condition]["Stop time"])
-            gen_time = float(simulation_stop_condition[condition]["Generator time"])
+    # Setup simulation
+    sim = Simulation(generator, gen_input, 
+                     simulation_type, simulation_stop_condition, 
+                     nodes, ppn, 
+                     schedulers_bundle)
+    sim.set_default("Default Scheduler")
 
-    sim = Simulation(generator, gen_inp)
-    # Create an experiment based on the above
-    exp = Experiment(jobs_set, nodes, ppn, schedulers)
-    exp.set_default("Default Scheduler")
+    print("BEFORE sim.run()")
     
-    # Fire the simulation for this experiment
-    exp.run()
+    sim.run()
 
     # Draw the figures
-    figures = exp.plot()
+    # figures = sim.plot()
+    sim.plot()
 
 @callback(
         Output("results-store", "data"),
@@ -189,6 +185,8 @@ def parallel_experiments(par_inp):
         prevent_initial_call=True
 )
 def run_simulation(data):
+
+    print(data)
 
     # Create load manager
     if data["workloads-suite"] == "All":
@@ -202,14 +200,14 @@ def run_simulation(data):
     # Instantiate a generator
     # TODO: change 'mapping' name
     gen_class = mapping[data["generator-type"]]
-    generator = gen_class(lm)
     gen_input = data["generator-input"]
 
     # Setup generator bundle
     simulation_type = data["simulation-type"]
     simulation_stop_condition = data["simulation-stop-condition"]
     generator_bundle = (
-            generator,
+            lm,
+            gen_class,
             gen_input,
             simulation_type,
             simulation_stop_condition
@@ -220,19 +218,6 @@ def run_simulation(data):
             data["cluster-nodes"],
             data["cluster-ppn"]
     )
-
-    # Create a set of jobs based on the simulation type
-    # Static creates a list of jobs while dynamic a list of list of jobs
-    if data["simulation-type"] == "Static":
-        jobs_set = generator.generate_jobs_set(gen_input)
-    elif data["simulation-type"] == "Dynamic":
-        # Hard code 10 mins stop condition and 1 min deploying new batch of jobs
-        halt_timer = 60 * 10
-        generator_timer = 60 * 1
-        jobs_set = [generator.generate_jobs_set(gen_input) 
-                    for _ in range( int(halt_timer / generator_timer) )]
-    else:
-        raise PreventUpdate
 
     # Setup schedulers bundle
     schedulers_bundle = []
@@ -248,12 +233,15 @@ def run_simulation(data):
     executor = ProcessPoolExecutor(max_workers=os.cpu_count())
     futures = list()
     for idx in range(num_of_experiments):
+        par_inp = (idx, generator_bundle, cluster_bundle, schedulers_bundle)
+        print(par_inp)
         futures.append(
-                executor.submit(parallel_experiments, (
-                    idx, generator_bundle, cluster_bundle, schedulers_bundle
-                ))
+                executor.submit(parallel_simulations, par_inp)
         )
+    print("EXPERIMENTS SUBMITTED")
     # Wait till all the experiments finish
     executor.shutdown(wait=True)
+    
+    print("EXECUTOR FINISHED")
 
     return data

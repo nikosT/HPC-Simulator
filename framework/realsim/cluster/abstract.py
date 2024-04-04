@@ -73,8 +73,8 @@ class AbstractCluster(abc.ABC):
 
         for job in copy:
             job.job_id = self.id_counter
-            job.queued_time = self.makespan
             self.id_counter += 1
+            self.waiting_queue.append(job)
 
     def filled_xunits(self) -> list[list[Job]]:
         """Return all the executing units that have no empty space. All the

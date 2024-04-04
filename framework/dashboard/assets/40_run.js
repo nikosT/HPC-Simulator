@@ -48,7 +48,7 @@ Object.assign(window.dash_clientside.clientside, {
 			'schedulers': undefined,
 			'simulation-experiments': simulation_experiments,
 			'simulation-type': simulation_type,
-			'simulation-stop-condition': undefined
+			'simulation-stop-condition': {}
 		};
 
 		// Generator options definitions
