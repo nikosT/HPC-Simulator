@@ -23,12 +23,18 @@ class ClusterExhaustive(AbstractCluster):
         """Execute the jobs in the execution list
         """
 
-        # Find smallest remaining time
+        # Find smallest remaining time of executing jobs
         min_rem_time = math.inf
         for unit in self.execution_list:
             for job in unit:
                 if type(job) != EmptyJob and job.remaining_time < min_rem_time:
                     min_rem_time = job.remaining_time
+
+        # Find smallest remaining time for a job to show up in the waiting queue
+        for job in self.waiting_queue:
+            showup_time = self.makespan - job.queued_time
+            if showup_time > 0 and showup_time < min_rem_time:
+                min_rem_time = showup_time
 
         assert min_rem_time >= 0
 
@@ -41,7 +47,7 @@ class ClusterExhaustive(AbstractCluster):
 
         # Increase the waiting/queued time of each job in the waiting queue
         for job in self.waiting_queue:
-            job.queued_time += min_rem_time
+            job.waiting_time += min_rem_time
 
         # Create a new execution list
         execution_list: list[list[Job]] = list()

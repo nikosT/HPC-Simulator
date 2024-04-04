@@ -17,13 +17,14 @@ from numpy import isnan
 class Job:
 
     def __init__(self, load: Optional[Load], job_id, job_name, num_of_processes,
-                 remaining_time, queued_time, wall_time, binded_cores):
+                 remaining_time, queued_time, waiting_time, wall_time, binded_cores):
         self.load = load
         self.job_id = job_id
         self.job_name = job_name
         self.num_of_processes = num_of_processes
         self.remaining_time = remaining_time
         self.queued_time = queued_time
+        self.waiting_time = waiting_time
         self.wall_time = wall_time
         self.binded_cores = binded_cores
         self.gave_position = 0
@@ -77,6 +78,7 @@ class Job:
                    num_of_processes=self.num_of_processes,
                    remaining_time=self.remaining_time,
                    queued_time=self.queued_time,
+                   waiting_time=self.waiting_time,
                    wall_time=self.wall_time,
                    binded_cores=self.binded_cores)
 
@@ -90,7 +92,7 @@ class EmptyJob(Job):
 
     def __init__(self, job: Job):
         Job.__init__(self, None, job.job_id, job.job_name, job.num_of_processes,
-                     None, None, None, job.binded_cores)
+                     None, None, None, None, job.binded_cores)
 
     def __repr__(self) -> str:
         return "{" + f"{self.job_id}, empty : {self.remaining_time}, {self.binded_cores}" + "}"
@@ -105,6 +107,7 @@ class EmptyJob(Job):
                             num_of_processes=self.num_of_processes,
                             remaining_time=self.remaining_time,
                             queued_time=self.queued_time,
+                            waiting_time=self.waiting_time,
                             wall_time=self.wall_time,
                             binded_cores=self.binded_cores)
                         )

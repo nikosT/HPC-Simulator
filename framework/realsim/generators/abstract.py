@@ -37,6 +37,7 @@ class AbstractGenerator(abc.ABC, Generic[T]):
                    num_of_processes=load.num_of_processes,
                    remaining_time=load.get_avg(),
                    queued_time=0,
+                   waiting_time=0,
                    wall_time=(10 * 60),
                    binded_cores=load.num_of_processes)
 

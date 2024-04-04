@@ -64,7 +64,7 @@ def run_sim(core):
                     index = index_hook.get()
                     index += bags
                     index_hook.put(index)
-                    print(scheduler.name, bags, index_hook)
+                    print(scheduler.name, bags, index)
 
                     # The execution is blocked until the new bags are delivered
                     for b in range(bags):
