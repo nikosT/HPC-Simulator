@@ -30,6 +30,8 @@ class AbstractCluster(abc.ABC):
         # Logger instance for the cluster
         self.logger: Logger
 
+        # Loaded jobs to pre-waiting queue based on their queued time
+        self.preloaded_queue: list[Job] = list()
         # The generated jobs are first deployed here
         self.waiting_queue: list[Job] = list()
         # The queue of jobs that are executing
@@ -60,21 +62,30 @@ class AbstractCluster(abc.ABC):
     def full_node_cores(self, job: Job) -> int:
         return int(math.ceil(job.num_of_processes / self.cores_per_node) * self.cores_per_node)
 
+    def preload_jobs(self, jobs_set: list[Job]) -> None:
+        # Get a clean deep copy of the set of jobs
+        copy = deepcopy_list(jobs_set)
 
-    def deploy_to_waiting_queue(self, job_set: list[Job]) -> None:
-        """Used to initialize the waiting queue of a cluster
-        or to append more jobs to the queue. It also overrides
-        the job ids of the jobs
-        """
-        copy = deepcopy_list(job_set)
+        # Sort jobs by their time they appear on the waiting queue
+        copy.sort(key=lambda job: job.queued_time)
 
         if self.makespan == 0:
             self.id_counter = 0
 
+        # Preload jobs
         for job in copy:
             job.job_id = self.id_counter
             self.id_counter += 1
-            self.waiting_queue.append(job)
+            self.preloaded_queue.append(job)
+
+    def load_in_waiting_queue(self) -> None:
+
+        copy = deepcopy_list(self.preloaded_queue)
+
+        for job in copy:
+            if job.queued_time <= self.makespan:
+                self.waiting_queue.append(job)
+                self.preloaded_queue.remove(job)
 
     def filled_xunits(self) -> list[list[Job]]:
         """Return all the executing units that have no empty space. All the
@@ -144,6 +155,9 @@ class AbstractCluster(abc.ABC):
         # If broken then the simulation loop has problems
         if self.free_cores < 0 or self.free_cores > self.total_cores:
             raise RuntimeError(f"Free cores: {self.free_cores}")
+
+        # Deploy to waiting queue any preloaded jobs that remain
+        self.load_in_waiting_queue()
         
         # Check if there are any jobs left waiting
         if self.waiting_queue != []:
@@ -171,6 +185,8 @@ class AbstractCluster(abc.ABC):
 
                 self.next_state()
                 self.free_resources()
+            elif self.preloaded_queue != []:
+                self.next_state()
 
     def run(self):
         """The simulation loop

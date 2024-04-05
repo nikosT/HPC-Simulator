@@ -2,6 +2,8 @@ from dash import Output, Input, State, dcc, html, callback, clientside_callback,
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 from concurrent.futures import ProcessPoolExecutor
+from numpy.random import seed, randint, exponential
+from time import time_ns
 import os
 import sys
 
@@ -13,7 +15,6 @@ from api.loader import LoadManager
 sys.path.append(os.path.abspath(os.path.join(
     os.path.dirname(__file__), "../../../"
 )))
-from realsim.cluster.exhaustive import ClusterExhaustive
 from realsim.simulator import Simulation
 
 from .generator import mapping
@@ -68,29 +69,18 @@ elem_run = dbc.Container([
             dbc.Select(["Static", "Dynamic"], "Static", id='simulation-type')
         ]),
         dbc.InputGroup([
-            dbc.InputGroupText("Stop condition", style={"width": "50%"}),
-            dbc.Select(["Time", "Number of jobs"], "Time",
-                       id='simulation-stop-conditions')
-        ], id="simulation-stop-conditions-display", style={"display": "none"}),
+            dbc.InputGroupText("Distribution", style={"width": "50%"}),
+            dbc.Select(["Constant", "Poisson", "Random"], "Constant",
+                       id='simulation-distribution')
+        ], id="simulation-distribution-display", style={"display": "none"}),
 
         dbc.Col([
             dbc.InputGroup([
-                dbc.InputGroupText("Stop time (sec)"),
+                dbc.InputGroupText("Generator interval (sec)", style={"width": "50%"}),
                 dbc.Input(value=0, type="number", min=0, 
-                          id="simulation-time-condition")
+                          id="generator-time")
             ]),
-            dbc.InputGroup([
-                dbc.InputGroupText("Generator pulse (sec)"),
-                dbc.Input(value=0, type="number", min=0, 
-                          id="generator-time-condition")
-            ]),
-        ], id="simulation-time-condition-display", style={"display": "none"}),
-
-        dbc.InputGroup([
-            dbc.InputGroupText("Jobs to finish", style={"width": "50%"}),
-            dbc.Input(value=0, type="number", min=0, 
-                      id="simulation-jobs-condition")
-        ], id="simulation-jobs-condition-display", style={"display": "none"}),
+        ], id="generator-time-display", style={"display": "none"}),
 
     ], class_name="element-item m-1 p-2"),
     ], class_name="element d-flex align-items-strech")
@@ -101,12 +91,10 @@ clientside_callback(
             function_name="run_options"
         ),
 
-        Output("simulation-stop-conditions-display", "style"),
-        Output("simulation-time-condition-display", "style"),
-        Output("simulation-jobs-condition-display", "style"),
+        Output("simulation-distribution-display", "style"),
+        Output("generator-time-display", "style"),
 
         Input("simulation-type", "value"),
-        Input("simulation-stop-conditions", "value"),
 
         prevent_initial_call=True
 )
@@ -141,10 +129,8 @@ clientside_callback(
         # Run args
         State("simulation-experiments", "value"),
         State("simulation-type", "value"),
-        State("simulation-stop-conditions", "value"),
-        State("simulation-time-condition", "value"),
-        State("generator-time-condition", "value"),
-        State("simulation-jobs-condition", "value"),
+        State("simulation-distribution", "value"),
+        State("generator-time", "value"),
 
         prevent_initial_call=True
 
@@ -152,27 +138,53 @@ clientside_callback(
 
 def parallel_simulations(par_inp):
 
-    print("INTO parallel_simulations")
-
     # num, generator, gen_input, nodes, ppn, schedulers = par_inp
     num, generator_bundle, cluster_bundle, schedulers_bundle = par_inp
 
     # Unpack generator bundle
-    lm, gen_class, gen_input, simulation_type, simulation_stop_condition = generator_bundle
+    lm, gen_class, gen_inp, sim_type, sim_dynamic_condition = generator_bundle
+
+    # Create a generator of jobs
     generator = gen_class(lm)
+
+    # Create a set of jobs based on generator's input
+    jobs_set = generator.generate_jobs_set(gen_inp)
+
+    # If simulation is dynamic then change the queued time of jobs
+    if sim_type == "Dynamic":
+
+        simulation_distribution = sim_dynamic_condition['distribution']
+        generator_time = sim_dynamic_condition['generator-time']
+
+        # Based on distribution
+        if simulation_distribution == "Constant":
+            for i, job in enumerate(jobs_set):
+                    job.queued_time = i * generator_time
+        elif simulation_distribution == "Random":
+            seed(time_ns() % (2 ** 32))
+            current_time = randint(low=0, high=generator_time, size=(1,))[0]
+            for job in jobs_set:
+                job.queued_time = current_time
+                seed(time_ns() % (2 ** 32))
+                current_time += randint(low=0, high=generator_time, size=(1,))[0]
+        elif simulation_distribution == "Poisson":
+            current_time = exponential(generator_time)
+            for job in jobs_set:
+                job.queued_time = current_time
+                current_time += exponential(generator_time)
+        else:
+            pass
 
     # Unpack cluster bundle
     nodes, ppn = cluster_bundle
 
     # Setup simulation
-    sim = Simulation(generator, gen_input, 
-                     simulation_type, simulation_stop_condition, 
+    sim = Simulation(jobs_set, 
                      nodes, ppn, 
                      schedulers_bundle)
     sim.set_default("Default Scheduler")
 
-    print("BEFORE sim.run()")
-    
+    # Start simulation
     sim.run()
 
     # Draw the figures
@@ -186,8 +198,6 @@ def parallel_simulations(par_inp):
 )
 def run_simulation(data):
 
-    print(data)
-
     # Create load manager
     if data["workloads-suite"] == "All":
         lm = LoadManager(machine=data["workloads-machine"])
@@ -197,20 +207,19 @@ def run_simulation(data):
     lm.import_from_db(host="mongodb+srv://cslab:bQt5TU6zQsu_LZ@storehouse.om2d9c0.mongodb.net",
                       dbname="storehouse")
 
-    # Instantiate a generator
+    # Setup generator bundle
     # TODO: change 'mapping' name
     gen_class = mapping[data["generator-type"]]
     gen_input = data["generator-input"]
-
-    # Setup generator bundle
     simulation_type = data["simulation-type"]
-    simulation_stop_condition = data["simulation-stop-condition"]
+    simulation_dynamic_condition = data["simulation-dynamic-condition"]
+
     generator_bundle = (
             lm,
             gen_class,
             gen_input,
             simulation_type,
-            simulation_stop_condition
+            simulation_dynamic_condition
     )
 
     # Setup cluster bundle
@@ -234,7 +243,6 @@ def run_simulation(data):
     futures = list()
     for idx in range(num_of_experiments):
         par_inp = (idx, generator_bundle, cluster_bundle, schedulers_bundle)
-        print(par_inp)
         futures.append(
                 executor.submit(parallel_simulations, par_inp)
         )

@@ -4,15 +4,10 @@ Object.assign(window.dash_clientside.clientside, {
 		let visible = {"display": "flex"};
 		let invisible = {"display": "none"};
 
-		if (sim_type == "Dynamic") {
-			if (sim_stop_condition == "Time")
-				return [visible, visible, invisible];
-			else
-				return [visible, invisible, visible];
-		}
-		else {
-			return [invisible, invisible, invisible];
-		}
+		if (sim_type == "Dynamic")
+			return [visible, visible]
+		else
+			return [invisible, invisible];
 	},
 
 	run_simulation: 
@@ -31,10 +26,8 @@ Object.assign(window.dash_clientside.clientside, {
 		schedulers,
 		simulation_experiments,
 		simulation_type,
-		simulation_stop_condition,
-		simulation_time_condition,
-		generator_time_condition,
-		simulation_jobs_condition
+		simulation_distribution,
+		generator_time,
 	) 
 	{
 		// Define the return object
@@ -48,7 +41,10 @@ Object.assign(window.dash_clientside.clientside, {
 			'schedulers': undefined,
 			'simulation-experiments': simulation_experiments,
 			'simulation-type': simulation_type,
-			'simulation-stop-condition': {}
+			'simulation-dynamic-condition': {
+				'distribution': simulation_distribution,
+				'generator-time': generator_time
+			}
 		};
 
 		// Generator options definitions
@@ -131,21 +127,6 @@ Object.assign(window.dash_clientside.clientside, {
 		}
 
 		data['schedulers'] = sched_obj;
-
-		// Simulation stop condition definitions
-		if (simulation_type == 'Dynamic') {
-			if (simulation_stop_condition == 'Time')
-				data['simulation-stop-condition'] = {
-					[simulation_stop_condition]: {
-						"Stop time": simulation_time_condition,
-						"Generator time": generator_time_condition
-					}
-				};
-			else
-				data['simulation-stop-condition'] = {
-					[simulation_stop_condition]: simulation_jobs_condition
-				};
-		}
 
 		return data;
 

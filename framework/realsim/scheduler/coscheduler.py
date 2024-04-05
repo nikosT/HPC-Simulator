@@ -47,22 +47,22 @@ class Coscheduler(Scheduler, ABC):
         """
 
         # Initialize the heatmap
-        for job in self.cluster.waiting_queue:
+        for job in self.cluster.preloaded_queue:
             self.heatmap[job.job_name] = {}
 
-        # Get a copy of the waiting queue
-        waiting_queue = deepcopy_list(self.cluster.waiting_queue)
+        # Get a copy of the preloaded queue
+        preloaded_queue = deepcopy_list(self.cluster.preloaded_queue)
 
-        while waiting_queue != []:
+        while preloaded_queue != []:
 
-            job: Job = self.pop(waiting_queue)
+            job: Job = self.pop(preloaded_queue)
 
             load: Optional[Load] = job.load
 
             if load is None:
                 raise RuntimeError("A job with an empty load was found inside the waiting queue at the startup stage")
 
-            for co_job in waiting_queue:
+            for co_job in preloaded_queue:
 
                 co_load: Optional[Load] = co_job.load
 
@@ -220,7 +220,8 @@ class Coscheduler(Scheduler, ABC):
                         largest_job.speedup = largest_job.get_max_speedup()
 
                     empty_job = EmptyJob(Job(None, -1, "empty", empty_space, 
-                                             None, None, None, empty_space))
+                                             None, None, None, None, 
+                                             empty_space))
                     new_xunit = [largest_job, empty_job]
 
                     # Deployment!
@@ -287,7 +288,7 @@ class Coscheduler(Scheduler, ABC):
             # If rem_cores > 0 then there is an empty space left in the unit
             if rem_cores > 0:
                 empty_job = EmptyJob(Job(None, -1, "empty", rem_cores, 
-                                         None, None, None, rem_cores))
+                                         None, None, None, None, rem_cores))
                 substitute_unit.append(empty_job)
 
             # Remove the former unit from the execution list
@@ -409,7 +410,8 @@ class Coscheduler(Scheduler, ABC):
             # with an empty job
             if max_binded_cores > 0:
                 empty_job = EmptyJob(Job(None, -1, "empty", max_binded_cores, 
-                                         None, None, None, max_binded_cores))
+                                         None, None, None, None, 
+                                         max_binded_cores))
                 xunit.append(empty_job)
 
             # Deployment!

@@ -45,7 +45,7 @@ class Logger(object):
         self.job_events: dict[str, dict] = dict()
 
         # Init job events
-        for job in self.cluster.waiting_queue:
+        for job in self.cluster.preloaded_queue:
             # Job events
             jevts = {
                     "trace": [], # [co-job, start time, end time]
@@ -387,23 +387,7 @@ class Logger(object):
                             )
                     )
 
-        used_cores = self.cluster_events["used cores"]
-
-        for i in range(len(checks)-1):
-
-            traces.append(go.Scattergl(
-                x=[checks[i], checks[i+1]],
-                y=[used_cores[i], used_cores[i]],
-                marker=dict(color="black"),
-                mode="lines"
-            ))
-
-            traces.append(go.Scattergl(
-                x=[checks[i+1], checks[i+1]],
-                y=[0, used_cores[i]],
-                marker=dict(color="black"),
-                mode="lines"
-            ))
+        # used_cores = self.cluster_events["used cores"]
 
         # Create figure with the box resource usage
         fig = go.Figure(data=traces)

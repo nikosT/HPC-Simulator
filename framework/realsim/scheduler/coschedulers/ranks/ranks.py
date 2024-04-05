@@ -98,6 +98,9 @@ class RanksCoscheduler(Coscheduler, ABC):
         # Reset deploying flag
         self.deploying = False
 
+        # Update ranks
+        self.update_ranks()
+
         # List of jobs to deploy
         deploying_list: list[list[Job]] = list()
 
