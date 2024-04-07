@@ -1,127 +1,125 @@
-from inspect import isabstract
-from dash import Output, Input, State, dcc, html, callback
+from dash import MATCH, Output, Input, State, dcc, html, callback, clientside_callback, ClientsideFunction
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
-import importlib
-import os
-import sys
+from .updateschedulers import update_schedulers
+from inspect import signature
 
-import jsonpickle
 
-# realsim
-sys.path.append(os.path.abspath(os.path.join(
-    os.path.dirname(__file__), "../../.."
-)))
-
-from realsim.scheduler.scheduler import Scheduler
-
-def check_schedulers():
-
-    schedulers_pack_dir = os.path.join(
-            os.path.dirname(__file__), "../../../realsim/scheduler")
-
-    modules = [
-            f"realsim.scheduler.{module}".replace(".py", "")
-            for module in os.listdir(schedulers_pack_dir)
-            if ".py" in module
-    ]
-
-    modules = list(filter(lambda mod: mod not in sys.modules, modules))
-
-    return modules
-
-def get_schedulers(modules):
-    for module in modules:
-        importlib.import_module(module)
-
-def all_subclasses(cls):
-    return set(cls.__subclasses__()).union(
-            [s for c in cls.__subclasses__() for s in all_subclasses(c)]
-    )
-
-def update_schedulers():
-
-    # Schedulers' storage
-    schedulers_data = list()
-
-    for scheduler_class in all_subclasses(Scheduler):
-        if not isabstract(scheduler_class):
-            schedulers_data.append(scheduler_class)
-
-    schedulers_data.sort(key=lambda scheduler_class: scheduler_class.name)
-
-    options = list()
-    enabled_by_default = list()
-    for i, scheduler_class in enumerate(schedulers_data):
-
-        name = scheduler_class.name
-
-        if "Default" in name:
-            options.insert(0, {"label": name, "value": i, "disabled": True})
-            enabled_by_default.append(i)
-        elif "Random" in name:
-            if options != []:
-                if "Default" in options[0]["label"]:
-                    options.insert(1, {"label": name, "value": i})
-                else:
-                    options.insert(0, {"label": name, "value": i})
-            enabled_by_default.append(i)
-        else:
-            options.append({"label": name, "value": i})
-
-    # Create list of checkboxes for schedulers
-    schedulers_checkboxes = dbc.Checklist(options=options, 
-                                          value=enabled_by_default,
-                                          id="schedulers-checkboxes")
-
-    schedulers_data = list(map(
-        lambda scheduler_class: jsonpickle.encode( scheduler_class ),
-        schedulers_data
-    ))
-
-    return schedulers_checkboxes, schedulers_data
-
-modules = check_schedulers()
-if modules != []:
-    get_schedulers(modules)
-schedulers_checkboxes, schedulers_data = update_schedulers()
+stored_modules: dict[str, dict] = dict()
 
 @callback(
         Output(component_id="schedulers-store", component_property="data"),
-        Output(component_id="schedulers-container", component_property="children"),
-        Input(component_id="check-schedulers", component_property="n_intervals")
+        State(component_id="schedulers-store", component_property="data"),
+        Input(component_id="update-schedulers", component_property="n_intervals")
         )
-def cb_schedulers(n_intervals):
+def CB_update_schedulers(store_data, n_intervals):
 
-    modules = check_schedulers()
-    
-    if modules == []:
+    # If there is a new scheduling python module then re-issue the names of the
+    # algorithms
+    if update_schedulers(stored_modules) or (store_data == [] and stored_modules != dict()):
+
+        data = list()
+
+        for mod_name, mod_dict in stored_modules.items():
+
+            if mod_dict["viewable"]:
+
+                # Hyperparameters name and type
+                hyperparams: dict[str, str] = dict()
+                for name, param in signature(mod_dict["classobj"]).parameters.items():
+                    hyperparams[name] = str(param.annotation)
+
+                if "Default" in mod_dict["classobj"].name:
+                    data.insert(0, {
+                        "module": mod_name,
+                        "name": mod_dict["classobj"].name,
+                        "description": mod_dict["classobj"].description,
+                        "selected": True,
+                        "disabled": True,
+                        "hyperparams": hyperparams
+                    })
+                
+                elif "Random" in mod_dict["classobj"].name:
+
+                    if data != [] and "Default" in data[0]["name"]:
+                        data.insert(1, {
+                            "module": mod_name,
+                            "name": mod_dict["classobj"].name,
+                            "description": mod_dict["classobj"].description,
+                            "selected": True,
+                            "disabled": False,
+                            "hyperparams": hyperparams
+                        })
+
+                    else:
+                        data.insert(0, {
+                            "module": mod_name,
+                            "name": mod_dict["classobj"].name,
+                            "description": mod_dict["classobj"].description,
+                            "selected": True,
+                            "disabled": False,
+                            "hyperparams": hyperparams
+                        })
+
+                else:
+                    # Check if the scheduler existed in the previous data stored
+                    # and if holds true check whether it was selected
+                    index = None
+                    for i, sched_dict in enumerate(store_data):
+                        if mod_dict["classobj"].name in sched_dict:
+                            index = i
+                            break
+
+                    data.append({
+                        "module": mod_name,
+                        "name": mod_dict["classobj"].name,
+                        "description": mod_dict["classobj"].description,
+                        "selected": store_data[index] if index is not None else False,
+                        "disabled": False,
+                        "hyperparams": hyperparams
+                    })
+
+        return data
+
+    else:
+
+        # If nothing changed or there was a code change then only the backend
+        # will deal with the changes
         raise PreventUpdate
 
-    get_schedulers(modules)
-    schedulers_checkboxes, schedulers_data = update_schedulers()
+clientside_callback(
+        ClientsideFunction(
+            namespace="clientside",
+            function_name="create_schedulers_checklist"
+        ),
+        Output("schedulers-container", "children"),
+        Input("schedulers-store", "data")
+)
 
-    return schedulers_data, schedulers_checkboxes
+clientside_callback(
+        ClientsideFunction(
+            namespace="clientside",
+            function_name="show_scheduler_hyperparameters"
+        ),
+        Output({'type': 'schedulers-collapse', 'index': MATCH}, 'is_open'),
+        Input({'type': 'schedulers-checkboxes', 'index': MATCH}, 'value')
+)
 
 
 elem_schedulers = dbc.Container([
 
-    dcc.Interval(id="check-schedulers", interval=10000),
+    dcc.Interval(id="update-schedulers", interval=10000),
 
-    dcc.Store(id="schedulers-store", data=schedulers_data),
+    dcc.Store(id="schedulers-store", data=list()),
 
     dbc.Row([
-        dbc.Col([dbc.CardImg(src="../../static/images/scheduler.svg")], width=2),
+        dbc.Col([dbc.CardImg(src="../../assets/static/images/scheduler.svg")], width=1),
         dbc.Col([
-            dbc.Row([html.H4("Schedulers")], class_name="py-1"),
-            dbc.Row([html.P("""Select which scheduling algorithms will
-                            participate in the simulation.""")]),
+            dbc.Row([html.H5("Schedulers"), 
+                     html.P("""Select which scheduling algorithms will
+                            participate in the simulation.""")])
             ], width=10)
-    ], align="center"),
+    ], class_name="element-header sticky-top"),
 
-    html.Hr(),
-
-    dbc.Container(schedulers_checkboxes, id="schedulers-container")
-], style={"background-color": "lightgray",
-          "height": "45vh",
-          "border-radius": "10px"})
+    dbc.Container(id="schedulers-container", class_name="py-1")
+], class_name="element")

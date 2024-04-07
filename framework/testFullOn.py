@@ -1,4 +1,4 @@
-from dash import Dash, dcc, html
+import cProfile
 import plotly.graph_objects as go
 import os
 import sys
@@ -23,6 +23,7 @@ from realsim.logger.logger import Logger
 
 from realsim.cluster.exhaustive import ClusterExhaustive
 from realsim.scheduler.balancerFullOn import BalancerFullOn
+from realsim.scheduler.coschedulers.ranks.balancing import BalancingRanksCoscheduler
 
 from realsim.scheduler.random import RandomScheduler
 
@@ -55,7 +56,7 @@ exps = int(input("How many experiments? "))
 for _ in range(exps):
 
     # Generate a job set
-    jobs_set = gen.generate_jobs_set(50)
+    jobs_set = gen.generate_jobs_set(200)
     # jobs_set = kshuffled_gen.generate_jobs_set({
     #     "bt.D.256": 30,
     #     "lu.E.512": 50
@@ -72,16 +73,19 @@ for _ in range(exps):
     compact.assign_cluster(cluster)
     cluster.assign_logger(logger)
     compact.assign_logger(logger)
+
     cluster.run()
 
-    logger.plot_resources()
+    fig = logger.plot_resources()
+    fig.show()
 
     # FULLON
     cluster_fullon = ClusterExhaustive(426, 20)
     cluster_fullon.deploy_to_waiting_queue(jobs_set)
 
+    balancer_fullon = BalancingRanksCoscheduler()
     #balancer_fullon = BalancerFullOn()
-    balancer_fullon = RandomScheduler()
+    #balancer_fullon = RandomScheduler()
 
     logger_fullon = Logger()
 
@@ -95,7 +99,8 @@ for _ in range(exps):
 
     # print( logger_fullon.job_events )
 
-    logger_fullon.plot_resources()
+    fig = logger_fullon.plot_resources()
+    fig.show()
 
     boxpoints.append(
             logger_fullon.jobs_speedup_boxpoints(logger)
@@ -107,31 +112,12 @@ for _ in range(exps):
 
     speedup = cluster.makespan / cluster_fullon.makespan
 
-    if speedup < 1:
-        with open(f"./testcases/bad_{speedup:.3f}", "w") as fd:
-            fd.writelines([str(job.job_name) + "\n" for job in jobs_set])
-    else:
-        with open(f"./testcases/good_{speedup:.3f}", "w") as fd:
-            fd.writelines([str(job.job_name) + "\n" for job in jobs_set])
-
     speedups.append(speedup)
 
     # Calculate job throughput
     compact_jobs = 0
     coschedule_jobs = 0
     compact_90 = cluster.makespan * 0.8
-
-    for _, jevts in logger.job_events.items():
-        if jevts["runtime"][-1][-1] <= compact_90:
-            compact_jobs += 1
-
-    for _, jevts in logger_fullon.job_events.items():
-        if jevts["runtime"][-1][-1] <= compact_90:
-            coschedule_jobs += 1
-
-    print(f"Compact 80% throughput = {compact_jobs}")
-    print(f"Coschedule 80% throughput = {coschedule_jobs}")
-    print()
 
 
 fig = go.Figure()

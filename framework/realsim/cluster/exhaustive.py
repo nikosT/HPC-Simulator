@@ -9,7 +9,6 @@ from realsim.cluster.abstract import AbstractCluster
 from realsim.jobs import Job, EmptyJob
 from realsim.jobs.utils import deepcopy_list
 
-from typing import List
 import math
 
 
@@ -24,24 +23,34 @@ class ClusterExhaustive(AbstractCluster):
         """Execute the jobs in the execution list
         """
 
-        # Find smallest remaining time
+        # Find smallest remaining time of executing jobs
         min_rem_time = math.inf
         for unit in self.execution_list:
             for job in unit:
                 if type(job) != EmptyJob and job.remaining_time < min_rem_time:
                     min_rem_time = job.remaining_time
 
+        # Find smallest remaining time for a job to show up in the waiting queue
+        for job in self.preloaded_queue:
+            showup_time = job.queued_time - self.makespan
+            if showup_time > 0 and showup_time < min_rem_time:
+                min_rem_time = showup_time
+
         assert min_rem_time >= 0
 
-        if min_rem_time == math.inf:
+        if min_rem_time == math.inf and self.waiting_queue != []:
             print(f"Infinity : {self.waiting_queue} {self.execution_list}")
             raise RuntimeError("Execution list is empty but the waiting queue still has jobs.")
 
         # Increase the overall cluster runtime
         self.makespan += min_rem_time
 
+        # Increase the waiting/queued time of each job in the waiting queue
+        for job in self.waiting_queue:
+            job.waiting_time += min_rem_time
+
         # Create a new execution list
-        execution_list: List[List[Job]] = list()
+        execution_list: list[list[Job]] = list()
 
         # Remove the smallest remaining time and if a job hits zero
         # then substitute it with an EmptyJob instance
@@ -60,7 +69,7 @@ class ClusterExhaustive(AbstractCluster):
                     job.remaining_time -= min_rem_time
                     if job.remaining_time == 0:
                         # Record in logger
-                        self.logger.job_finish(job)
+                        self.logger.evt_job_finishes(job)
                         # Convert to an empty job
                         job = EmptyJob(job)
 
@@ -113,6 +122,7 @@ class ClusterExhaustive(AbstractCluster):
 
         # Replace execution list
         self.execution_list = execution_list
+
 
     def free_resources(self):
         """Find any EmptyJob instances and return the resources

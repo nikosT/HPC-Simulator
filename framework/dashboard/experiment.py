@@ -80,7 +80,7 @@ class Experiment:
 
             # Plot resource usage
             logger = self.results[policy][2]
-            figures[f"Plot Resources: {policy}"] = logger.plot_resources(save=False)
+            figures[f"Plot Resources: {policy}"] = logger.get_resource_usage(save=False)
 
         speedups = list() # makespan speedups
         boxpoints = list()
@@ -94,7 +94,7 @@ class Experiment:
             speedups.append(
                     self.results[self.default][0].makespan / self.results[policy][0].makespan
             )
-            boxpoints.append( logger.jobs_boxpoints(compact_logger) )
+            boxpoints.append( logger.get_jobs_utilization(compact_logger) )
 
         fig = go.Figure()
 

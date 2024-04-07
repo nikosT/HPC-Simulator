@@ -18,6 +18,7 @@ sys.path.append(os.path.abspath(os.path.join(
 )))
 
 app = Dash(__name__,
+           compress=True,
            meta_tags=[{"name": "viewport", "content": "width=device-width, initial-scale=1"}],
            external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.BOOTSTRAP])
 
@@ -29,6 +30,9 @@ app.layout = dbc.Container([
                   storage_type="session", 
                   data=dict(sid=str(uuid4()))
                   ),
+        # html.Video(id='bg-video',
+        #            src="https://videos.pexels.com/video-files/1085656/1085656-hd_1280_720_25fps.mp4",
+        #            loop="loop", muted="muted", autoPlay="autoPlay"),
         main_layout
         ], fluid=True, class_name="mh-100", id="layout")
 

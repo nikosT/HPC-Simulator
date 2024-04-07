@@ -1,4 +1,4 @@
-# realsim
+# library "realsim"
 
 A python library to test the possibility of co-scheduling algorithms and their
 impact on system performance.

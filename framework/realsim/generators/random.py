@@ -33,9 +33,4 @@ class RandomGenerator(AbstractGenerator[int]):
                     self.generate_job(i, load)
             )
 
-        # Sort the jobs by their queued time
-        jobs_set.sort(key=(lambda job: job.queued_time))
-        for jid, job in enumerate(jobs_set):
-            job.job_id = jid
-
         return jobs_set

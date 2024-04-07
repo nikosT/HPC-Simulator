@@ -3,11 +3,10 @@ Utility function used in various instances of the source code for Jobs inside
 containers
 """
 
-from typing import List
 from .jobs import Job, EmptyJob
 
 
-def deepcopy_list(jobs_list: List[Job] | List[List[Job]]):
+def deepcopy_list(jobs_list: list[Job] | list[list[Job]]):
     """
     Create and return a new list of jobs or lists of jobs.
     This function tries to fit all the oddities found in the simulation code
