@@ -82,8 +82,11 @@ Object.assign(window.dash_clientside.clientside, {
 		let row_children, checkbox, collapse;
 		for (row of schedulers) {
 			row_children = row.props.children;
-			checkbox = row_children[0];
-			collapse = row_children[1];
+			sched_inp = row_children[0];
+			collapse_inp = row_children[1];
+
+			checkbox = sched_inp.props.children[0].props.children[0];
+			collapse = collapse_inp.props.children[0];
 
 
 			// If checkbox is checked then walk through

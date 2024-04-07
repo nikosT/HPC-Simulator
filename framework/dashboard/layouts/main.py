@@ -1,4 +1,4 @@
-from dash import MATCH, ClientsideFunction, Input, Output, State, clientside_callback, dcc
+from dash import MATCH, ClientsideFunction, Input, Output, State, clientside_callback, dcc, html
 import dash_bootstrap_components as dbc
 
 from layouts.elements.generator import elem_generator
@@ -49,17 +49,24 @@ main_layout = dbc.Container([
     dbc.Spinner([
         dbc.Modal([
 
-            dbc.Button(">", id="results-nav-btn",
-                       style={"position": "fixed", 
-                              "top": '5px', 
-                              "zIndex": 100,
-                              "borderRadius": 0}),
+            dbc.Container([
+                dbc.Button(">", id="results-nav-btn", style={"borderRadius": 0}),
+                dbc.Button([html.I(className="bi bi-download",
+                                   id="results-download-graph")], 
+                           color="secondary", style={"borderRadius": 0})
+            ], style={
+                "margin": 0,
+                "padding": 0,
+                "position": "fixed",
+                "top": 0,
+                "zIndex": 100,
+                }),
 
             dbc.Button("x", id="results-close-btn",
                        href="#",
                        color="danger",
                        style={"position": "fixed", 
-                              "top": '5px', 
+                              "top": 0, 
                               "right": 0,
                               "zIndex": 100,
                               "borderRadius": 0}),
@@ -95,6 +102,7 @@ main_layout = dbc.Container([
 
     ], class_name="flex-row h-100", fluid=True, style={"height": "100vh"})
 
+# Stylize results screen/modal when figure navigation is open
 clientside_callback(
         ClientsideFunction(
             namespace="clientside",
@@ -105,6 +113,7 @@ clientside_callback(
         prevent_initial_call=True
 )
 
+# Callback to open/close the results screen/modal
 clientside_callback(
         ClientsideFunction(
             namespace="clientside",
@@ -116,6 +125,7 @@ clientside_callback(
         prevent_initial_call=True
 )
 
+# Open navigation to select figures
 clientside_callback(
         ClientsideFunction(
             namespace="clientside",
@@ -129,6 +139,7 @@ clientside_callback(
 
 )
 
+# Open collapse for the matched experiment by index
 clientside_callback(
         ClientsideFunction(
             namespace="clientside",
@@ -142,6 +153,7 @@ clientside_callback(
 
 )
 
+# Create a plot
 clientside_callback(
         ClientsideFunction(
             namespace="clientside",
@@ -156,3 +168,13 @@ clientside_callback(
 
 )
 
+# Download graphs/plots
+clientside_callback(
+        ClientsideFunction(
+            namespace="clientside",
+            function_name="results_download_graph"
+        ),
+        Output("results-download-graph", "n_clicks"),
+        Input("results-download-graph", "n_clicks"),
+        prevent_initial_call=True
+)

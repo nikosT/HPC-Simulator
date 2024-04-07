@@ -433,56 +433,40 @@ Object.assign(window.dash_clientside.clientside, {
 					],
 					'label': 'Jobs turnarounds',
 					'method': 'update'
-				}
+				},
+				{
+					'args': [
+						{
+							'visible': upd_waiting_traces,
+							'xaxis': ['x3', 'x3', 'x3'],
+							'yaxis': ['y3', 'y3', 'y3']
+						},
+						{
+							'xaxis.domain': [0, 0],
+							'xaxis.visible': false,
+							'yaxis.visible': false,
+
+							'xaxis2.visible': false,
+							'xaxis2.domain': [0, 0],
+							'yaxis2.visible': false,
+
+							'xaxis3.visible': true,
+							'xaxis3.domain': [0, 1],
+							'yaxis3.visible': true
+						}
+					],
+					'label': 'Jobs waiting time',
+					'method': 'update'
+				},
 			],
 			'direction': 'left',
 			'showactive': true,
 			'type': 'buttons',
-			'x': 0.1,
-			'xanchor': 'left',
-			'y': 1.12,
+			'x': 1,
+			'xanchor': 'right',
+			'y': 1,
 			'yanchor': 'bottom',
 		};
-
-		// Create subplots titles with annotations
-		let annots = [
-			{
-				'text': '<b>Jobs and avg makespan speedups</b>',
-				'font': {
-					'size': 14
-				},
-				'showarrow': false,
-				'align': 'left',
-				'x': 0.075,
-				'y': 1.01,
-				'xref': 'paper',
-				'yref': 'paper'
-			},
-			{
-				'text': '<b>Jobs turnaround ratio</b>',
-				'font': {
-					'size': 14
-				},
-				'showarrow': false,
-				'align': 'left',
-				'x': 0.5,
-				'y': 1.01,
-				'xref': 'paper',
-				'yref': 'paper'
-			},
-			{
-				'text': '<b>Jobs waiting time difference</b>',
-				'font': {
-					'size': 14
-				},
-				'showarrow': false,
-				'align': 'left',
-				'x': 0.91,
-				'y': 1.01,
-				'xref': 'paper',
-				'yref': 'paper'
-			},
-		]
 
 		let layout = {
 			title: '<b>All experiments and scheduling algorithms</b>',
@@ -498,10 +482,9 @@ Object.assign(window.dash_clientside.clientside, {
 			xaxis3: {title: '<b>Scheduling algorithms</b>'},
 			yaxis3: {title: '<b>Jobs waiting time difference</b>'},
 			updatemenus: [update_menu],
-			// annotations: annots
 		};
 
-		Plotly.newPlot("results-graph", traces, layout, {'autosizable': true});
+		Plotly.newPlot("results-graph", traces, layout, {'autosizable': true, 'displayModeBar': false});
 
 	},
 
@@ -525,6 +508,15 @@ Object.assign(window.dash_clientside.clientside, {
 			return false;
 		else
 			return true;
+	},
+
+	results_download_graph: function(n_clicks) {
+		Plotly.downloadImage('results-graph', {
+			'format': 'svg',
+			'height': 1080,
+			'width': 1920,
+			'filename': 'newplot'
+		});
 	}
 
 })

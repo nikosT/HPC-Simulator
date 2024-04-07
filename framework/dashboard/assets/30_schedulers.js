@@ -20,6 +20,60 @@ Object.assign(window.dash_clientside.clientside, {
 				}
 			};
 
+			// Create info button tooltip that shows the description 
+			// of the scheduling algorithm
+			let info = {
+				'type': 'Button',
+				'namespace': 'dash_bootstrap_components',
+				'props': {
+					'id': data[i].name + ' tooltip',
+					'children': [{
+						'type': 'I',
+						'namespace': 'dash_html_components',
+						'props': {
+							'className': 'bi bi-info',
+							'color': 'info',
+						}
+					}],
+					'color': 'info',
+					'outline': true
+				}
+			};
+
+			let tooltip = {
+				'type': 'Tooltip',
+				'namespace': 'dash_bootstrap_components',
+				'props': {
+					'children': data[i].description,
+					'target': data[i].name + ' tooltip'
+				}
+			}
+
+			let sched_inp = {
+				'type': 'Row',
+				'namespace': 'dash_bootstrap_components',
+				'props': {
+					'children': [
+						{
+							'type': 'Col',
+							'namespace': 'dash_bootstrap_components',
+							'props': {
+								'children': [checkbox],
+								'width': 11
+							}
+						},
+						{
+							'type': 'Col',
+							'namespace': 'dash_bootstrap_components',
+							'props': {
+								'children': [info, tooltip],
+								'width': 1
+							}
+						}
+					]
+				}
+			};
+
 			let collapse_children = [];
 
 			if ('hyperparams' in data[i]) {
@@ -87,17 +141,27 @@ Object.assign(window.dash_clientside.clientside, {
 						'index': JSON.stringify(i)
 					},
 					'children': collapse_children,
-					'is_open': false
+					'is_open': false,
 				}
 				
+			};
+
+			let collapse_inp = {
+				'type': 'Row',
+				'namespace': 'dash_bootstrap_components',
+				'props': {
+					'children': [collapse],
+					'class_name': 'my-2'
+				}
 			};
 
 			let input_group = {
 				'type': 'Row',
 				'namespace': 'dash_bootstrap_components',
 				'props': {
-					'children': [checkbox, collapse],
-					'class_name': 'element-item m-1 p-2'
+					'children': [sched_inp, collapse_inp],
+					'class_name': 'element-item m-1 p-2',
+					'style': {'width': '100%'}
 				}
 			};
 

@@ -38,19 +38,23 @@ elem_run = dbc.Container([
     ], class_name="element-header sticky-top"),
     dbc.Row([
         dbc.Col([
-            dbc.Button("Run simulation",
+            dbc.Button([dbc.Label("Run simulation",
+                                  class_name="text-center",
+                                  style={"width": "100%"})],
                        id="simulation-run-btn",
                        href='#',
-                       class_name="d-flex align-items-center text-center",
+                       class_name="btn-primary d-flex align-items-center",
                        style={"width": "100%", "borderRadius": "10px",
                               "height": "100%"}
                        )
             ], width=6),
         dbc.Col([
-            dbc.Button("View results",
+            dbc.Button([dbc.Label("View results", 
+                                  class_name="text-center",
+                                  style={"width": "100%"})],
                        id="simulation-results-btn",
                        href='#',
-                       class_name="btn-success d-flex align-items-center text-center",
+                       class_name="btn-success d-flex align-items-center",
                        style={"width": "100%", "borderRadius": "10px",
                               "height": "100%"}
                        )

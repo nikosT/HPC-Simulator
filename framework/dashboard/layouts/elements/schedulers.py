@@ -31,8 +31,9 @@ def CB_update_schedulers(store_data, n_intervals):
 
                 if "Default" in mod_dict["classobj"].name:
                     data.insert(0, {
-                        "name": mod_dict["classobj"].name,
                         "module": mod_name,
+                        "name": mod_dict["classobj"].name,
+                        "description": mod_dict["classobj"].description,
                         "selected": True,
                         "disabled": True,
                         "hyperparams": hyperparams
@@ -42,8 +43,9 @@ def CB_update_schedulers(store_data, n_intervals):
 
                     if data != [] and "Default" in data[0]["name"]:
                         data.insert(1, {
-                            "name": mod_dict["classobj"].name,
                             "module": mod_name,
+                            "name": mod_dict["classobj"].name,
+                            "description": mod_dict["classobj"].description,
                             "selected": True,
                             "disabled": False,
                             "hyperparams": hyperparams
@@ -51,8 +53,9 @@ def CB_update_schedulers(store_data, n_intervals):
 
                     else:
                         data.insert(0, {
-                            "name": mod_dict["classobj"].name,
                             "module": mod_name,
+                            "name": mod_dict["classobj"].name,
+                            "description": mod_dict["classobj"].description,
                             "selected": True,
                             "disabled": False,
                             "hyperparams": hyperparams
@@ -68,8 +71,9 @@ def CB_update_schedulers(store_data, n_intervals):
                             break
 
                     data.append({
-                        "name": mod_dict["classobj"].name,
                         "module": mod_name,
+                        "name": mod_dict["classobj"].name,
+                        "description": mod_dict["classobj"].description,
                         "selected": store_data[index] if index is not None else False,
                         "disabled": False,
                         "hyperparams": hyperparams
