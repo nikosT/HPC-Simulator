@@ -1,5 +1,6 @@
 import plotly.graph_objects as go
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
+from multiprocessing import Manager
 import os
 import sys
 
@@ -13,7 +14,8 @@ from realsim.logger.logger import Logger
 
 def run_sim(core):
 
-    cluster, scheduler, logger = core
+    print("RUN SIM")
+    cluster, scheduler, logger, sharing, default_list = core
 
     cluster.setup()
     scheduler.setup()
@@ -24,10 +26,41 @@ def run_sim(core):
     while cluster.preloaded_queue != [] or cluster.waiting_queue != [] or cluster.execution_list != []:
         cluster.step()
 
-    fig = logger.get_resource_usage(save=False)
-    fig.show()
+    if sharing:
 
-    return cluster, scheduler, logger
+        default_list.extend([cluster.makespan, logger])
+
+        data = {
+                "Resource usage": logger.get_resource_usage(),
+                "Jobs utilization": {},
+                "Makespan speedup": 1.0
+        }
+
+    else:
+
+        while default_list == []:
+            # Do nothing while waiting
+            pass
+
+        # When finished then use the default logger to get per job utilization
+        # results
+        default_cluster_makespan = default_list[0]
+        default_logger = default_list[1]
+
+        data = {
+                "Resource usage": logger.get_resource_usage(),
+                "Jobs utilization": logger.get_jobs_utilization(default_logger),
+                "Makespan speedup": default_cluster_makespan / cluster.makespan
+        }
+
+    # Return:
+    # 1. Plot data for the resource usage in json format
+    # 2. Jobs' utilization:
+    #       a. Speedup for each job
+    #       b. Turnaround ratio for each job
+    #       c. Waiting time difference for each job
+    # 3. Makespan speedup
+    return data
 
 class Simulation:
     """The entry point of a simulation for scheduling and scheduling algorithms.
@@ -45,7 +78,12 @@ class Simulation:
                  schedulers_bundle):
 
         self.num_of_jobs = len(jobs_set)
-        self.executor = ProcessPoolExecutor(max_workers=len(schedulers_bundle))
+        self.default = "Default Scheduler"
+        self.executor = ThreadPoolExecutor(max_workers=len(schedulers_bundle))
+
+        self.manager = Manager()
+        self.default_list = self.manager.list()
+
         self.sims = dict()
         self.futures = dict()
         self.results = dict()
@@ -68,8 +106,16 @@ class Simulation:
             cluster.assign_logger(logger)
             scheduler.assign_logger(logger)
 
+            sharing = False
+            if scheduler.name == self.default:
+                sharing = True
+
             # Record of a simulation
-            self.sims[scheduler.name] = (cluster, scheduler, logger)
+            self.sims[scheduler.name] = (cluster, 
+                                         scheduler, 
+                                         logger, 
+                                         sharing,
+                                         self.default_list)
 
     def set_default(self, name):
         self.default = name
@@ -79,9 +125,7 @@ class Simulation:
             print(policy, "submitted")
             self.futures[policy] = self.executor.submit(run_sim, sim)
 
-    def plot(self):
-
-        figures = dict()
+    def get_results(self):
 
         # Wait until all the futures are complete
         self.executor.shutdown(wait=True)
@@ -91,13 +135,7 @@ class Simulation:
             # Get the results
             self.results[policy] = future.result()
 
-            # Plot resource usage
-            # logger = self.results[policy][2]
-            # print(logger.get_history_trace())
-            # fig = logger.get_resource_usage(save=False)
-            # figures[f"Plot Resources: {policy}"] = fig
-
-            # fig.show()
+        return self.results
 
         # speedups = list() # makespan speedups
         # boxpoints = list()

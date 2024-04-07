@@ -1,4 +1,4 @@
-from dash import ClientsideFunction, Input, Output, State, callback, clientside_callback, ctx, dcc, html
+from dash import ClientsideFunction, Input, Output, clientside_callback, dcc, html
 import dash_bootstrap_components as dbc
 import pymongo
 from pymongo.server_api import ServerApi
@@ -71,93 +71,10 @@ clientside_callback(
             function_name="cluster_events"
         ),
 
-        # Output("cluster-store", "data"),
         Output("cluster-btn", "children"),
         Output("cluster-names-display", "style"),
         Output("cluster-manual-display", "style"),
 
         Input("cluster-btn", "n_clicks"),
-        # Input("cluster-machines", "value"),
-        # Input("cluster-nodes", "value"),
-        # Input("cluster-ppn", "value")
 
 )
-
-# @callback(
-#         Output(component_id="cluster-store", component_property="data"),
-#         Output(component_id="cluster-options", component_property="children"),
-#         Output(component_id="to-manual-display", component_property="style"),
-#         Output(component_id="to-name-display", component_property="style"),
-#         Input(component_id="to-manual-btn", component_property="n_clicks"),
-#         Input(component_id="to-name-btn", component_property="n_clicks"),
-#         Input(component_id="cluster-store", component_property="data"),
-#         Input(component_id="cluster-options", component_property="children")
-#         )
-# def cb_cluster(n1, n2, data, cluster_opts):
-# 
-#     visible = {"display": "block"}
-#     invisible = {"display": "none"}
-# 
-#     if ctx.triggered_id == "to-manual-btn":
-#         if data["nodes"] > 0:
-#             nodes = dbc.Col([ 
-#                              dbc.Input(type="number", 
-#                                        min=0, 
-#                                        value=data["nodes"],
-#                                        placeholder="number of nodes") 
-#                              ])
-#         else:
-#             nodes = dbc.Col([ 
-#                              dbc.Input(type="number", 
-#                                        min=0, 
-#                                        value=0,
-#                                        placeholder="number of nodes") 
-#                              ])
-# 
-#         if data["nodes"] > 0:
-#             ppn = dbc.Col([ 
-#                            dbc.Input(type="number", 
-#                                      min=0, 
-#                                      value=data["ppn"],
-#                                      placeholder="number of nodes") 
-#                            ])
-#         else:
-#             ppn = dbc.Col([ 
-#                            dbc.Input(type="number", 
-#                                      min=0,
-#                                      value=0,
-#                                      placeholder="number of nodes") 
-#                            ])
-# 
-#         manual_opts = dbc.Row([ nodes, ppn ], id="cluster-nodes-ppn")
-# 
-#         # Save machine name to data
-#         data["name"] = cluster_opts[0]["props"]["children"][0]["props"]["value"]
-# 
-#         return data, [manual_opts], invisible, visible
-# 
-#     else:
-#         if data["name"] != "":
-#             name_opts = dbc.Row([
-#                 dbc.Select(machines, data["name"])
-#                 ], id="cluster-name")
-#         else:
-#             name_opts = dbc.Row([
-#                 dbc.Select(machines, machines[0])
-#                 ], id="cluster-name")
-#             data["name"] = machines[0]
-# 
-#         # Save nodes and ppn to data
-#         if cluster_opts is not None:
-#             nodes_inp, ppn_inp = cluster_opts[0]["props"]["children"]
-# 
-#             nodes = nodes_inp["props"]["children"][0]["props"]["value"]
-#             if nodes is not None:
-#                 data["nodes"] = int(nodes)
-# 
-#             ppn = ppn_inp["props"]["children"][0]["props"]["value"]
-#             if ppn is not None:
-#                 data["ppn"] = int(ppn)
-# 
-#         return data, [name_opts], visible, invisible
-

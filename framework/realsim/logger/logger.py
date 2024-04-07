@@ -51,7 +51,9 @@ class Logger(object):
                     "trace": [], # [co-job, start time, end time]
                     "speedups": [], # [sp1, sp2, ..]
                     "cores": dict(), # {cojob1: cores1, cojob2: cores2, ..}
-                    "remaining time": []
+                    "remaining time": [],
+                    "arrival time": 0,
+                    "waiting time": 0
             }
             self.job_events[f"{job.job_id}:{job.job_name}"] = jevts
 
@@ -174,6 +176,10 @@ class Logger(object):
                 self.cluster.makespan
         )
 
+        # Record the arrival and waiting time
+        self.job_events[job_key]["arrival time"] = job.queued_time
+        self.job_events[job_key]["waiting time"] = job.waiting_time
+
         # Record the number of used cores at this checkpoint
         # self.cluster_events["used cores"].append(
         #         self.cluster.total_cores - self.cluster.free_cores
@@ -278,7 +284,7 @@ class Logger(object):
 
         return historical_data
 
-    def get_resource_usage(self, save=False):
+    def get_resource_usage(self):
 
         # Get all the checkpoints of the simulation
         checks = list(sorted(
@@ -387,8 +393,6 @@ class Logger(object):
                             )
                     )
 
-        # used_cores = self.cluster_events["used cores"]
-
         # Create figure with the box resource usage
         fig = go.Figure(data=traces)
 
@@ -398,7 +402,7 @@ class Logger(object):
 
         # Change the layout of the plot
         fig.update_layout(
-                title=f"<b>{self.cluster.scheduler.name}</b>",
+                title=f"<b>{self.cluster.scheduler.name}</b><br>Resources usage",
                 title_x=0.5,
                 showlegend=True,
                 yaxis=dict(
@@ -418,17 +422,7 @@ class Logger(object):
                 bargap=0.1
         )
 
-        if save:
-            if not os.path.exists("./resources_usage"):
-                os.mkdir("./resources_usage")
-            fig.update_layout(showlegend=False)
-            fig.write_image(f"resources_usage/{self.cluster.scheduler.name}.chart.pdf",
-                            format="pdf")
-        else:
-            pass
-            #fig.show()
-
-        return fig
+        return fig.to_json()
 
     def get_jobs_utilization(self, logger):
         """Get different utilization metrics for each job in comparison to
@@ -460,7 +454,8 @@ class Logger(object):
             # Utilization numbers
             job_points = {
                     "speedup": (max(their_job_times) - min(their_job_times)) / (max(our_job_times) - min(our_job_times)),
-                    "turnaround": (max(their_job_times)) / (max(our_job_times)),
+                    "turnaround": (max(their_job_times) - logger.job_events[job_key]["arrival time"]) / (max(our_job_times) - self.job_events[job_key]["arrival time"]),
+                    "waiting": logger.job_events[job_key]["waiting time"] - self.job_events[job_key]["waiting time"]
             }
 
             points[job_key] = job_points

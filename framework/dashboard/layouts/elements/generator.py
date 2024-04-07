@@ -1,11 +1,8 @@
-from typing import Optional
 import pymongo
 from pymongo.server_api import ServerApi
 import importlib
-import jsonpickle
 
-from dash import ALL, ClientsideFunction, Input, Output, State, callback, clientside_callback, dcc, html, ctx
-from dash.exceptions import PreventUpdate
+from dash import ClientsideFunction, Input, Output, State, clientside_callback, dcc, html
 import dash_bootstrap_components as dbc
 
 import os
@@ -21,7 +18,6 @@ sys.path.append(os.path.abspath(os.path.join(
     os.path.dirname(__file__), "../../.."
 )))
 
-from api.loader.manager import LoadManager
 from realsim.generators.abstract import AbstractGenerator
 
 # Get machines, suites per machine and workloads' names per machine per suite
@@ -202,70 +198,3 @@ clientside_callback(
         Input("workloads-suites-select", "value"),
         State("generator-store", "data")
 )
-
-# Clientside callback for generator and generator options element-items
-
- 
-# def get_options(generator_type, lm : Optional[LoadManager] = None):
-# 
-#     if generator_type == "Random Generator":
-#         return [ dbc.InputGroup([
-#             dbc.InputGroupText("Number of jobs", style={"width": "50%"}),
-#             dbc.Input(type="number", min=1, value=1, )
-#             ]) ]
-#     elif generator_type == "Dictionary Generator":
-#         children = list()
-#         for name in sorted(lm.loads):
-#             children.append(dbc.InputGroup([
-#                 dbc.InputGroupText(f"{name}", style={"width": "50%"}),
-#                 dbc.Input(type="number", value=0, min=0)
-#             ]))
-# 
-#         return children
-#     elif generator_type == "List Generator":
-#         return [ dcc.Upload([
-#             dbc.Button("Upload file with list of jobs", id="list-gen-input",
-#                        style={"width": "100%"})
-#             ], id="upload-list-gen-input") ]
-#     else:
-#         return []
-# 
-# @callback(
-#         Output(component_id="generator-store", component_property="data"),
-#         Output(component_id="generator-options", component_property="children"),
-#         Input(component_id="generator-store", component_property="data"),
-#         Input(component_id="db-input", component_property="value"),
-#         Input(component_id="generator-type", component_property="value"),
-#         )
-# def storage_db(data, db_input, gen_type):
-# 
-#     if data is None:
-#         new_data = dict()
-#     else:
-#         new_data = data
-# 
-#     if ctx.triggered_id == "db-input":
-#         lm = LoadManager(db_input) # Add suite selection
-#         lm.import_from_db(host="mongodb+srv://cslab:bQt5TU6zQsu_LZ@storehouse.om2d9c0.mongodb.net", 
-#                           dbname="storehouse")
-# 
-#         #for name in ["bt.D.484", "sp.D.484", "bt.E.2025", "cg.E.2048", "ft.E.2048", "lu.E.2048", "sp.E.2025"]:
-#         #    try:
-#         #        del lm.loads[name]
-#         #    except Exception:
-#         #        print("Exception")
-#         #        pass
-# 
-#         new_data["load-manager"] = jsonpickle.encode( lm )
-#         new_data["generator"] = jsonpickle.encode( mapping[gen_type](lm) )
-#     elif ctx.triggered_id == "generator-type":
-#         lm = jsonpickle.decode( data["load-manager"] )
-#         new_data["generator"] = jsonpickle.encode( mapping[gen_type](lm) )
-#     else:
-#         raise PreventUpdate
-# 
-#     if gen_type == "Dictionary Generator":
-#         return new_data, get_options(gen_type, jsonpickle.decode( new_data["load-manager"] ))
-#     else:
-#         return new_data, get_options(gen_type)
-

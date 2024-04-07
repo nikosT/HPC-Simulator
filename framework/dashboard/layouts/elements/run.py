@@ -1,7 +1,7 @@
 from dash import Output, Input, State, dcc, html, callback, clientside_callback, ClientsideFunction
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from numpy.random import seed, randint, exponential
 from time import time_ns
 import os
@@ -23,9 +23,9 @@ from .schedulers import stored_modules
 
 elem_run = dbc.Container([
 
-    dcc.Store(id="results-store"),
-
     dcc.Store(id="run-store"),
+
+    dcc.Store(id="results-store"),
 
     # RUN AND VIEW BUTTONS
     dbc.Row([
@@ -40,6 +40,8 @@ elem_run = dbc.Container([
         dbc.Col([
             dbc.Button("Run simulation",
                        id="simulation-run-btn",
+                       href='#',
+                       class_name="d-flex align-items-center text-center",
                        style={"width": "100%", "borderRadius": "10px",
                               "height": "100%"}
                        )
@@ -47,7 +49,8 @@ elem_run = dbc.Container([
         dbc.Col([
             dbc.Button("View results",
                        id="simulation-results-btn",
-                       class_name="btn-success",
+                       href='#',
+                       class_name="btn-success d-flex align-items-center text-center",
                        style={"width": "100%", "borderRadius": "10px",
                               "height": "100%"}
                        )
@@ -139,7 +142,7 @@ clientside_callback(
 def parallel_simulations(par_inp):
 
     # num, generator, gen_input, nodes, ppn, schedulers = par_inp
-    num, generator_bundle, cluster_bundle, schedulers_bundle = par_inp
+    generator_bundle, cluster_bundle, schedulers_bundle = par_inp
 
     # Unpack generator bundle
     lm, gen_class, gen_inp, sim_type, sim_dynamic_condition = generator_bundle
@@ -187,12 +190,14 @@ def parallel_simulations(par_inp):
     # Start simulation
     sim.run()
 
-    # Draw the figures
-    # figures = sim.plot()
-    sim.plot()
+    # Get results from simulation
+    res = sim.get_results()
+
+    return res
 
 @callback(
         Output("results-store", "data"),
+        Output("results-modal", "is_open", True),
         Input("run-store", "data"),
         prevent_initial_call=True
 )
@@ -239,17 +244,37 @@ def run_simulation(data):
     # Setup for parallel experiment execution
     num_of_experiments = int(data["simulation-experiments"])
 
-    executor = ProcessPoolExecutor(max_workers=os.cpu_count())
+    executor = ProcessPoolExecutor()
     futures = list()
-    for idx in range(num_of_experiments):
-        par_inp = (idx, generator_bundle, cluster_bundle, schedulers_bundle)
+    for _ in range(num_of_experiments):
+        par_inp = (generator_bundle, cluster_bundle, schedulers_bundle)
         futures.append(
                 executor.submit(parallel_simulations, par_inp)
         )
-    print("EXPERIMENTS SUBMITTED")
+
+    print("<----- EXPERIMENTS SUBMITTED ----->")
+    
     # Wait till all the experiments finish
     executor.shutdown(wait=True)
     
-    print("EXECUTOR FINISHED")
+    print("<----- EXECUTOR FINISHED ----->")
 
-    return data
+    results = dict()
+    for idx, future in enumerate(futures):
+        results[f"Experiment {idx}"] = future.result()
+
+    return results, True
+
+clientside_callback(
+        ClientsideFunction(
+            namespace="clientside",
+            function_name="create_results_menu"
+            ),
+
+        Output("results-nav", "children"),
+
+        Input("results-store", "data"),
+
+        prevent_initial_call=True
+
+)
