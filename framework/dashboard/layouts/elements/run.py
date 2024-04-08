@@ -215,6 +215,13 @@ def run_simulation(data):
                          suite=data["workloads-suite"])
     lm.import_from_db(host="mongodb+srv://cslab:bQt5TU6zQsu_LZ@storehouse.om2d9c0.mongodb.net",
                       dbname="storehouse")
+    
+    # ONLY FOR REGALE
+    try:
+        for load in ["bt.D.484", "sp.D.484", "bt.E.2025", "cg.E.2048", "ft.E.2048", "lu.E.2048", "sp.E.2025"]:
+            lm.loads.pop(load)
+    except:
+        pass
 
     # Setup generator bundle
     # TODO: change 'mapping' name

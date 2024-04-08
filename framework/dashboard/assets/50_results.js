@@ -262,10 +262,14 @@ Object.assign(window.dash_clientside.clientside, {
 		console.log(schedulers)
 		schedulers.splice(schedulers.indexOf('Default Scheduler'), 1)
 
+		let aggr_exps = 0;
+		let aggr_jobs = 0;
 		let traces = [];
 		let avg_makespans = [];
 
 		for (scheduler of schedulers) {
+
+			aggr_exps = 0;
 
 			let index = 0;
 			let jobs_text = [];
@@ -276,6 +280,9 @@ Object.assign(window.dash_clientside.clientside, {
 
 			for (exp_obj of Object.values(data)) {
 
+				aggr_jobs = 0;
+				aggr_exps++;
+
 				exp_data = exp_obj[scheduler]['Jobs utilization'];
 
 				for ([job_name, job_util] of Object.entries(exp_data)) {
@@ -283,6 +290,9 @@ Object.assign(window.dash_clientside.clientside, {
 					jobs_speedups.push(job_util['speedup']);
 					jobs_turnaround.push(job_util['turnaround']);
 					jobs_waiting.push(job_util['waiting']);
+
+					// Culminative counter of jobs
+					aggr_jobs++;
 				}
 
 				makespans.push(exp_obj[scheduler]['Makespan speedup']);
@@ -300,7 +310,10 @@ Object.assign(window.dash_clientside.clientside, {
 				'jitter': 0.2,
 				'boxmean': 'sd',
 				'type': 'box',
-				'showlegend': false
+				'showlegend': false,
+				'marker': {
+					'opacity': 0.6
+				}
 			};
 
 			let turnaround_trace = {
@@ -313,7 +326,10 @@ Object.assign(window.dash_clientside.clientside, {
 				'type': 'box',
 				'showlegend': false,
 				'xaxis': 'x2',
-				'yaxis': 'y2'
+				'yaxis': 'y2',
+				'marker': {
+					'opacity': 0.6
+				}
 			};
 
 			let waiting_trace = {
@@ -326,7 +342,10 @@ Object.assign(window.dash_clientside.clientside, {
 				'type': 'box',
 				'showlegend': false,
 				'xaxis': 'x3',
-				'yaxis': 'y3'
+				'yaxis': 'y3',
+				'marker': {
+					'opacity': 0.6
+				}
 			};
 
 			traces.push(speedups_trace);
@@ -347,7 +366,7 @@ Object.assign(window.dash_clientside.clientside, {
 
 		}
 
-		// Add trace for average makespan speedups
+		// Create trace for makespan speedups
 		let makespans_trace = {
 			'type': 'scatter',
 			'y': avg_makespans,
@@ -359,14 +378,37 @@ Object.assign(window.dash_clientside.clientside, {
 			'showlegend': false
 		};
 
+		// Add trace for average makespan speedups
 		traces.push(makespans_trace);
 
+		// Add makespan speedups for annotation
+		let annotations = [];
+
+		for (i in avg_makespans) {
+			annotations.push({
+				'x': i,
+				'y': avg_makespans[i],
+				'xref': 'x',
+				'yref': 'y',
+				'text': '<b>' + avg_makespans[i].toFixed(2) + '</b>',
+				'font': {
+					'size': 18
+				}
+			})
+		}
+
 		// Create update visibility for traces args
+		let upd_all_traces = [];
 		let upd_speedup_traces = [];
 		let upd_turnaround_traces = [];
 		let upd_waiting_traces = [];
 
 		for (s in schedulers) {
+
+			upd_all_traces.push(true);
+			upd_all_traces.push(true);
+			upd_all_traces.push(true);
+
 			upd_speedup_traces.push(true);
 			upd_speedup_traces.push(false);
 			upd_speedup_traces.push(false);
@@ -380,12 +422,39 @@ Object.assign(window.dash_clientside.clientside, {
 			upd_waiting_traces.push(true);
 		}
 
+		upd_all_traces.push(true);
 		upd_speedup_traces.push(true);
 		upd_turnaround_traces.push(false);
 		upd_waiting_traces.push(false);
 
 		let update_menu = {
 			'buttons': [
+				{
+					'args': [
+						{
+							'visible': upd_all_traces,
+							'xaxis': ['x', 'x2', 'x3'],
+							'yaxis': ['y', 'y2', 'y3']
+						},
+						{
+							'xaxis.domain': [0, 0.3],
+							'xaxis.visible': true,
+							'yaxis.visible': true,
+
+							'xaxis2.domain': [0.35, 0.65],
+							'xaxis2.visible': true,
+							'yaxis2.visible': true,
+
+							'xaxis3.domain': [0.7, 1],
+							'xaxis3.visible': true,
+							'yaxis3.visible': true,
+
+							'annotations': annotations
+						}
+					],
+					'label': 'All',
+					'method': 'update'
+				},
 				{
 					'args': [
 						{
@@ -404,7 +473,9 @@ Object.assign(window.dash_clientside.clientside, {
 
 							'xaxis3.visible': false,
 							'xaxis3.domain': [0, 0],
-							'yaxis3.visible': false
+							'yaxis3.visible': false,
+
+							'annotations': annotations
 						}
 					],
 					'label': 'Jobs speedups',
@@ -428,7 +499,9 @@ Object.assign(window.dash_clientside.clientside, {
 
 							'xaxis3.visible': false,
 							'xaxis3.domain': [0, 0],
-							'yaxis3.visible': false
+							'yaxis3.visible': false,
+
+							'annotations': []
 						}
 					],
 					'label': 'Jobs turnarounds',
@@ -452,7 +525,9 @@ Object.assign(window.dash_clientside.clientside, {
 
 							'xaxis3.visible': true,
 							'xaxis3.domain': [0, 1],
-							'yaxis3.visible': true
+							'yaxis3.visible': true,
+
+							'annotations': []
 						}
 					],
 					'label': 'Jobs waiting time',
@@ -468,20 +543,58 @@ Object.assign(window.dash_clientside.clientside, {
 			'yanchor': 'bottom',
 		};
 
+		let suffix = aggr_exps + ' experiment(s), ' + aggr_jobs + ' jobs per experiment';
 		let layout = {
-			title: '<b>All experiments and scheduling algorithms</b>',
+			title: '<b>All experiments and scheduling algorithms</b><br>' + suffix,
 			grid: {
 				rows: 1,
 				columns: 3,
 				pattern: 'independent'
 			},
-			xaxis: {title: '<b>Scheduling algorithms</b>'},
-			yaxis: {title: '<b>Jobs and average makespan speedups</b>'},
-			xaxis2: {title: '<b>Scheduling algorithms</b>'},
-			yaxis2: {title: '<b>Jobs turnaround ratio</b>'},
-			xaxis3: {title: '<b>Scheduling algorithms</b>'},
-			yaxis3: {title: '<b>Jobs waiting time difference</b>'},
+			xaxis: {
+				title: {
+					text: '<b>Scheduling algorithms</b>', 
+					font: {size: 18}
+				},
+				tickfont: {size: 16}
+			},
+			yaxis: {
+				title: {
+					text: '<b>Jobs and average makespan speedups</b>',
+					font: {size: 18}
+				},
+				tickfont: {size: 16}
+			},
+			xaxis2: {
+				title: {
+					text: '<b>Scheduling algorithms</b>',
+					font: {size: 18}
+				},
+				tickfont: {size: 16}
+			},
+			yaxis2: {
+				title: {
+					text: '<b>Jobs turnaround ratio</b>',
+					font: {size: 18}
+				},
+				tickfont: {size: 16}
+			},
+			xaxis3: {
+				title: {
+					text: '<b>Scheduling algorithms</b>',
+					font: {size: 18}
+				},
+				tickfont: {size: 16}
+			},
+			yaxis3: {
+				title: {
+					text: '<b>Jobs waiting time difference</b>',
+					font: {size: 18}
+				},
+				tickfont: {size: 16}
+			},
 			updatemenus: [update_menu],
+			annotations: annotations
 		};
 
 		Plotly.newPlot("results-graph", traces, layout, {'autosizable': true, 'displayModeBar': false});
@@ -511,12 +624,18 @@ Object.assign(window.dash_clientside.clientside, {
 	},
 
 	results_download_graph: function(n_clicks) {
+		graph_elem = document.getElementById('results-graph');
+		updatemenus = graph_elem.layout.updatemenus;
+		graph_elem.layout.updatemenus = [];
+
 		Plotly.downloadImage('results-graph', {
 			'format': 'svg',
 			'height': 1080,
 			'width': 1920,
 			'filename': 'newplot'
 		});
+		
+		graph_elem.layout.updatemenus = updatemenus;
 	}
 
 })
