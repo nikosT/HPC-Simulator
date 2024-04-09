@@ -3,7 +3,8 @@ from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from numpy.random import seed, randint, exponential
-from time import time_ns
+from time import time_ns, time
+from datetime import timedelta
 import os
 import sys
 
@@ -264,11 +265,14 @@ def run_simulation(data):
         )
 
     print("<----- EXPERIMENTS SUBMITTED ----->")
+
+    start_time = time()
     
     # Wait till all the experiments finish
     executor.shutdown(wait=True)
     
-    print("<----- EXECUTOR FINISHED ----->")
+    end_time = time()
+    print("<----- EXECUTOR FINISHED ----->", timedelta(seconds=(end_time-start_time)))
 
     results = dict()
     for idx, future in enumerate(futures):
