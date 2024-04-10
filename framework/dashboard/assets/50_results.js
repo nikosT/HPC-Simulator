@@ -392,7 +392,7 @@ Object.assign(window.dash_clientside.clientside, {
 				'yref': 'y',
 				'text': '<b>' + avg_makespans[i].toFixed(2) + '</b>',
 				'font': {
-					'size': 18
+					'size': 30
 				}
 			})
 		}
@@ -546,6 +546,7 @@ Object.assign(window.dash_clientside.clientside, {
 		let suffix = aggr_exps + ' experiment(s), ' + aggr_jobs + ' jobs per experiment';
 		let layout = {
 			title: '<b>All experiments and scheduling algorithms</b><br>' + suffix,
+			font: {size: 30},
 			grid: {
 				rows: 1,
 				columns: 3,
@@ -554,44 +555,44 @@ Object.assign(window.dash_clientside.clientside, {
 			xaxis: {
 				title: {
 					text: '<b>Scheduling algorithms</b>', 
-					font: {size: 18}
+					font: {size: 30}
 				},
-				tickfont: {size: 16}
+				tickfont: {size: 30}
 			},
 			yaxis: {
 				title: {
 					text: '<b>Jobs and average makespan speedups</b>',
-					font: {size: 18}
+					font: {size: 30}
 				},
-				tickfont: {size: 16}
+				tickfont: {size: 30}
 			},
 			xaxis2: {
 				title: {
 					text: '<b>Scheduling algorithms</b>',
-					font: {size: 18}
+					font: {size: 30}
 				},
-				tickfont: {size: 16}
+				tickfont: {size: 30}
 			},
 			yaxis2: {
 				title: {
 					text: '<b>Jobs turnaround ratio</b>',
-					font: {size: 18}
+					font: {size: 30}
 				},
-				tickfont: {size: 16}
+				tickfont: {size: 30}
 			},
 			xaxis3: {
 				title: {
 					text: '<b>Scheduling algorithms</b>',
-					font: {size: 18}
+					font: {size: 30}
 				},
-				tickfont: {size: 16}
+				tickfont: {size: 30}
 			},
 			yaxis3: {
 				title: {
 					text: '<b>Jobs waiting time difference</b>',
-					font: {size: 18}
+					font: {size: 30}
 				},
-				tickfont: {size: 16}
+				tickfont: {size: 30}
 			},
 			updatemenus: [update_menu],
 			annotations: annotations
