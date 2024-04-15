@@ -98,6 +98,8 @@ class Load:
         # coloads = dict(coload_full_name: load_coscheduled_time_bundle)
         self.coloads: dict[str, list] = dict()
 
+        self.coloads_median_speedup: dict[str, float] = dict()
+
     def __repr__(self) -> str:
         return self.__str__()
 
@@ -234,7 +236,17 @@ class Load:
         ▛ ReturnVal ▟ returns the average speedup of load when coscheduled 
         with coload
         """
-        return (self.get_median() /self.get_median(coload))
+        return self.coloads_median_speedup[coload]
+
+    def set_median_speedup(self, coload):
+        """Return the average speedup of a load when coscheduled with coload
+
+        ▛ coload ▟ the load colocated to the same nodes with load
+
+        ▛ ReturnVal ▟ returns the average speedup of load when coscheduled 
+        with coload
+        """
+        self.coloads_median_speedup[coload] = (self.get_median() /self.get_median(coload))
 
     def get_dram_bandwidth_list(self) -> list[float]:
         """Get the DRAM bandwidth of load for each run

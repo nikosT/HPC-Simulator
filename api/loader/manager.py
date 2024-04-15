@@ -592,6 +592,9 @@ class LoadManager:
 
         for doc in coll.find(query):
             load = pickle.loads(doc["bin"])
+            load.coloads_median_speedup = dict()
+            for coload_name in load.coloads:
+                load.set_median_speedup(coload_name)
             self.loads[doc["_id"]["load"]] = load
 
         # Filter out coloads

@@ -35,11 +35,13 @@ class AbstractGenerator(abc.ABC, Generic[T]):
                    job_id=idx,
                    job_name=load.full_load_name,
                    num_of_processes=load.num_of_processes,
+                   binded_cores=load.num_of_processes,
+                   half_node_cores=-1,
+                   full_node_cores=-1,
                    remaining_time=load.get_avg(),
                    queued_time=0,
                    waiting_time=0,
-                   wall_time=(10 * 60),
-                   binded_cores=load.num_of_processes)
+                   wall_time=(10 * 60))
 
     @abc.abstractmethod
     def generate_jobs_set(self, arg: T) -> list[Job]:

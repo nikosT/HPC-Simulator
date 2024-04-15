@@ -36,8 +36,10 @@ class Coscheduler(Scheduler, ABC):
 
     def __init__(self, 
                  threshold: float = 1, 
+                 system_utilization: float = 1,
                  engine: Optional[ScikitModel] = None):
         self.threshold = threshold
+        self.system_utilization = system_utilization
         self.engine = engine
         self.heatmap: dict[str, dict] = dict()
         Scheduler.__init__(self)
@@ -147,7 +149,7 @@ class Coscheduler(Scheduler, ABC):
 
                     self.heatmap[largest_job.job_name][job.job_name] is not None 
                     and
-                    self.cluster.half_node_cores(job) <= empty_space,
+                    job.half_node_cores <= empty_space,
 
                     self.cluster.waiting_queue
                 )
@@ -173,7 +175,6 @@ class Coscheduler(Scheduler, ABC):
         )
 
         return candidates
-
 
     def deploying_to_xunits(self, deploying_list):
         """Deploying waiting jobs to executing units that have available free
@@ -214,14 +215,23 @@ class Coscheduler(Scheduler, ABC):
                 # xunit then change the execution policy to spread
                 if min_binded_cores == 0: 
 
-                    # Policy change!
+                    # Check if spread and if not change it to spread
                     if largest_job.speedup != largest_job.get_max_speedup():
                         largest_job.remaining_time *= largest_job.speedup / largest_job.get_max_speedup()
                         largest_job.speedup = largest_job.get_max_speedup()
 
-                    empty_job = EmptyJob(Job(None, -1, "empty", empty_space, 
-                                             None, None, None, None, 
-                                             empty_space))
+                    empty_job = EmptyJob(Job(None, 
+                                             -1, 
+                                             "empty", 
+                                             empty_space, 
+                                             empty_space,
+                                             -1,
+                                             -1,
+                                             None, 
+                                             None, 
+                                             None, 
+                                             None))
+
                     new_xunit = [largest_job, empty_job]
 
                     # Deployment!
@@ -269,9 +279,10 @@ class Coscheduler(Scheduler, ABC):
 
             for co_job in candidates:
 
-                if self.cluster.half_node_cores(co_job) <= rem_cores:
+                if co_job.half_node_cores <= rem_cores:
+
                     self.cluster.waiting_queue.remove(co_job)
-                    co_job.binded_cores = self.cluster.half_node_cores(co_job)
+                    co_job.binded_cores = co_job.half_node_cores
                     co_job.ratioed_remaining_time(substitute_unit[0])
 
                     substitute_unit.append(co_job)
@@ -279,7 +290,7 @@ class Coscheduler(Scheduler, ABC):
 
             # Redefine largest job speedup
             worst_neighbor = min(substitute_unit[1:], key=(
-                lambda job2: substitute_unit[0].get_speedup(job2)
+                lambda co_job: substitute_unit[0].get_speedup(co_job)
             ))
 
             if substitute_unit[0].speedup != substitute_unit[0].get_speedup(worst_neighbor):
@@ -287,8 +298,17 @@ class Coscheduler(Scheduler, ABC):
             
             # If rem_cores > 0 then there is an empty space left in the unit
             if rem_cores > 0:
-                empty_job = EmptyJob(Job(None, -1, "empty", rem_cores, 
-                                         None, None, None, None, rem_cores))
+                empty_job = EmptyJob(Job(None, 
+                                         -1,
+                                         "empty",
+                                         rem_cores,
+                                         rem_cores, 
+                                         -1,
+                                         -1,
+                                         None, 
+                                         None, 
+                                         None, 
+                                         None))
                 substitute_unit.append(empty_job)
 
             # Remove the former unit from the execution list
@@ -316,8 +336,8 @@ class Coscheduler(Scheduler, ABC):
             self.heatmap[co_job.job_name][job.job_name] is not None 
             and
             2 * max(
-                self.cluster.half_node_cores(job),
-                self.cluster.half_node_cores(co_job)
+                job.half_node_cores,
+                co_job.half_node_cores
             ) <= self.cluster.free_cores, 
 
             candidates
@@ -370,17 +390,17 @@ class Coscheduler(Scheduler, ABC):
 
             # If there are candidates then create a new xunit
             xunit: list[Job] = [job]
-            max_binded_cores = self.cluster.half_node_cores(job)
+            max_binded_cores = job.half_node_cores
             
             # Build execution unit
             for co_job in candidates:
-                if self.cluster.half_node_cores(co_job) <= max_binded_cores:
+                if co_job.half_node_cores <= max_binded_cores:
 
                     waiting_queue.remove(co_job)
                     self.cluster.waiting_queue.remove(co_job)
 
                     co_job.ratioed_remaining_time(job)
-                    co_job.binded_cores = self.cluster.half_node_cores(co_job)
+                    co_job.binded_cores = co_job.half_node_cores
 
                     xunit.append(co_job)
 
@@ -398,20 +418,28 @@ class Coscheduler(Scheduler, ABC):
             
             # Set the speedup of the largest job
             worst_neighbor = min(xunit[1:], key=(
-                lambda co_job: xunit[0].get_speedup(co_job)
+                lambda co_job: job.get_speedup(co_job)
             ))
 
-            xunit[0].ratioed_remaining_time(worst_neighbor)
-            xunit[0].binded_cores = self.cluster.half_node_cores(
-                    xunit[0]
-            )
+            job.ratioed_remaining_time(worst_neighbor)
+            job.binded_cores = job.half_node_cores
 
             # If max_binded_cores is not 0 then fill the empty cores
             # with an empty job
             if max_binded_cores > 0:
-                empty_job = EmptyJob(Job(None, -1, "empty", max_binded_cores, 
-                                         None, None, None, None, 
-                                         max_binded_cores))
+                empty_job = EmptyJob(
+                        Job(None, 
+                            -1, 
+                            "empty", 
+                            max_binded_cores, 
+                            max_binded_cores,
+                            -1,
+                            -1,
+                            None, 
+                            None, 
+                            None, 
+                            None))
+
                 xunit.append(empty_job)
 
             # Deployment!
@@ -422,7 +450,7 @@ class Coscheduler(Scheduler, ABC):
             self.after_deployment(xunit)
 
             # Cluster setup
-            self.cluster.free_cores -= 2 * xunit[0].binded_cores
+            self.cluster.free_cores -= 2 * job.binded_cores
 
             # Logger cluster events update
             self.logger.cluster_events["deploying:wait-colocation"] += 1
@@ -443,13 +471,13 @@ class Coscheduler(Scheduler, ABC):
 
             job = self.pop(waiting_queue)
 
-            if self.cluster.full_node_cores(job) <= int(self.cluster.free_cores):
+            if job.full_node_cores <= int(self.cluster.free_cores):
 
                 # Remove from cluster's waiting queue
                 self.cluster.waiting_queue.remove(job)
 
                 # Setup job
-                job.binded_cores = self.cluster.full_node_cores(job)
+                job.binded_cores = job.full_node_cores
 
                 # Deploy job
                 deploying_list.append([job])
@@ -463,6 +491,57 @@ class Coscheduler(Scheduler, ABC):
 
                 # Logger cluster events update
                 self.logger.cluster_events["deploying:compact"] += 1
+
+        return
+
+    def deploying_as_spread(self, deploying_list):
+
+        # Get a copy of the current waiting queue of the cluster
+        waiting_queue: list[Job] = deepcopy_list(self.cluster.waiting_queue)
+
+        # Order waiting queue by needed cores starting with the lowest
+        waiting_queue.sort(key=lambda job: self.waiting_queue_order(job),
+                           reverse=True)
+
+        while waiting_queue != []:
+
+            # Get first job
+            job = self.pop(waiting_queue)
+
+            condition = (2 * job.half_node_cores) <= self.cluster.free_cores
+            condition &= job.get_max_speedup() > self.threshold
+            condition &= (self.cluster.free_cores / self.cluster.total_cores) > self.system_utilization
+
+            # If the job fits and the cores utilization of the system meets the
+            # requirements specified then submit as spread
+            if condition:
+
+                self.cluster.waiting_queue.remove(job)
+                job.binded_cores = job.half_node_cores
+                job.speedup = job.get_max_speedup()
+
+                # Deploying job
+                empty_space = EmptyJob(Job(None, 
+                                           -1, 
+                                           "empty",
+                                           job.binded_cores,
+                                           job.binded_cores,
+                                           -1,
+                                           -1,
+                                           None,
+                                           None,
+                                           None,
+                                           None))
+                xunit = [job, empty_space]
+                deploying_list.append(xunit)
+
+                self.cluster.free_cores -= 2 * job.binded_cores
+
+                self.deploying = True
+                self.after_deployment(xunit)
+
+                # Logger cluster events update
+                self.logger.cluster_events["deploying:spread"] += 1
 
         return
 

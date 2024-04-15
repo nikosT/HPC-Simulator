@@ -16,8 +16,19 @@ from numpy import isnan
 
 class Job:
 
-    def __init__(self, load: Optional[Load], job_id, job_name, num_of_processes,
-                 remaining_time, queued_time, waiting_time, wall_time, binded_cores):
+    def __init__(self, 
+                 load: Optional[Load], 
+                 job_id: int, 
+                 job_name: str, 
+                 num_of_processes: int,
+                 binded_cores: int,
+                 half_node_cores: int,
+                 full_node_cores: int,
+                 remaining_time, 
+                 queued_time, 
+                 waiting_time, 
+                 wall_time):
+
         self.load = load
         self.job_id = job_id
         self.job_name = job_name
@@ -29,6 +40,10 @@ class Job:
         self.binded_cores = binded_cores
         self.gave_position = 0
         self.speedup = 1
+
+        # Configs for faster simulation
+        self.half_node_cores = half_node_cores
+        self.full_node_cores = full_node_cores
 
     def __eq__(self, job):
         if not isinstance(job, Job):
@@ -72,15 +87,17 @@ class Job:
         """Return a new instance of Job that is a true copy
         of the original
         """
-        copy = Job(load=self.load.deepcopy(),
+        copy = Job(load=self.load,
                    job_id=self.job_id,
                    job_name=self.job_name,
                    num_of_processes=self.num_of_processes,
+                   binded_cores=self.binded_cores,
+                   half_node_cores=self.half_node_cores,
+                   full_node_cores=self.full_node_cores,
                    remaining_time=self.remaining_time,
                    queued_time=self.queued_time,
                    waiting_time=self.waiting_time,
-                   wall_time=self.wall_time,
-                   binded_cores=self.binded_cores)
+                   wall_time=self.wall_time)
 
         copy.gave_position = self.gave_position
         copy.speedup = self.speedup
@@ -91,8 +108,8 @@ class Job:
 class EmptyJob(Job):
 
     def __init__(self, job: Job):
-        Job.__init__(self, None, job.job_id, job.job_name, job.num_of_processes,
-                     None, None, None, None, job.binded_cores)
+        Job.__init__(self, None, job.job_id, job.job_name, job.num_of_processes, 
+                     job.binded_cores, -1, -1, None, None, None, None,)
 
     def __repr__(self) -> str:
         return "{" + f"{self.job_id}, empty : {self.remaining_time}, {self.binded_cores}" + "}"
@@ -105,11 +122,13 @@ class EmptyJob(Job):
                             job_id=self.job_id,
                             job_name=self.job_name,
                             num_of_processes=self.num_of_processes,
+                            binded_cores=self.binded_cores,
+                            half_node_cores=self.half_node_cores,
+                            full_node_cores=self.full_node_cores,
                             remaining_time=self.remaining_time,
                             queued_time=self.queued_time,
                             waiting_time=self.waiting_time,
-                            wall_time=self.wall_time,
-                            binded_cores=self.binded_cores)
+                            wall_time=self.wall_time)
                         )
 
         return copy

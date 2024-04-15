@@ -33,7 +33,9 @@ class Logger(object):
         # Cluster wide events
         self.cluster_events = dict()
         self.cluster_events["checkpoints"] = set()
+        self.cluster_events["checkpoints"].add(0)
         self.cluster_events["used cores"] = list()
+        self.cluster_events["deploying:spread"] = 0
         self.cluster_events["deploying:exec-colocation"] = 0
         self.cluster_events["deploying:wait-colocation"] = 0
         self.cluster_events["deploying:compact"] = 0
@@ -451,6 +453,7 @@ class Logger(object):
             for _, timeline in their_history[job_key].items():
                 their_job_times.extend(timeline)
 
+            print(job_key, their_job_times, our_job_times)
             # Utilization numbers
             job_points = {
                     "speedup": (max(their_job_times) - min(their_job_times)) / (max(our_job_times) - min(our_job_times)),

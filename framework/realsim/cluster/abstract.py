@@ -42,11 +42,11 @@ class AbstractCluster(abc.ABC):
         # Important counters #
 
         # Job id counter
-        self.id_counter = 0
+        self.id_counter: int = 0
         
         # The total execution time
         # of a cluster
-        self.makespan = 0
+        self.makespan: float = 0
 
     def assign_scheduler(self, scheduler: Scheduler):
         self.scheduler = scheduler
@@ -57,10 +57,10 @@ class AbstractCluster(abc.ABC):
         self.logger.assign_cluster(self)
 
     def half_node_cores(self, job: Job) -> int:
-        return int(math.ceil(job.num_of_processes / (self.cores_per_node / 2)) * (self.cores_per_node / 2))
+        return job.half_node_cores
 
     def full_node_cores(self, job: Job) -> int:
-        return int(math.ceil(job.num_of_processes / self.cores_per_node) * self.cores_per_node)
+        return job.full_node_cores
 
     def preload_jobs(self, jobs_set: list[Job]) -> None:
         # Get a clean deep copy of the set of jobs
@@ -72,9 +72,12 @@ class AbstractCluster(abc.ABC):
         if self.makespan == 0:
             self.id_counter = 0
 
-        # Preload jobs
+        # Preload jobs and calculate their respective half and full node cores
+        # usage
         for job in copy:
             job.job_id = self.id_counter
+            job.half_node_cores = int(math.ceil(job.num_of_processes / (self.cores_per_node / 2)) * (self.cores_per_node / 2))
+            job.full_node_cores = int(math.ceil(job.num_of_processes / self.cores_per_node) * self.cores_per_node)
             self.id_counter += 1
             self.preloaded_queue.append(job)
 
@@ -107,7 +110,6 @@ class AbstractCluster(abc.ABC):
                 filled_units.append(unit)
 
         return filled_units
-
 
     def nonfilled_xunits(self) -> list[list[Job]]:
         """Return all the execution units that have empty space. All the
@@ -151,6 +153,7 @@ class AbstractCluster(abc.ABC):
         self.execution_list = list()
 
     def step(self):
+
         # This is definite
         # If broken then the simulation loop has problems
         if self.free_cores < 0 or self.free_cores > self.total_cores:
@@ -178,30 +181,14 @@ class AbstractCluster(abc.ABC):
 
         # If there aren't any jobs left on the waiting queue
         else:
+            self.logger.evt_jobs_executing()
             # Check if there is any job left in the execution queue
             if self.execution_list != []:
 
-                self.logger.evt_jobs_executing()
-
                 self.next_state()
                 self.free_resources()
+
+            # If there aren't any jobs left in the waiting queue and execution
+            # list then check if there is any in the preloaded queue
             elif self.preloaded_queue != []:
                 self.next_state()
-
-    def run(self):
-        """The simulation loop
-        """
-
-        # Setup cluster
-        self.setup()
-
-        # Setup scheduling algorithms
-        self.scheduler.setup()
-
-        # Reset counters for an experiment
-        self.logger.setup()
-
-        # Simulation loop
-        while self.waiting_queue != [] or self.execution_list != []:
-            self.step()
-
