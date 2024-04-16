@@ -1,6 +1,6 @@
 import plotly.graph_objects as go
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-from multiprocessing import Manager
+from multiprocessing import Manager, Queue, set_start_method
 from cProfile import Profile
 import os
 import sys
@@ -12,10 +12,13 @@ sys.path.append(os.path.abspath(os.path.join(
 from realsim.cluster.exhaustive import ClusterExhaustive
 from realsim.logger.logger import Logger
 
+set_start_method('fork')
 
 def run_sim(core):
 
-    cluster, scheduler, logger, comm_queue = core
+    global comm_queue
+
+    cluster, scheduler, logger = core
 
     cluster.setup()
     scheduler.setup()
@@ -26,8 +29,10 @@ def run_sim(core):
     while cluster.preloaded_queue != [] or cluster.waiting_queue != [] or cluster.execution_list != []:
         cluster.step()
 
+    # Get from communication queue the default scheduler's associated cluster
+    # makespan and logger. Block until it is served
     default_list = comm_queue.get()
-    comm_queue.put(default_list)
+    # comm_queue.put(default_list)
 
     print(scheduler.name, id(default_list), default_list)
 
@@ -67,6 +72,9 @@ class Simulation:
     the the waiting queue of a cluster.
     """
 
+    global comm_queue
+    comm_queue = Queue(maxsize=1)
+
     def __init__(self, 
                  # generator bundle
                  jobs_set,
@@ -78,9 +86,6 @@ class Simulation:
         self.num_of_jobs = len(jobs_set)
         self.default = "Default Scheduler"
         self.executor = ProcessPoolExecutor()
-
-        self.manager = Manager()
-        self.comm_queue = self.manager.Queue(maxsize=1)
 
         self.sims = dict()
         self.futures = dict()
@@ -114,8 +119,7 @@ class Simulation:
             # Record of a simulation
             self.sims[scheduler.name] = (cluster, 
                                          scheduler, 
-                                         logger, 
-                                         self.comm_queue)
+                                         logger)
 
     def set_default(self, name):
         # Set name for default scheduling algorithm
@@ -140,8 +144,8 @@ class Simulation:
 
         print("DEFAULT FINISHED")
 
-        # Submit to the shared list the results
-        self.comm_queue.put([self.default_cluster.makespan, self.default_logger])
+        # Feed the makespan and logger to the worker processes
+        comm_queue.put([self.default_cluster.makespan, self.default_logger])
 
         # Set results for default scheduler
         data = {
