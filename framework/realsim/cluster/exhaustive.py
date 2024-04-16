@@ -65,6 +65,9 @@ class ClusterExhaustive(AbstractCluster):
 
             for job in execution_unit:
 
+                if type(job) != EmptyJob and job.speedup > job.get_max_speedup():
+                    print(execution_unit)
+
                 if type(job) != EmptyJob:
                     job.remaining_time -= min_rem_time
                     if job.remaining_time == 0:

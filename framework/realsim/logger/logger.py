@@ -453,7 +453,7 @@ class Logger(object):
             for _, timeline in their_history[job_key].items():
                 their_job_times.extend(timeline)
 
-            print(job_key, their_job_times, our_job_times)
+            # print(job_key, their_job_times, our_job_times)
             # Utilization numbers
             job_points = {
                     "speedup": (max(their_job_times) - min(their_job_times)) / (max(our_job_times) - min(our_job_times)),
