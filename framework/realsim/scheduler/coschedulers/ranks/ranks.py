@@ -22,6 +22,7 @@ class RanksCoscheduler(Coscheduler, ABC):
 
     def __init__(self, 
                  threshold: float = 1, 
+                 system_utilization: float = 1,
                  engine: Optional[ScikitModel] = None,
                  ranks_threshold: float = 1):
 
@@ -36,7 +37,10 @@ class RanksCoscheduler(Coscheduler, ABC):
 
         self.ranks : dict[int, int] = dict() # jobId --> good pairings
         self.ranks_threshold = ranks_threshold
-        Coscheduler.__init__(self, threshold=threshold, engine=engine)
+        Coscheduler.__init__(self, 
+                             threshold=threshold, 
+                             system_utilization=system_utilization,
+                             engine=engine)
 
     def update_ranks(self):
 
@@ -53,7 +57,7 @@ class RanksCoscheduler(Coscheduler, ABC):
                 if job_speedup is None or co_job_speedup is None:
                     continue
 
-                avg_speedup = avg([job_speedup, co_job_speedup])
+                avg_speedup = (job_speedup + co_job_speedup) / 2
 
                 if avg_speedup > self.ranks_threshold:
                     self.ranks[job.job_id] += 1
@@ -76,9 +80,9 @@ class RanksCoscheduler(Coscheduler, ABC):
 
         # Deploy any job that has 0 ranking in compact allocation policy
         for job in waiting_queue:
-            if self.ranks[job.job_id] == 0 and self.cluster.full_node_cores(job) <= self.cluster.free_cores:
+            if self.ranks[job.job_id] == 0 and job.full_node_cores <= self.cluster.free_cores:
 
-                        job.binded_cores = self.cluster.full_node_cores(job)
+                        job.binded_cores = job.full_node_cores
 
                         # Deployment!
                         deploying_list.append([job])
@@ -109,6 +113,9 @@ class RanksCoscheduler(Coscheduler, ABC):
 
         # Call after-processing method for deployment for each xunit
         map(lambda xunit: self.after_deployment(xunit), deploying_list)
+
+        # Spread scheduling of waiting jobs
+        self.deploying_as_spread(deploying_list)
 
         # Co-scheduling waiting jobs with nonfilled executing units
         self.deploying_to_xunits(deploying_list)

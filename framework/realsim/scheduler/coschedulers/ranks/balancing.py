@@ -27,6 +27,7 @@ class BalancingRanksCoscheduler(RanksCoscheduler):
 
     def __init__(self, 
                  threshold: float = 1, 
+                 system_utilization: float = 1,
                  engine: Optional[ScikitModel] = None, 
                  ranks_threshold: float = 1):
         self.ll_avg_speedup = 0
@@ -34,6 +35,7 @@ class BalancingRanksCoscheduler(RanksCoscheduler):
         self.fragmentation = 0
         RanksCoscheduler.__init__(self, 
                                   threshold=threshold, 
+                                  system_utilization=system_utilization,
                                   engine=engine,
                                   ranks_threshold=ranks_threshold)
 
@@ -50,7 +52,7 @@ class BalancingRanksCoscheduler(RanksCoscheduler):
         rank_r = rank / len(self.cluster.waiting_queue)
 
         # Needed cores by the job
-        needed_cores = self.cluster.half_node_cores(job)
+        needed_cores = job.half_node_cores
         # cores ratio
         cores_r = needed_cores / largest_job.binded_cores
         # fragmentation ratio
@@ -68,7 +70,7 @@ class BalancingRanksCoscheduler(RanksCoscheduler):
         else:
             speedup_r = avg_speedup
 
-        return rank_r * speedup_r * frag_r
+        return float(rank_r * speedup_r * frag_r)
 
     def waiting_queue_order(self, job: Job) -> float:
 
@@ -87,7 +89,7 @@ class BalancingRanksCoscheduler(RanksCoscheduler):
         rank_r = rank / len(self.cluster.waiting_queue)
 
         # Needed cores by the job
-        needed_cores = self.cluster.half_node_cores(co_job)
+        needed_cores = co_job.half_node_cores
         # cores ratio
         cores_r = needed_cores / job.binded_cores
         # fragmentation ratio
@@ -105,7 +107,7 @@ class BalancingRanksCoscheduler(RanksCoscheduler):
         else:
             speedup_r = avg_speedup
 
-        return rank_r * speedup_r * frag_r
+        return float(rank_r * speedup_r * frag_r)
 
     def xunit_avg_speedup(self, xunit: list[Job]) -> float:
         return float(avg([job.speedup for job in xunit]))
