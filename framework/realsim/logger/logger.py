@@ -242,47 +242,49 @@ class Logger(object):
             current_cojob_key = first_trace[CJ_KEY]
             current_starting_time = first_trace[START]
 
-            if len(traces) > 1:
+            # Initialize historical data
+            historical_data[job_key].update({
 
-                # If there are many traces recorded then visit all of them to
-                # create the history of the job
+                current_cojob_key: 
+                [
+                    [current_starting_time, first_trace[END]]
+                ]
 
-                for trace in traces[1:]:
+            })
 
-                    # If the co-scheduled job(s) changed then record the history
-                    # with the previous job and move on to the next jobs
-                    if current_cojob_key != trace[CJ_KEY]:
+            for trace in traces:
 
-                        # The starting time of the current trace is the ending
-                        # time of the previous cojob key co-execution
+                # If the co-scheduled job(s) changed then record the history
+                # with the previous job and move on to the next jobs
+                if current_cojob_key != trace[CJ_KEY]:
+
+                    # Set end time for the previouse co-job key
+                    historical_data[job_key][current_cojob_key][-1][-1] = trace[START]
+                    
+                    # Set the current cojob key and starting time
+                    current_cojob_key = trace[CJ_KEY]
+                    current_starting_time = trace[START]
+
+                    # If the newly found co-job key already exists then create a
+                    # new list
+                    if current_cojob_key in historical_data[job_key]:
+                        historical_data[job_key][current_cojob_key].append([
+                            current_starting_time, trace[END]
+                        ])
+                    # Else create a new record for the new co-job key
+                    else:
                         historical_data[job_key].update({
 
                             current_cojob_key: 
-                            [current_starting_time, trace[START]]
+                            [
+                                [current_starting_time, first_trace[END]]
+                            ]
 
                         })
 
-                        # Set the current cojob key and starting time
-                        current_cojob_key = trace[CJ_KEY]
-                        current_starting_time = trace[START]
 
-                    # Update the historical data for the current cojob key and
-                    # starting and end time even if there wasn't any change in
-                    # their values. This way even if we reach the end of the
-                    # job's lifecycle without any changes in the co-execution
-                    # context, we will get the true 'end time' rather than None.
-                    historical_data[job_key].update({
-                        current_cojob_key: [current_starting_time, trace[END]]
-                    })
-
-            else:
-
-                # If there is only one trace recorded then the job was short
-                # lived between checkpoints and this one trace contains each
-                # whole history
-                historical_data[job_key].update({
-                    current_cojob_key: [current_starting_time, first_trace[END]]
-                })
+            # Get the end time from last trace
+            historical_data[job_key][current_cojob_key][-1][-1] = traces[-1][END]
 
         return historical_data
 
@@ -308,92 +310,94 @@ class Logger(object):
         traces = list()
         for idx, [job_key, job_history] in enumerate(history_trace.items()):
 
-            for cojob_key, times in job_history.items():
+            for cojob_key, list_times in job_history.items():
 
-                job_cores = self.job_events[job_key]["cores"][cojob_key]
+                for times in list_times:
 
-                # Calculate unused cores from an xunit
-                unused_cores = 0
-                if cojob_key != "spread" and cojob_key != "compact":
-                    
-                    lesser_cores = sum([
-                        self.job_events[cj_key]["cores"][job_key]
-                        for cj_key in cojob_key.split("|")
-                        if job_key in self.job_events[cj_key]["cores"].keys()
-                    ])
+                    job_cores = self.job_events[job_key]["cores"][cojob_key]
 
-                    # We only show unused cores for the big job so as to not
-                    # duplicate their value in the graph
-                    if lesser_cores > 0 and lesser_cores < job_cores:
-                        unused_cores = job_cores - lesser_cores
+                    # Calculate unused cores from an xunit
+                    unused_cores = 0
+                    if cojob_key != "spread" and cojob_key != "compact":
+                        
+                        lesser_cores = sum([
+                            self.job_events[cj_key]["cores"][job_key]
+                            for cj_key in cojob_key.split("|")
+                            if job_key in self.job_events[cj_key]["cores"].keys()
+                        ])
 
-                elif cojob_key == "spread":
-                    unused_cores = job_cores
+                        # We only show unused cores for the big job so as to not
+                        # duplicate their value in the graph
+                        if lesser_cores > 0 and lesser_cores < job_cores:
+                            unused_cores = job_cores - lesser_cores
 
-                # The position of each box on the x-axis (time axis)
-                xs = [
-                    checks[i] + intervals[i] / 2
-                    # We don't care about the last checkpoint because all jobs
-                    # have finished by that time
-                    for i, time in enumerate(checks[:len(checks)])
-                    if time >= times[0] and time < times[1]
-                ]
+                    elif cojob_key == "spread":
+                        unused_cores = job_cores
 
-                # The width of each box
-                ws = [
-                    intervals[i]
-                    for i, time in enumerate(checks[:len(checks)])
-                    if time >= times[0] and time < times[1]
-                ]
+                    # The position of each box on the x-axis (time axis)
+                    xs = [
+                        checks[i] + intervals[i] / 2
+                        # We don't care about the last checkpoint because all jobs
+                        # have finished by that time
+                        for i, time in enumerate(checks[:len(checks)])
+                        if time >= times[0] and time < times[1]
+                    ]
 
-                # The height of each box
-                ys = [job_cores] * len(xs)
+                    # The width of each box
+                    ws = [
+                        intervals[i]
+                        for i, time in enumerate(checks[:len(checks)])
+                        if time >= times[0] and time < times[1]
+                    ]
 
-                # The label on top of the box
-                if cojob_key == "compact":
-                    text = f"<b>{job_key}<br>[{cojob_key}]</b><br>nodes = {int(job_cores / self.cluster.cores_per_node)}"
-                else:
-                    text = f"<b>{job_key}<br>[{cojob_key}]</b><br>nodes = {int(2 * job_cores / self.cluster.cores_per_node)}"
+                    # The height of each box
+                    ys = [job_cores] * len(xs)
 
-                # Add the box to the plot
-                traces.append(
-                        go.Bar(
-                            x=xs,
-                            y=ys,
-                            width=ws,
-                            name=f"{job_key}_{cojob_key}",
-                            text=text,
-                            insidetextanchor="middle",
-                            marker_line=dict(width=2, color="black"),
-                            marker=dict(
-                                color=jcolors[idx]
-                            )
-                        )
-                )
+                    # The label on top of the box
+                    if cojob_key == "compact":
+                        text = f"<b>{job_key}<br>[{cojob_key}]</b><br>nodes = {int(job_cores / self.cluster.cores_per_node)}"
+                    else:
+                        text = f"<b>{job_key}<br>[{cojob_key}]</b><br>nodes = {int(2 * job_cores / self.cluster.cores_per_node)}"
 
-                # If there are unused cores inside the xunit then show them
-                if unused_cores > 0:
-
+                    # Add the box to the plot
                     traces.append(
                             go.Bar(
                                 x=xs,
-                                y=[unused_cores] * len(xs),
+                                y=ys,
                                 width=ws,
-                                name=f"{job_key.split(':')[0]}:unused",
-                                text="",
+                                name=f"{job_key}_{cojob_key}",
+                                text=text,
                                 insidetextanchor="middle",
-                                marker_line=dict(width=2, color=jcolors[idx]),
+                                marker_line=dict(width=2, color="black"),
                                 marker=dict(
-                                    color=jcolors[idx],
-                                    pattern=dict(
-                                        fillmode="replace",
-                                        shape="x",
-                                        size=6,
-                                        solidity=0.7
-                                    )
-                                ),
+                                    color=jcolors[idx]
+                                )
                             )
                     )
+
+                    # If there are unused cores inside the xunit then show them
+                    if unused_cores > 0:
+
+                        traces.append(
+                                go.Bar(
+                                    x=xs,
+                                    y=[unused_cores] * len(xs),
+                                    width=ws,
+                                    name=f"{job_key.split(':')[0]}:unused",
+                                    text="",
+                                    insidetextanchor="middle",
+                                    marker_line=dict(width=2, color=jcolors[idx]),
+                                    marker=dict(
+                                        color=jcolors[idx],
+                                        pattern=dict(
+                                            fillmode="replace",
+                                            shape="x",
+                                            size=6,
+                                            solidity=0.7
+                                        )
+                                    ),
+                                )
+                        )
 
         # Create figure with the box resource usage
         fig = go.Figure(data=traces)
@@ -446,14 +450,15 @@ class Logger(object):
             # Get all the times in our job_key
             our_job_times = list()
             for _, trace in our_history[job_key].items():
-                our_job_times.extend(trace)
+                for times in trace:
+                    our_job_times.extend(times)
 
             # Get all the times in their job_key
             their_job_times = list()
-            for _, timeline in their_history[job_key].items():
-                their_job_times.extend(timeline)
+            for _, trace in their_history[job_key].items():
+                for times in trace:
+                    their_job_times.extend(times)
 
-            # print(job_key, their_job_times, our_job_times)
             # Utilization numbers
             job_points = {
                     "speedup": (max(their_job_times) - min(their_job_times)) / (max(our_job_times) - min(our_job_times)),

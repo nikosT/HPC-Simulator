@@ -29,8 +29,6 @@ def run_sim(core):
     default_list = comm_queue.get()
     comm_queue.put(default_list)
 
-    print(scheduler.name, id(default_list), default_list)
-
     # When finished then use the default logger to get per job utilization
     # results
     default_cluster_makespan = default_list[0]
@@ -138,10 +136,14 @@ class Simulation:
         while self.default_cluster.preloaded_queue != [] or self.default_cluster.waiting_queue != [] or self.default_cluster.execution_list != []:
             self.default_cluster.step()
 
-        print("DEFAULT FINISHED")
-
         # Submit to the shared list the results
         self.comm_queue.put([self.default_cluster.makespan, self.default_logger])
+
+        # Wait until all the futures are complete
+        self.executor.shutdown(wait=True)
+
+
+    def get_results(self):
 
         # Set results for default scheduler
         data = {
@@ -151,12 +153,6 @@ class Simulation:
         }
 
         self.results[self.default] = data
-
-        # Wait until all the futures are complete
-        self.executor.shutdown(wait=True)
-
-
-    def get_results(self):
 
         for policy, future in self.futures.items():
 
