@@ -19,7 +19,10 @@ cdef class AbstractGenerator:
         self.description = "Abstract base class for all generators"
         self.load_manager = load_manager
 
-    cdef Job generate_job(self, int idx, load: Load):
+    cdef Job generate_job(self, int idx, string load_name):
+
+        # Get python object Load
+        load = self.load_manager(load_name)
 
         cdef string name
         cdef double speedup
@@ -28,7 +31,7 @@ cdef class AbstractGenerator:
         for coload_name in load.coloads:
             
             name = <string>coload_name
-            speedup = <double>(self.load_manager(load.full_load_name).get_median_speedup( coload_name ))
+            speedup = <double>(load.get_median_speedup( coload_name ))
 
             speedups_map[name] = speedup
 

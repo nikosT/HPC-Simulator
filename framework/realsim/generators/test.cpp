@@ -1548,7 +1548,7 @@ struct __pyx_obj_9randomgen_RandomGenerator {
  */
 
 struct __pyx_vtabstruct_11abstractgen_AbstractGenerator {
-  Job (*generate_job)(struct __pyx_obj_11abstractgen_AbstractGenerator *, int, PyObject *);
+  Job (*generate_job)(struct __pyx_obj_11abstractgen_AbstractGenerator *, int, std::string);
 };
 static struct __pyx_vtabstruct_11abstractgen_AbstractGenerator *__pyx_vtabptr_11abstractgen_AbstractGenerator;
 
@@ -2008,6 +2008,7 @@ static CYTHON_INLINE PyObject *__pyx_convert_PyUnicode_string_to_py_6libcpp_6str
 static CYTHON_INLINE PyObject *__pyx_convert_PyStr_string_to_py_6libcpp_6string_std__in_string(std::string const &); /*proto*/
 static CYTHON_INLINE PyObject *__pyx_convert_PyBytes_string_to_py_6libcpp_6string_std__in_string(std::string const &); /*proto*/
 static CYTHON_INLINE PyObject *__pyx_convert_PyByteArray_string_to_py_6libcpp_6string_std__in_string(std::string const &); /*proto*/
+static PyObject *__pyx_convert_unordered_map_to_py_std_3a__3a_string____double(std::unordered_map<std::string,double>  const &); /*proto*/
 /* #### Code section: typeinfo ### */
 /* #### Code section: before_global_var ### */
 #define __Pyx_MODULE_NAME "test"
@@ -2599,6 +2600,127 @@ static CYTHON_INLINE PyObject *__pyx_convert_PyByteArray_string_to_py_6libcpp_6s
   __Pyx_AddTraceback("string.to_py.__pyx_convert_PyByteArray_string_to_py_6libcpp_6string_std__in_string", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = 0;
   __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "map.to_py":237
+ * 
+ * @cname("__pyx_convert_unordered_map_to_py_std_3a__3a_string____double")
+ * cdef object __pyx_convert_unordered_map_to_py_std_3a__3a_string____double(const map[X,Y]& s):             # <<<<<<<<<<<<<<
+ *     o = {}
+ *     cdef const map[X,Y].value_type *key_value
+ */
+
+static PyObject *__pyx_convert_unordered_map_to_py_std_3a__3a_string____double(std::unordered_map<std::string,double>  const &__pyx_v_s) {
+  PyObject *__pyx_v_o = NULL;
+  std::unordered_map<std::string,double> ::value_type const *__pyx_v_key_value;
+  std::unordered_map<std::string,double> ::const_iterator __pyx_v_iter;
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_t_2;
+  PyObject *__pyx_t_3 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("__pyx_convert_unordered_map_to_py_std_3a__3a_string____double", 1);
+
+  /* "map.to_py":238
+ * @cname("__pyx_convert_unordered_map_to_py_std_3a__3a_string____double")
+ * cdef object __pyx_convert_unordered_map_to_py_std_3a__3a_string____double(const map[X,Y]& s):
+ *     o = {}             # <<<<<<<<<<<<<<
+ *     cdef const map[X,Y].value_type *key_value
+ *     cdef map[X,Y].const_iterator iter = s.begin()
+ */
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 238, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_v_o = ((PyObject*)__pyx_t_1);
+  __pyx_t_1 = 0;
+
+  /* "map.to_py":240
+ *     o = {}
+ *     cdef const map[X,Y].value_type *key_value
+ *     cdef map[X,Y].const_iterator iter = s.begin()             # <<<<<<<<<<<<<<
+ *     while iter != s.end():
+ *         key_value = &cython.operator.dereference(iter)
+ */
+  __pyx_v_iter = __pyx_v_s.begin();
+
+  /* "map.to_py":241
+ *     cdef const map[X,Y].value_type *key_value
+ *     cdef map[X,Y].const_iterator iter = s.begin()
+ *     while iter != s.end():             # <<<<<<<<<<<<<<
+ *         key_value = &cython.operator.dereference(iter)
+ *         o[key_value.first] = key_value.second
+ */
+  while (1) {
+    __pyx_t_2 = (__pyx_v_iter != __pyx_v_s.end());
+    if (!__pyx_t_2) break;
+
+    /* "map.to_py":242
+ *     cdef map[X,Y].const_iterator iter = s.begin()
+ *     while iter != s.end():
+ *         key_value = &cython.operator.dereference(iter)             # <<<<<<<<<<<<<<
+ *         o[key_value.first] = key_value.second
+ *         cython.operator.preincrement(iter)
+ */
+    __pyx_v_key_value = (&(*__pyx_v_iter));
+
+    /* "map.to_py":243
+ *     while iter != s.end():
+ *         key_value = &cython.operator.dereference(iter)
+ *         o[key_value.first] = key_value.second             # <<<<<<<<<<<<<<
+ *         cython.operator.preincrement(iter)
+ *     return o
+ */
+    __pyx_t_1 = PyFloat_FromDouble(__pyx_v_key_value->second); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 243, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __pyx_t_3 = __pyx_convert_PyBytes_string_to_py_6libcpp_6string_std__in_string(__pyx_v_key_value->first); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 243, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    if (unlikely((PyDict_SetItem(__pyx_v_o, __pyx_t_3, __pyx_t_1) < 0))) __PYX_ERR(1, 243, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+    /* "map.to_py":244
+ *         key_value = &cython.operator.dereference(iter)
+ *         o[key_value.first] = key_value.second
+ *         cython.operator.preincrement(iter)             # <<<<<<<<<<<<<<
+ *     return o
+ * 
+ */
+    (void)((++__pyx_v_iter));
+  }
+
+  /* "map.to_py":245
+ *         o[key_value.first] = key_value.second
+ *         cython.operator.preincrement(iter)
+ *     return o             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __Pyx_XDECREF(__pyx_r);
+  __Pyx_INCREF(__pyx_v_o);
+  __pyx_r = __pyx_v_o;
+  goto __pyx_L0;
+
+  /* "map.to_py":237
+ * 
+ * @cname("__pyx_convert_unordered_map_to_py_std_3a__3a_string____double")
+ * cdef object __pyx_convert_unordered_map_to_py_std_3a__3a_string____double(const map[X,Y]& s):             # <<<<<<<<<<<<<<
+ *     o = {}
+ *     cdef const map[X,Y].value_type *key_value
+ */
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_AddTraceback("map.to_py.__pyx_convert_unordered_map_to_py_std_3a__3a_string____double", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = 0;
+  __pyx_L0:;
+  __Pyx_XDECREF(__pyx_v_o);
   __Pyx_XGIVEREF(__pyx_r);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
@@ -3267,7 +3389,7 @@ if (!__Pyx_RefNanny) {
  * cdef vector[Job].iterator it = res.begin()
  * 
  * while it != res.end():             # <<<<<<<<<<<<<<
- *     print(deref(it).job_name)
+ *     print(deref(it).speedups_map)
  *     it += 1
  */
   while (1) {
@@ -3277,10 +3399,10 @@ if (!__Pyx_RefNanny) {
     /* "test.pyx":20
  * 
  * while it != res.end():
- *     print(deref(it).job_name)             # <<<<<<<<<<<<<<
+ *     print(deref(it).speedups_map)             # <<<<<<<<<<<<<<
  *     it += 1
  */
-    __pyx_t_6 = __pyx_convert_PyBytes_string_to_py_6libcpp_6string_std__in_string((*__pyx_v_4test_it).job_name); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 20, __pyx_L1_error)
+    __pyx_t_6 = __pyx_convert_unordered_map_to_py_std_3a__3a_string____double((*__pyx_v_4test_it).speedups_map); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 20, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __pyx_t_7 = __Pyx_PyObject_CallOneArg(__pyx_builtin_print, __pyx_t_6); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 20, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
@@ -3289,7 +3411,7 @@ if (!__Pyx_RefNanny) {
 
     /* "test.pyx":21
  * while it != res.end():
- *     print(deref(it).job_name)
+ *     print(deref(it).speedups_map)
  *     it += 1             # <<<<<<<<<<<<<<
  */
     __pyx_v_4test_it += 1;

@@ -5,4 +5,4 @@ cdef class AbstractGenerator:
     cdef string name
     cdef string description
     cdef object load_manager
-    cdef Job generate_job(self, int idx, load: Load)
+    cdef Job generate_job(self, int idx, string load_name)

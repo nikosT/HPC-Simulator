@@ -21,6 +21,12 @@ cdef extern from "lib/Job.hpp":
         double waiting_time;
         double wall_time;
 
+        unordered_map[string, double] speedups_map;
+        double current_speedup;
+        double max_coscheduled_speedup;
+        double overall_coscheduled_speedup;
+
+
         Job() except +
         Job(unordered_map[string, double], int, string, long, long, double, double, double, double) except +
 

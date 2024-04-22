@@ -6,4 +6,4 @@ from job cimport Job
 
 
 cdef class DictionaryGenerator(AbstractGenerator):
-    cdef vector[Job] generate_jobs_set(self, unordered_map[string, int])
+    cdef vector[Job] generate_jobs_set(self, unordered_map[string, int]& arg)

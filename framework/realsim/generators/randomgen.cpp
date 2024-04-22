@@ -1256,11 +1256,11 @@ typedef struct {PyObject **p; const char *s; const Py_ssize_t n; const char* enc
                 const char is_unicode; const char is_str; const char intern; } __Pyx_StringTabEntry;
 
 #define __PYX_DEFAULT_STRING_ENCODING_IS_ASCII 0
-#define __PYX_DEFAULT_STRING_ENCODING_IS_UTF8 0
+#define __PYX_DEFAULT_STRING_ENCODING_IS_UTF8 1
 #define __PYX_DEFAULT_STRING_ENCODING_IS_DEFAULT (PY_MAJOR_VERSION >= 3 && __PYX_DEFAULT_STRING_ENCODING_IS_UTF8)
-#define __PYX_DEFAULT_STRING_ENCODING ""
-#define __Pyx_PyObject_FromString __Pyx_PyBytes_FromString
-#define __Pyx_PyObject_FromStringAndSize __Pyx_PyBytes_FromStringAndSize
+#define __PYX_DEFAULT_STRING_ENCODING "utf8"
+#define __Pyx_PyObject_FromString __Pyx_PyUnicode_FromString
+#define __Pyx_PyObject_FromStringAndSize __Pyx_PyUnicode_FromStringAndSize
 #define __Pyx_uchar_cast(c) ((unsigned char)c)
 #define __Pyx_long_cast(x) ((long)x)
 #define __Pyx_fits_Py_ssize_t(v, type, is_signed)  (\
@@ -1537,7 +1537,7 @@ struct __pyx_obj_9randomgen_RandomGenerator {
 };
 
 
-/* "randomgen.pyx":14
+/* "randomgen.pyx":17
  *         AbstractGenerator.__init__(self, load_manager=load_manager)
  * 
  *     cdef vector[Job] generate_jobs_set(self, int arg):             # <<<<<<<<<<<<<<
@@ -1547,7 +1547,6 @@ struct __pyx_obj_9randomgen_RandomGenerator {
 struct __pyx_obj_9randomgen___pyx_scope_struct__generate_jobs_set {
   PyObject_HEAD
   PyObject *__pyx_v_keys;
-  struct __pyx_obj_9randomgen_RandomGenerator *__pyx_v_self;
 };
 
 
@@ -1561,12 +1560,12 @@ struct __pyx_obj_9randomgen___pyx_scope_struct__generate_jobs_set {
  */
 
 struct __pyx_vtabstruct_11abstractgen_AbstractGenerator {
-  Job (*generate_job)(struct __pyx_obj_11abstractgen_AbstractGenerator *, int, PyObject *);
+  Job (*generate_job)(struct __pyx_obj_11abstractgen_AbstractGenerator *, int, std::string);
 };
 static struct __pyx_vtabstruct_11abstractgen_AbstractGenerator *__pyx_vtabptr_11abstractgen_AbstractGenerator;
 
 
-/* "randomgen.pyx":7
+/* "randomgen.pyx":10
  * cimport randomgen
  * 
  * cdef class RandomGenerator(AbstractGenerator):             # <<<<<<<<<<<<<<
@@ -2382,7 +2381,7 @@ static const char __pyx_k_high[] = "high";
 static const char __pyx_k_init[] = "__init__";
 static const char __pyx_k_keys[] = "keys";
 static const char __pyx_k_main[] = "__main__";
-static const char __pyx_k_name[] = "name";
+static const char __pyx_k_name[] = "__name__";
 static const char __pyx_k_seed[] = "seed";
 static const char __pyx_k_self[] = "self";
 static const char __pyx_k_size[] = "size";
@@ -2393,7 +2392,6 @@ static const char __pyx_k_state[] = "state";
 static const char __pyx_k_dict_2[] = "_dict";
 static const char __pyx_k_enable[] = "enable";
 static const char __pyx_k_import[] = "__import__";
-static const char __pyx_k_name_2[] = "__name__";
 static const char __pyx_k_pickle[] = "pickle";
 static const char __pyx_k_reduce[] = "__reduce__";
 static const char __pyx_k_update[] = "update";
@@ -2435,7 +2433,6 @@ static const char __pyx_k_RandomGenerator_generate_jobs_se[] = "RandomGenerator.
 /* #### Code section: decls ### */
 static int __pyx_pf_9randomgen_15RandomGenerator___init__(struct __pyx_obj_9randomgen_RandomGenerator *__pyx_v_self, PyObject *__pyx_v_load_manager); /* proto */
 static PyObject *__pyx_lambda_funcdef_lambda(PyObject *__pyx_self, PyObject *__pyx_v_i); /* proto */
-static PyObject *__pyx_lambda_funcdef_lambda1(PyObject *__pyx_self, PyObject *__pyx_v_name); /* proto */
 static PyObject *__pyx_pf_9randomgen_15RandomGenerator_2__reduce_cython__(struct __pyx_obj_9randomgen_RandomGenerator *__pyx_v_self); /* proto */
 static PyObject *__pyx_pf_9randomgen_15RandomGenerator_4__setstate_cython__(struct __pyx_obj_9randomgen_RandomGenerator *__pyx_v_self, PyObject *__pyx_v___pyx_state); /* proto */
 static PyObject *__pyx_pf_9randomgen___pyx_unpickle_RandomGenerator(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v___pyx_type, long __pyx_v___pyx_checksum, PyObject *__pyx_v___pyx_state); /* proto */
@@ -2524,7 +2521,6 @@ typedef struct {
   PyObject *__pyx_n_s_main;
   PyObject *__pyx_n_s_map;
   PyObject *__pyx_n_s_name;
-  PyObject *__pyx_n_s_name_2;
   PyObject *__pyx_n_s_new;
   PyObject *__pyx_n_s_numpy_random;
   PyObject *__pyx_n_s_pickle;
@@ -2646,7 +2642,6 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_main);
   Py_CLEAR(clear_module_state->__pyx_n_s_map);
   Py_CLEAR(clear_module_state->__pyx_n_s_name);
-  Py_CLEAR(clear_module_state->__pyx_n_s_name_2);
   Py_CLEAR(clear_module_state->__pyx_n_s_new);
   Py_CLEAR(clear_module_state->__pyx_n_s_numpy_random);
   Py_CLEAR(clear_module_state->__pyx_n_s_pickle);
@@ -2746,7 +2741,6 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_main);
   Py_VISIT(traverse_module_state->__pyx_n_s_map);
   Py_VISIT(traverse_module_state->__pyx_n_s_name);
-  Py_VISIT(traverse_module_state->__pyx_n_s_name_2);
   Py_VISIT(traverse_module_state->__pyx_n_s_new);
   Py_VISIT(traverse_module_state->__pyx_n_s_numpy_random);
   Py_VISIT(traverse_module_state->__pyx_n_s_pickle);
@@ -2872,7 +2866,6 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_main __pyx_mstate_global->__pyx_n_s_main
 #define __pyx_n_s_map __pyx_mstate_global->__pyx_n_s_map
 #define __pyx_n_s_name __pyx_mstate_global->__pyx_n_s_name
-#define __pyx_n_s_name_2 __pyx_mstate_global->__pyx_n_s_name_2
 #define __pyx_n_s_new __pyx_mstate_global->__pyx_n_s_new
 #define __pyx_n_s_numpy_random __pyx_mstate_global->__pyx_n_s_numpy_random
 #define __pyx_n_s_pickle __pyx_mstate_global->__pyx_n_s_pickle
@@ -3234,7 +3227,7 @@ static std::string __pyx_convert_string_from_py_6libcpp_6string_std__in_string(P
   return __pyx_r;
 }
 
-/* "randomgen.pyx":9
+/* "randomgen.pyx":12
  * cdef class RandomGenerator(AbstractGenerator):
  * 
  *     def __init__(self, object load_manager):             # <<<<<<<<<<<<<<
@@ -3278,12 +3271,12 @@ static int __pyx_pw_9randomgen_15RandomGenerator_1__init__(PyObject *__pyx_v_sel
           (void)__Pyx_Arg_NewRef_VARARGS(values[0]);
           kw_args--;
         }
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 9, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 12, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "__init__") < 0)) __PYX_ERR(0, 9, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "__init__") < 0)) __PYX_ERR(0, 12, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 1)) {
       goto __pyx_L5_argtuple_error;
@@ -3294,7 +3287,7 @@ static int __pyx_pw_9randomgen_15RandomGenerator_1__init__(PyObject *__pyx_v_sel
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__init__", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 9, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__init__", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 12, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -3334,51 +3327,51 @@ static int __pyx_pf_9randomgen_15RandomGenerator___init__(struct __pyx_obj_9rand
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__init__", 1);
 
-  /* "randomgen.pyx":10
+  /* "randomgen.pyx":13
  * 
  *     def __init__(self, object load_manager):
  *         self.name = "Random Generator"             # <<<<<<<<<<<<<<
  *         self.description = "Generating random set of jobs from a specific LoadManager instance"
  *         AbstractGenerator.__init__(self, load_manager=load_manager)
  */
-  __pyx_t_1 = __pyx_convert_string_from_py_6libcpp_6string_std__in_string(__pyx_kp_b_Random_Generator); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 10, __pyx_L1_error)
+  __pyx_t_1 = __pyx_convert_string_from_py_6libcpp_6string_std__in_string(__pyx_kp_b_Random_Generator); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 13, __pyx_L1_error)
   __pyx_v_self->__pyx_base.name = __PYX_STD_MOVE_IF_SUPPORTED(__pyx_t_1);
 
-  /* "randomgen.pyx":11
+  /* "randomgen.pyx":14
  *     def __init__(self, object load_manager):
  *         self.name = "Random Generator"
  *         self.description = "Generating random set of jobs from a specific LoadManager instance"             # <<<<<<<<<<<<<<
  *         AbstractGenerator.__init__(self, load_manager=load_manager)
  * 
  */
-  __pyx_t_1 = __pyx_convert_string_from_py_6libcpp_6string_std__in_string(__pyx_kp_b_Generating_random_set_of_jobs_fr); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 11, __pyx_L1_error)
+  __pyx_t_1 = __pyx_convert_string_from_py_6libcpp_6string_std__in_string(__pyx_kp_b_Generating_random_set_of_jobs_fr); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 14, __pyx_L1_error)
   __pyx_v_self->__pyx_base.description = __PYX_STD_MOVE_IF_SUPPORTED(__pyx_t_1);
 
-  /* "randomgen.pyx":12
+  /* "randomgen.pyx":15
  *         self.name = "Random Generator"
  *         self.description = "Generating random set of jobs from a specific LoadManager instance"
  *         AbstractGenerator.__init__(self, load_manager=load_manager)             # <<<<<<<<<<<<<<
  * 
  *     cdef vector[Job] generate_jobs_set(self, int arg):
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_ptype_11abstractgen_AbstractGenerator), __pyx_n_s_init); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 12, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_ptype_11abstractgen_AbstractGenerator), __pyx_n_s_init); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 15, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 12, __pyx_L1_error)
+  __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 15, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_INCREF((PyObject *)__pyx_v_self);
   __Pyx_GIVEREF((PyObject *)__pyx_v_self);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_3, 0, ((PyObject *)__pyx_v_self))) __PYX_ERR(0, 12, __pyx_L1_error);
-  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 12, __pyx_L1_error)
+  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_3, 0, ((PyObject *)__pyx_v_self))) __PYX_ERR(0, 15, __pyx_L1_error);
+  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 15, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_load_manager, __pyx_v_load_manager) < 0) __PYX_ERR(0, 12, __pyx_L1_error)
-  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_3, __pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 12, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_load_manager, __pyx_v_load_manager) < 0) __PYX_ERR(0, 15, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_3, __pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 15, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-  /* "randomgen.pyx":9
+  /* "randomgen.pyx":12
  * cdef class RandomGenerator(AbstractGenerator):
  * 
  *     def __init__(self, object load_manager):             # <<<<<<<<<<<<<<
@@ -3401,12 +3394,12 @@ static int __pyx_pf_9randomgen_15RandomGenerator___init__(struct __pyx_obj_9rand
   return __pyx_r;
 }
 
-/* "randomgen.pyx":25
+/* "randomgen.pyx":28
  * 
  *         # Get the names of the loads
  *         names = list(map(lambda i: keys[i], ints))             # <<<<<<<<<<<<<<
- *         # Get the loads
- *         loads = list(map(lambda name: self.load_manager(name), names))
+ * 
+ *         cdef int idx
  */
 
 /* Python wrapper */
@@ -3462,12 +3455,12 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
           (void)__Pyx_Arg_NewRef_FASTCALL(values[0]);
           kw_args--;
         }
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 25, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 28, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "lambda") < 0)) __PYX_ERR(0, 25, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "lambda") < 0)) __PYX_ERR(0, 28, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 1)) {
       goto __pyx_L5_argtuple_error;
@@ -3478,7 +3471,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("lambda", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 25, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("lambda", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 28, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -3518,12 +3511,12 @@ static PyObject *__pyx_lambda_funcdef_lambda(PyObject *__pyx_self, PyObject *__p
   __pyx_outer_scope = (struct __pyx_obj_9randomgen___pyx_scope_struct__generate_jobs_set *) __Pyx_CyFunction_GetClosure(__pyx_self);
   __pyx_cur_scope = __pyx_outer_scope;
   __Pyx_XDECREF(__pyx_r);
-  if (unlikely(!__pyx_cur_scope->__pyx_v_keys)) { __Pyx_RaiseClosureNameError("keys"); __PYX_ERR(0, 25, __pyx_L1_error) }
+  if (unlikely(!__pyx_cur_scope->__pyx_v_keys)) { __Pyx_RaiseClosureNameError("keys"); __PYX_ERR(0, 28, __pyx_L1_error) }
   if (unlikely(__pyx_cur_scope->__pyx_v_keys == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 25, __pyx_L1_error)
+    __PYX_ERR(0, 28, __pyx_L1_error)
   }
-  __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_cur_scope->__pyx_v_keys, __pyx_v_i); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 25, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_cur_scope->__pyx_v_keys, __pyx_v_i); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 28, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -3540,168 +3533,7 @@ static PyObject *__pyx_lambda_funcdef_lambda(PyObject *__pyx_self, PyObject *__p
   return __pyx_r;
 }
 
-/* "randomgen.pyx":27
- *         names = list(map(lambda i: keys[i], ints))
- *         # Get the loads
- *         loads = list(map(lambda name: self.load_manager(name), names))             # <<<<<<<<<<<<<<
- * 
- *         cdef int idx
- */
-
-/* Python wrapper */
-static PyObject *__pyx_pw_9randomgen_15RandomGenerator_17generate_jobs_set_1lambda1(PyObject *__pyx_self, 
-#if CYTHON_METH_FASTCALL
-PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
-#else
-PyObject *__pyx_args, PyObject *__pyx_kwds
-#endif
-); /*proto*/
-static PyMethodDef __pyx_mdef_9randomgen_15RandomGenerator_17generate_jobs_set_1lambda1 = {"lambda1", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9randomgen_15RandomGenerator_17generate_jobs_set_1lambda1, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
-static PyObject *__pyx_pw_9randomgen_15RandomGenerator_17generate_jobs_set_1lambda1(PyObject *__pyx_self, 
-#if CYTHON_METH_FASTCALL
-PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
-#else
-PyObject *__pyx_args, PyObject *__pyx_kwds
-#endif
-) {
-  PyObject *__pyx_v_name = 0;
-  #if !CYTHON_METH_FASTCALL
-  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
-  #endif
-  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
-  PyObject* values[1] = {0};
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
-  PyObject *__pyx_r = 0;
-  __Pyx_RefNannyDeclarations
-  __Pyx_RefNannySetupContext("lambda1 (wrapper)", 0);
-  #if !CYTHON_METH_FASTCALL
-  #if CYTHON_ASSUME_SAFE_MACROS
-  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
-  #else
-  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
-  #endif
-  #endif
-  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
-  {
-    PyObject **__pyx_pyargnames[] = {&__pyx_n_s_name,0};
-    if (__pyx_kwds) {
-      Py_ssize_t kw_args;
-      switch (__pyx_nargs) {
-        case  1: values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
-        CYTHON_FALLTHROUGH;
-        case  0: break;
-        default: goto __pyx_L5_argtuple_error;
-      }
-      kw_args = __Pyx_NumKwargs_FASTCALL(__pyx_kwds);
-      switch (__pyx_nargs) {
-        case  0:
-        if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_name)) != 0)) {
-          (void)__Pyx_Arg_NewRef_FASTCALL(values[0]);
-          kw_args--;
-        }
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 27, __pyx_L3_error)
-        else goto __pyx_L5_argtuple_error;
-      }
-      if (unlikely(kw_args > 0)) {
-        const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "lambda1") < 0)) __PYX_ERR(0, 27, __pyx_L3_error)
-      }
-    } else if (unlikely(__pyx_nargs != 1)) {
-      goto __pyx_L5_argtuple_error;
-    } else {
-      values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
-    }
-    __pyx_v_name = values[0];
-  }
-  goto __pyx_L6_skip;
-  __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("lambda1", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 27, __pyx_L3_error)
-  __pyx_L6_skip:;
-  goto __pyx_L4_argument_unpacking_done;
-  __pyx_L3_error:;
-  {
-    Py_ssize_t __pyx_temp;
-    for (__pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
-      __Pyx_Arg_XDECREF_FASTCALL(values[__pyx_temp]);
-    }
-  }
-  __Pyx_AddTraceback("randomgen.RandomGenerator.generate_jobs_set.lambda1", __pyx_clineno, __pyx_lineno, __pyx_filename);
-  __Pyx_RefNannyFinishContext();
-  return NULL;
-  __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_lambda_funcdef_lambda1(__pyx_self, __pyx_v_name);
-
-  /* function exit code */
-  {
-    Py_ssize_t __pyx_temp;
-    for (__pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
-      __Pyx_Arg_XDECREF_FASTCALL(values[__pyx_temp]);
-    }
-  }
-  __Pyx_RefNannyFinishContext();
-  return __pyx_r;
-}
-
-static PyObject *__pyx_lambda_funcdef_lambda1(PyObject *__pyx_self, PyObject *__pyx_v_name) {
-  struct __pyx_obj_9randomgen___pyx_scope_struct__generate_jobs_set *__pyx_cur_scope;
-  struct __pyx_obj_9randomgen___pyx_scope_struct__generate_jobs_set *__pyx_outer_scope;
-  PyObject *__pyx_r = NULL;
-  __Pyx_RefNannyDeclarations
-  PyObject *__pyx_t_1 = NULL;
-  PyObject *__pyx_t_2 = NULL;
-  PyObject *__pyx_t_3 = NULL;
-  int __pyx_t_4;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
-  __Pyx_RefNannySetupContext("lambda1", 1);
-  __pyx_outer_scope = (struct __pyx_obj_9randomgen___pyx_scope_struct__generate_jobs_set *) __Pyx_CyFunction_GetClosure(__pyx_self);
-  __pyx_cur_scope = __pyx_outer_scope;
-  __Pyx_XDECREF(__pyx_r);
-  if (unlikely(!__pyx_cur_scope->__pyx_v_self)) { __Pyx_RaiseClosureNameError("self"); __PYX_ERR(0, 27, __pyx_L1_error) }
-  __Pyx_INCREF(__pyx_cur_scope->__pyx_v_self->__pyx_base.load_manager);
-  __pyx_t_2 = __pyx_cur_scope->__pyx_v_self->__pyx_base.load_manager; __pyx_t_3 = NULL;
-  __pyx_t_4 = 0;
-  #if CYTHON_UNPACK_METHODS
-  if (likely(PyMethod_Check(__pyx_t_2))) {
-    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_2);
-    if (likely(__pyx_t_3)) {
-      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
-      __Pyx_INCREF(__pyx_t_3);
-      __Pyx_INCREF(function);
-      __Pyx_DECREF_SET(__pyx_t_2, function);
-      __pyx_t_4 = 1;
-    }
-  }
-  #endif
-  {
-    PyObject *__pyx_callargs[2] = {__pyx_t_3, __pyx_v_name};
-    __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_4, 1+__pyx_t_4);
-    __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 27, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  }
-  __pyx_r = __pyx_t_1;
-  __pyx_t_1 = 0;
-  goto __pyx_L0;
-
-  /* function exit code */
-  __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_XDECREF(__pyx_t_2);
-  __Pyx_XDECREF(__pyx_t_3);
-  __Pyx_AddTraceback("randomgen.RandomGenerator.generate_jobs_set.lambda1", __pyx_clineno, __pyx_lineno, __pyx_filename);
-  __pyx_r = NULL;
-  __pyx_L0:;
-  __Pyx_XGIVEREF(__pyx_r);
-  __Pyx_RefNannyFinishContext();
-  return __pyx_r;
-}
-
-/* "randomgen.pyx":14
+/* "randomgen.pyx":17
  *         AbstractGenerator.__init__(self, load_manager=load_manager)
  * 
  *     cdef vector[Job] generate_jobs_set(self, int arg):             # <<<<<<<<<<<<<<
@@ -3713,11 +3545,10 @@ static std::vector<Job>  __pyx_f_9randomgen_15RandomGenerator_generate_jobs_set(
   struct __pyx_obj_9randomgen___pyx_scope_struct__generate_jobs_set *__pyx_cur_scope;
   PyObject *__pyx_v_ints = NULL;
   PyObject *__pyx_v_names = NULL;
-  PyObject *__pyx_v_loads = NULL;
   int __pyx_v_idx;
   std::vector<Job>  __pyx_v_jobs_set;
   PyObject *__pyx_v_i = NULL;
-  PyObject *__pyx_v_load = NULL;
+  PyObject *__pyx_v_load_name = NULL;
   std::vector<Job>  __pyx_r;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -3727,7 +3558,8 @@ static std::vector<Job>  __pyx_f_9randomgen_15RandomGenerator_generate_jobs_set(
   PyObject *__pyx_t_5 = NULL;
   PyObject *__pyx_t_6 = NULL;
   Py_ssize_t __pyx_t_7;
-  Job __pyx_t_8;
+  std::string __pyx_t_8;
+  Job __pyx_t_9;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
@@ -3736,24 +3568,21 @@ static std::vector<Job>  __pyx_f_9randomgen_15RandomGenerator_generate_jobs_set(
   if (unlikely(!__pyx_cur_scope)) {
     __pyx_cur_scope = ((struct __pyx_obj_9randomgen___pyx_scope_struct__generate_jobs_set *)Py_None);
     __Pyx_INCREF(Py_None);
-    __PYX_ERR(0, 14, __pyx_L1_error)
+    __PYX_ERR(0, 17, __pyx_L1_error)
   } else {
     __Pyx_GOTREF((PyObject *)__pyx_cur_scope);
   }
-  __pyx_cur_scope->__pyx_v_self = __pyx_v_self;
-  __Pyx_INCREF((PyObject *)__pyx_cur_scope->__pyx_v_self);
-  __Pyx_GIVEREF((PyObject *)__pyx_cur_scope->__pyx_v_self);
 
-  /* "randomgen.pyx":17
+  /* "randomgen.pyx":20
  * 
  *         # Get the load names of the load_manager
  *         keys = list(self.load_manager.loads.keys())             # <<<<<<<<<<<<<<
  * 
  *         # Generate random positive integers that will be used as
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_cur_scope->__pyx_v_self->__pyx_base.load_manager, __pyx_n_s_loads); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 17, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self->__pyx_base.load_manager, __pyx_n_s_loads); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 20, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_keys); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 17, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_keys); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 20, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_2 = NULL;
@@ -3774,27 +3603,27 @@ static std::vector<Job>  __pyx_f_9randomgen_15RandomGenerator_generate_jobs_set(
     PyObject *__pyx_callargs[2] = {__pyx_t_2, NULL};
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_4, 0+__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 17, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 20, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   }
-  __pyx_t_3 = __Pyx_PySequence_ListKeepNew(__pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 17, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PySequence_ListKeepNew(__pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 20, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_GIVEREF(__pyx_t_3);
   __pyx_cur_scope->__pyx_v_keys = ((PyObject*)__pyx_t_3);
   __pyx_t_3 = 0;
 
-  /* "randomgen.pyx":21
+  /* "randomgen.pyx":24
  *         # Generate random positive integers that will be used as
  *         # indices to query the loads' names
  *         seed(time_ns() % (2 ** 32))             # <<<<<<<<<<<<<<
  *         ints = randint(low=0, high=len(keys), size=(arg,))
  * 
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_seed); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 21, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_seed); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 24, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_time_ns); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 21, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_time_ns); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 24, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __pyx_t_6 = NULL;
   __pyx_t_4 = 0;
@@ -3814,11 +3643,11 @@ static std::vector<Job>  __pyx_f_9randomgen_15RandomGenerator_generate_jobs_set(
     PyObject *__pyx_callargs[2] = {__pyx_t_6, NULL};
     __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_5, __pyx_callargs+1-__pyx_t_4, 0+__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 21, __pyx_L1_error)
+    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 24, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   }
-  __pyx_t_5 = PyNumber_Remainder(__pyx_t_2, __pyx_int_4294967296); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 21, __pyx_L1_error)
+  __pyx_t_5 = PyNumber_Remainder(__pyx_t_2, __pyx_int_4294967296); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 24, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_2 = NULL;
@@ -3840,180 +3669,155 @@ static std::vector<Job>  __pyx_f_9randomgen_15RandomGenerator_generate_jobs_set(
     __pyx_t_3 = __Pyx_PyObject_FastCall(__pyx_t_1, __pyx_callargs+1-__pyx_t_4, 1+__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 21, __pyx_L1_error)
+    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 24, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-  /* "randomgen.pyx":22
+  /* "randomgen.pyx":25
  *         # indices to query the loads' names
  *         seed(time_ns() % (2 ** 32))
  *         ints = randint(low=0, high=len(keys), size=(arg,))             # <<<<<<<<<<<<<<
  * 
  *         # Get the names of the loads
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_randint); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 22, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_randint); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 25, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 22, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 25, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_low, __pyx_int_0) < 0) __PYX_ERR(0, 22, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_low, __pyx_int_0) < 0) __PYX_ERR(0, 25, __pyx_L1_error)
   __pyx_t_5 = __pyx_cur_scope->__pyx_v_keys;
   __Pyx_INCREF(__pyx_t_5);
-  __pyx_t_7 = __Pyx_PyList_GET_SIZE(__pyx_t_5); if (unlikely(__pyx_t_7 == ((Py_ssize_t)-1))) __PYX_ERR(0, 22, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyList_GET_SIZE(__pyx_t_5); if (unlikely(__pyx_t_7 == ((Py_ssize_t)-1))) __PYX_ERR(0, 25, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = PyInt_FromSsize_t(__pyx_t_7); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 22, __pyx_L1_error)
+  __pyx_t_5 = PyInt_FromSsize_t(__pyx_t_7); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 25, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_high, __pyx_t_5) < 0) __PYX_ERR(0, 22, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_high, __pyx_t_5) < 0) __PYX_ERR(0, 25, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_arg); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 22, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_arg); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 25, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_2 = PyTuple_New(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 22, __pyx_L1_error)
+  __pyx_t_2 = PyTuple_New(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 25, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_GIVEREF(__pyx_t_5);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_5)) __PYX_ERR(0, 22, __pyx_L1_error);
+  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_5)) __PYX_ERR(0, 25, __pyx_L1_error);
   __pyx_t_5 = 0;
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_size, __pyx_t_2) < 0) __PYX_ERR(0, 22, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_size, __pyx_t_2) < 0) __PYX_ERR(0, 25, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_empty_tuple, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 22, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_empty_tuple, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 25, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_ints = __pyx_t_2;
   __pyx_t_2 = 0;
 
-  /* "randomgen.pyx":25
+  /* "randomgen.pyx":28
  * 
  *         # Get the names of the loads
  *         names = list(map(lambda i: keys[i], ints))             # <<<<<<<<<<<<<<
- *         # Get the loads
- *         loads = list(map(lambda name: self.load_manager(name), names))
+ * 
+ *         cdef int idx
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9randomgen_15RandomGenerator_17generate_jobs_set_lambda, 0, __pyx_n_s_RandomGenerator_generate_jobs_se, ((PyObject*)__pyx_cur_scope), __pyx_n_s_randomgen, __pyx_d, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 25, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9randomgen_15RandomGenerator_17generate_jobs_set_lambda, 0, __pyx_n_s_RandomGenerator_generate_jobs_se, ((PyObject*)__pyx_cur_scope), __pyx_n_s_randomgen, __pyx_d, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 28, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 25, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 28, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_2);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_t_2)) __PYX_ERR(0, 25, __pyx_L1_error);
+  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_t_2)) __PYX_ERR(0, 28, __pyx_L1_error);
   __Pyx_INCREF(__pyx_v_ints);
   __Pyx_GIVEREF(__pyx_v_ints);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_v_ints)) __PYX_ERR(0, 25, __pyx_L1_error);
+  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_v_ints)) __PYX_ERR(0, 28, __pyx_L1_error);
   __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_map, __pyx_t_1, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 25, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_map, __pyx_t_1, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 28, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PySequence_ListKeepNew(__pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 25, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PySequence_ListKeepNew(__pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 28, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_v_names = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "randomgen.pyx":27
- *         names = list(map(lambda i: keys[i], ints))
- *         # Get the loads
- *         loads = list(map(lambda name: self.load_manager(name), names))             # <<<<<<<<<<<<<<
- * 
- *         cdef int idx
- */
-  __pyx_t_1 = __Pyx_CyFunction_New(&__pyx_mdef_9randomgen_15RandomGenerator_17generate_jobs_set_1lambda1, 0, __pyx_n_s_RandomGenerator_generate_jobs_se, ((PyObject*)__pyx_cur_scope), __pyx_n_s_randomgen, __pyx_d, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 27, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 27, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_GIVEREF(__pyx_t_1);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_1)) __PYX_ERR(0, 27, __pyx_L1_error);
-  __Pyx_INCREF(__pyx_v_names);
-  __Pyx_GIVEREF(__pyx_v_names);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_v_names)) __PYX_ERR(0, 27, __pyx_L1_error);
-  __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_map, __pyx_t_2, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 27, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PySequence_ListKeepNew(__pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 27, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_v_loads = ((PyObject*)__pyx_t_2);
-  __pyx_t_2 = 0;
-
-  /* "randomgen.pyx":31
+  /* "randomgen.pyx":32
  *         cdef int idx
  *         cdef vector[Job] jobs_set
- *         for i, load in enumerate(loads):             # <<<<<<<<<<<<<<
+ *         for i, load_name in enumerate(names):             # <<<<<<<<<<<<<<
  *             idx = <int>i
- *             jobs_set.push_back( <Job>self.generate_job(idx, load) )
+ *             jobs_set.push_back( <Job>self.generate_job(idx, <string>load_name) )
  */
   __Pyx_INCREF(__pyx_int_0);
-  __pyx_t_2 = __pyx_int_0;
-  __pyx_t_1 = __pyx_v_loads; __Pyx_INCREF(__pyx_t_1);
+  __pyx_t_1 = __pyx_int_0;
+  __pyx_t_2 = __pyx_v_names; __Pyx_INCREF(__pyx_t_2);
   __pyx_t_7 = 0;
   for (;;) {
     {
-      Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_1);
+      Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_2);
       #if !CYTHON_ASSUME_SAFE_MACROS
-      if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 31, __pyx_L1_error)
+      if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 32, __pyx_L1_error)
       #endif
       if (__pyx_t_7 >= __pyx_temp) break;
     }
     #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-    __pyx_t_3 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_7); __Pyx_INCREF(__pyx_t_3); __pyx_t_7++; if (unlikely((0 < 0))) __PYX_ERR(0, 31, __pyx_L1_error)
+    __pyx_t_3 = PyList_GET_ITEM(__pyx_t_2, __pyx_t_7); __Pyx_INCREF(__pyx_t_3); __pyx_t_7++; if (unlikely((0 < 0))) __PYX_ERR(0, 32, __pyx_L1_error)
     #else
-    __pyx_t_3 = __Pyx_PySequence_ITEM(__pyx_t_1, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 31, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PySequence_ITEM(__pyx_t_2, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 32, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     #endif
-    __Pyx_XDECREF_SET(__pyx_v_load, __pyx_t_3);
+    __Pyx_XDECREF_SET(__pyx_v_load_name, __pyx_t_3);
     __pyx_t_3 = 0;
-    __Pyx_INCREF(__pyx_t_2);
-    __Pyx_XDECREF_SET(__pyx_v_i, __pyx_t_2);
-    __pyx_t_3 = __Pyx_PyInt_AddObjC(__pyx_t_2, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 31, __pyx_L1_error)
+    __Pyx_INCREF(__pyx_t_1);
+    __Pyx_XDECREF_SET(__pyx_v_i, __pyx_t_1);
+    __pyx_t_3 = __Pyx_PyInt_AddObjC(__pyx_t_1, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 32, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __Pyx_DECREF(__pyx_t_2);
-    __pyx_t_2 = __pyx_t_3;
+    __Pyx_DECREF(__pyx_t_1);
+    __pyx_t_1 = __pyx_t_3;
     __pyx_t_3 = 0;
-
-    /* "randomgen.pyx":32
- *         cdef vector[Job] jobs_set
- *         for i, load in enumerate(loads):
- *             idx = <int>i             # <<<<<<<<<<<<<<
- *             jobs_set.push_back( <Job>self.generate_job(idx, load) )
- * 
- */
-    __pyx_t_4 = __Pyx_PyInt_As_int(__pyx_v_i); if (unlikely((__pyx_t_4 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 32, __pyx_L1_error)
-    __pyx_v_idx = ((int)__pyx_t_4);
 
     /* "randomgen.pyx":33
- *         for i, load in enumerate(loads):
+ *         cdef vector[Job] jobs_set
+ *         for i, load_name in enumerate(names):
+ *             idx = <int>i             # <<<<<<<<<<<<<<
+ *             jobs_set.push_back( <Job>self.generate_job(idx, <string>load_name) )
+ * 
+ */
+    __pyx_t_4 = __Pyx_PyInt_As_int(__pyx_v_i); if (unlikely((__pyx_t_4 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 33, __pyx_L1_error)
+    __pyx_v_idx = ((int)__pyx_t_4);
+
+    /* "randomgen.pyx":34
+ *         for i, load_name in enumerate(names):
  *             idx = <int>i
- *             jobs_set.push_back( <Job>self.generate_job(idx, load) )             # <<<<<<<<<<<<<<
+ *             jobs_set.push_back( <Job>self.generate_job(idx, <string>load_name) )             # <<<<<<<<<<<<<<
  * 
  *         return jobs_set
  */
-    __pyx_t_8 = ((struct __pyx_vtabstruct_9randomgen_RandomGenerator *)__pyx_cur_scope->__pyx_v_self->__pyx_base.__pyx_vtab)->__pyx_base.generate_job(((struct __pyx_obj_11abstractgen_AbstractGenerator *)__pyx_cur_scope->__pyx_v_self), __pyx_v_idx, __pyx_v_load); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 33, __pyx_L1_error)
+    __pyx_t_8 = __pyx_convert_string_from_py_6libcpp_6string_std__in_string(__pyx_v_load_name); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 34, __pyx_L1_error)
+    __pyx_t_9 = ((struct __pyx_vtabstruct_9randomgen_RandomGenerator *)__pyx_v_self->__pyx_base.__pyx_vtab)->__pyx_base.generate_job(((struct __pyx_obj_11abstractgen_AbstractGenerator *)__pyx_v_self), __pyx_v_idx, ((std::string)__pyx_t_8)); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 34, __pyx_L1_error)
     try {
-      __pyx_v_jobs_set.push_back(((Job)__pyx_t_8));
+      __pyx_v_jobs_set.push_back(((Job)__pyx_t_9));
     } catch(...) {
       __Pyx_CppExn2PyErr();
-      __PYX_ERR(0, 33, __pyx_L1_error)
+      __PYX_ERR(0, 34, __pyx_L1_error)
     }
 
-    /* "randomgen.pyx":31
+    /* "randomgen.pyx":32
  *         cdef int idx
  *         cdef vector[Job] jobs_set
- *         for i, load in enumerate(loads):             # <<<<<<<<<<<<<<
+ *         for i, load_name in enumerate(names):             # <<<<<<<<<<<<<<
  *             idx = <int>i
- *             jobs_set.push_back( <Job>self.generate_job(idx, load) )
+ *             jobs_set.push_back( <Job>self.generate_job(idx, <string>load_name) )
  */
   }
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "randomgen.pyx":35
- *             jobs_set.push_back( <Job>self.generate_job(idx, load) )
+  /* "randomgen.pyx":36
+ *             jobs_set.push_back( <Job>self.generate_job(idx, <string>load_name) )
  * 
  *         return jobs_set             # <<<<<<<<<<<<<<
  */
   __pyx_r = __pyx_v_jobs_set;
   goto __pyx_L0;
 
-  /* "randomgen.pyx":14
+  /* "randomgen.pyx":17
  *         AbstractGenerator.__init__(self, load_manager=load_manager)
  * 
  *     cdef vector[Job] generate_jobs_set(self, int arg):             # <<<<<<<<<<<<<<
@@ -4033,9 +3837,8 @@ static std::vector<Job>  __pyx_f_9randomgen_15RandomGenerator_generate_jobs_set(
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_ints);
   __Pyx_XDECREF(__pyx_v_names);
-  __Pyx_XDECREF(__pyx_v_loads);
   __Pyx_XDECREF(__pyx_v_i);
-  __Pyx_XDECREF(__pyx_v_load);
+  __Pyx_XDECREF(__pyx_v_load_name);
   __Pyx_DECREF((PyObject *)__pyx_cur_scope);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
@@ -4110,9 +3913,9 @@ static PyObject *__pyx_pf_9randomgen_15RandomGenerator_2__reduce_cython__(struct
  *     _dict = getattr(self, '__dict__', None)
  *     if _dict is not None:
  */
-  __pyx_t_1 = __pyx_convert_PyBytes_string_to_py_6libcpp_6string_std__in_string(__pyx_v_self->__pyx_base.description); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 5, __pyx_L1_error)
+  __pyx_t_1 = __pyx_convert_PyUnicode_string_to_py_6libcpp_6string_std__in_string(__pyx_v_self->__pyx_base.description); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 5, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __pyx_convert_PyBytes_string_to_py_6libcpp_6string_std__in_string(__pyx_v_self->__pyx_base.name); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 5, __pyx_L1_error)
+  __pyx_t_2 = __pyx_convert_PyUnicode_string_to_py_6libcpp_6string_std__in_string(__pyx_v_self->__pyx_base.name); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 5, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = PyTuple_New(3); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 5, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
@@ -5076,7 +4879,6 @@ static void __pyx_tp_dealloc_9randomgen___pyx_scope_struct__generate_jobs_set(Py
   #endif
   PyObject_GC_UnTrack(o);
   Py_CLEAR(p->__pyx_v_keys);
-  Py_CLEAR(p->__pyx_v_self);
   #if CYTHON_COMPILING_IN_CPYTHON
   if (((int)(__pyx_freecount_9randomgen___pyx_scope_struct__generate_jobs_set < 8) & (int)(Py_TYPE(o)->tp_basicsize == sizeof(struct __pyx_obj_9randomgen___pyx_scope_struct__generate_jobs_set)))) {
     __pyx_freelist_9randomgen___pyx_scope_struct__generate_jobs_set[__pyx_freecount_9randomgen___pyx_scope_struct__generate_jobs_set++] = ((struct __pyx_obj_9randomgen___pyx_scope_struct__generate_jobs_set *)o);
@@ -5100,9 +4902,6 @@ static int __pyx_tp_traverse_9randomgen___pyx_scope_struct__generate_jobs_set(Py
   if (p->__pyx_v_keys) {
     e = (*v)(p->__pyx_v_keys, a); if (e) return e;
   }
-  if (p->__pyx_v_self) {
-    e = (*v)(((PyObject *)p->__pyx_v_self), a); if (e) return e;
-  }
   return 0;
 }
 
@@ -5111,9 +4910,6 @@ static int __pyx_tp_clear_9randomgen___pyx_scope_struct__generate_jobs_set(PyObj
   struct __pyx_obj_9randomgen___pyx_scope_struct__generate_jobs_set *p = (struct __pyx_obj_9randomgen___pyx_scope_struct__generate_jobs_set *)o;
   tmp = ((PyObject*)p->__pyx_v_keys);
   p->__pyx_v_keys = ((PyObject*)Py_None); Py_INCREF(Py_None);
-  Py_XDECREF(tmp);
-  tmp = ((PyObject*)p->__pyx_v_self);
-  p->__pyx_v_self = ((struct __pyx_obj_9randomgen_RandomGenerator *)Py_None); Py_INCREF(Py_None);
   Py_XDECREF(tmp);
   return 0;
 }
@@ -5265,7 +5061,6 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_main, __pyx_k_main, sizeof(__pyx_k_main), 0, 0, 1, 1},
     {&__pyx_n_s_map, __pyx_k_map, sizeof(__pyx_k_map), 0, 0, 1, 1},
     {&__pyx_n_s_name, __pyx_k_name, sizeof(__pyx_k_name), 0, 0, 1, 1},
-    {&__pyx_n_s_name_2, __pyx_k_name_2, sizeof(__pyx_k_name_2), 0, 0, 1, 1},
     {&__pyx_n_s_new, __pyx_k_new, sizeof(__pyx_k_new), 0, 0, 1, 1},
     {&__pyx_n_s_numpy_random, __pyx_k_numpy_random, sizeof(__pyx_k_numpy_random), 0, 0, 1, 1},
     {&__pyx_n_s_pickle, __pyx_k_pickle, sizeof(__pyx_k_pickle), 0, 0, 1, 1},
@@ -5300,8 +5095,8 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
 }
 /* #### Code section: cached_builtins ### */
 static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
-  __pyx_builtin_map = __Pyx_GetBuiltinName(__pyx_n_s_map); if (!__pyx_builtin_map) __PYX_ERR(0, 25, __pyx_L1_error)
-  __pyx_builtin_enumerate = __Pyx_GetBuiltinName(__pyx_n_s_enumerate); if (!__pyx_builtin_enumerate) __PYX_ERR(0, 31, __pyx_L1_error)
+  __pyx_builtin_map = __Pyx_GetBuiltinName(__pyx_n_s_map); if (!__pyx_builtin_map) __PYX_ERR(0, 28, __pyx_L1_error)
+  __pyx_builtin_enumerate = __Pyx_GetBuiltinName(__pyx_n_s_enumerate); if (!__pyx_builtin_enumerate) __PYX_ERR(0, 32, __pyx_L1_error)
   return 0;
   __pyx_L1_error:;
   return -1;
@@ -5429,12 +5224,12 @@ static int __Pyx_modinit_type_init_code(void) {
   __pyx_vtable_9randomgen_RandomGenerator.__pyx_base = *__pyx_vtabptr_11abstractgen_AbstractGenerator;
   __pyx_vtable_9randomgen_RandomGenerator.generate_jobs_set = (std::vector<Job>  (*)(struct __pyx_obj_9randomgen_RandomGenerator *, int))__pyx_f_9randomgen_15RandomGenerator_generate_jobs_set;
   #if CYTHON_USE_TYPE_SPECS
-  __pyx_t_2 = PyTuple_Pack(1, (PyObject *)__pyx_ptype_11abstractgen_AbstractGenerator); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 7, __pyx_L1_error)
+  __pyx_t_2 = PyTuple_Pack(1, (PyObject *)__pyx_ptype_11abstractgen_AbstractGenerator); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 10, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_ptype_9randomgen_RandomGenerator = (PyTypeObject *) __Pyx_PyType_FromModuleAndSpec(__pyx_m, &__pyx_type_9randomgen_RandomGenerator_spec, __pyx_t_2);
   __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (unlikely(!__pyx_ptype_9randomgen_RandomGenerator)) __PYX_ERR(0, 7, __pyx_L1_error)
-  if (__Pyx_fix_up_extension_type_from_spec(&__pyx_type_9randomgen_RandomGenerator_spec, __pyx_ptype_9randomgen_RandomGenerator) < 0) __PYX_ERR(0, 7, __pyx_L1_error)
+  if (unlikely(!__pyx_ptype_9randomgen_RandomGenerator)) __PYX_ERR(0, 10, __pyx_L1_error)
+  if (__Pyx_fix_up_extension_type_from_spec(&__pyx_type_9randomgen_RandomGenerator_spec, __pyx_ptype_9randomgen_RandomGenerator) < 0) __PYX_ERR(0, 10, __pyx_L1_error)
   #else
   __pyx_ptype_9randomgen_RandomGenerator = &__pyx_type_9randomgen_RandomGenerator;
   #endif
@@ -5443,7 +5238,7 @@ static int __Pyx_modinit_type_init_code(void) {
   __pyx_ptype_9randomgen_RandomGenerator->tp_base = __pyx_ptype_11abstractgen_AbstractGenerator;
   #endif
   #if !CYTHON_USE_TYPE_SPECS
-  if (__Pyx_PyType_Ready(__pyx_ptype_9randomgen_RandomGenerator) < 0) __PYX_ERR(0, 7, __pyx_L1_error)
+  if (__Pyx_PyType_Ready(__pyx_ptype_9randomgen_RandomGenerator) < 0) __PYX_ERR(0, 10, __pyx_L1_error)
   #endif
   #if PY_MAJOR_VERSION < 3
   __pyx_ptype_9randomgen_RandomGenerator->tp_print = 0;
@@ -5453,24 +5248,24 @@ static int __Pyx_modinit_type_init_code(void) {
     __pyx_ptype_9randomgen_RandomGenerator->tp_getattro = __Pyx_PyObject_GenericGetAttr;
   }
   #endif
-  if (__Pyx_SetVtable(__pyx_ptype_9randomgen_RandomGenerator, __pyx_vtabptr_9randomgen_RandomGenerator) < 0) __PYX_ERR(0, 7, __pyx_L1_error)
+  if (__Pyx_SetVtable(__pyx_ptype_9randomgen_RandomGenerator, __pyx_vtabptr_9randomgen_RandomGenerator) < 0) __PYX_ERR(0, 10, __pyx_L1_error)
   #if !CYTHON_COMPILING_IN_LIMITED_API
-  if (__Pyx_MergeVtables(__pyx_ptype_9randomgen_RandomGenerator) < 0) __PYX_ERR(0, 7, __pyx_L1_error)
+  if (__Pyx_MergeVtables(__pyx_ptype_9randomgen_RandomGenerator) < 0) __PYX_ERR(0, 10, __pyx_L1_error)
   #endif
-  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_RandomGenerator, (PyObject *) __pyx_ptype_9randomgen_RandomGenerator) < 0) __PYX_ERR(0, 7, __pyx_L1_error)
+  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_RandomGenerator, (PyObject *) __pyx_ptype_9randomgen_RandomGenerator) < 0) __PYX_ERR(0, 10, __pyx_L1_error)
   #if !CYTHON_COMPILING_IN_LIMITED_API
-  if (__Pyx_setup_reduce((PyObject *) __pyx_ptype_9randomgen_RandomGenerator) < 0) __PYX_ERR(0, 7, __pyx_L1_error)
+  if (__Pyx_setup_reduce((PyObject *) __pyx_ptype_9randomgen_RandomGenerator) < 0) __PYX_ERR(0, 10, __pyx_L1_error)
   #endif
   #if CYTHON_USE_TYPE_SPECS
-  __pyx_ptype_9randomgen___pyx_scope_struct__generate_jobs_set = (PyTypeObject *) __Pyx_PyType_FromModuleAndSpec(__pyx_m, &__pyx_type_9randomgen___pyx_scope_struct__generate_jobs_set_spec, NULL); if (unlikely(!__pyx_ptype_9randomgen___pyx_scope_struct__generate_jobs_set)) __PYX_ERR(0, 14, __pyx_L1_error)
-  if (__Pyx_fix_up_extension_type_from_spec(&__pyx_type_9randomgen___pyx_scope_struct__generate_jobs_set_spec, __pyx_ptype_9randomgen___pyx_scope_struct__generate_jobs_set) < 0) __PYX_ERR(0, 14, __pyx_L1_error)
+  __pyx_ptype_9randomgen___pyx_scope_struct__generate_jobs_set = (PyTypeObject *) __Pyx_PyType_FromModuleAndSpec(__pyx_m, &__pyx_type_9randomgen___pyx_scope_struct__generate_jobs_set_spec, NULL); if (unlikely(!__pyx_ptype_9randomgen___pyx_scope_struct__generate_jobs_set)) __PYX_ERR(0, 17, __pyx_L1_error)
+  if (__Pyx_fix_up_extension_type_from_spec(&__pyx_type_9randomgen___pyx_scope_struct__generate_jobs_set_spec, __pyx_ptype_9randomgen___pyx_scope_struct__generate_jobs_set) < 0) __PYX_ERR(0, 17, __pyx_L1_error)
   #else
   __pyx_ptype_9randomgen___pyx_scope_struct__generate_jobs_set = &__pyx_type_9randomgen___pyx_scope_struct__generate_jobs_set;
   #endif
   #if !CYTHON_COMPILING_IN_LIMITED_API
   #endif
   #if !CYTHON_USE_TYPE_SPECS
-  if (__Pyx_PyType_Ready(__pyx_ptype_9randomgen___pyx_scope_struct__generate_jobs_set) < 0) __PYX_ERR(0, 14, __pyx_L1_error)
+  if (__Pyx_PyType_Ready(__pyx_ptype_9randomgen___pyx_scope_struct__generate_jobs_set) < 0) __PYX_ERR(0, 17, __pyx_L1_error)
   #endif
   #if PY_MAJOR_VERSION < 3
   __pyx_ptype_9randomgen___pyx_scope_struct__generate_jobs_set->tp_print = 0;
@@ -5766,7 +5561,7 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_init_sys_getdefaultencoding_params() < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   #endif
   if (__pyx_module_is_main_randomgen) {
-    if (PyObject_SetAttr(__pyx_m, __pyx_n_s_name_2, __pyx_n_s_main) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
+    if (PyObject_SetAttr(__pyx_m, __pyx_n_s_name, __pyx_n_s_main) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   }
   #if PY_MAJOR_VERSION >= 3
   {
@@ -5793,58 +5588,59 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_patch_abc() < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   #endif
 
-  /* "randomgen.pyx":2
+  /* "randomgen.pyx":4
+ * 
  * # Python imports
  * from numpy.random import seed, randint, random_sample             # <<<<<<<<<<<<<<
  * from time import time_ns
  * 
  */
-  __pyx_t_2 = PyList_New(3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2, __pyx_L1_error)
+  __pyx_t_2 = PyList_New(3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 4, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_INCREF(__pyx_n_s_seed);
   __Pyx_GIVEREF(__pyx_n_s_seed);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_2, 0, __pyx_n_s_seed)) __PYX_ERR(0, 2, __pyx_L1_error);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_2, 0, __pyx_n_s_seed)) __PYX_ERR(0, 4, __pyx_L1_error);
   __Pyx_INCREF(__pyx_n_s_randint);
   __Pyx_GIVEREF(__pyx_n_s_randint);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_2, 1, __pyx_n_s_randint)) __PYX_ERR(0, 2, __pyx_L1_error);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_2, 1, __pyx_n_s_randint)) __PYX_ERR(0, 4, __pyx_L1_error);
   __Pyx_INCREF(__pyx_n_s_random_sample);
   __Pyx_GIVEREF(__pyx_n_s_random_sample);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_2, 2, __pyx_n_s_random_sample)) __PYX_ERR(0, 2, __pyx_L1_error);
-  __pyx_t_3 = __Pyx_Import(__pyx_n_s_numpy_random, __pyx_t_2, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2, __pyx_L1_error)
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_2, 2, __pyx_n_s_random_sample)) __PYX_ERR(0, 4, __pyx_L1_error);
+  __pyx_t_3 = __Pyx_Import(__pyx_n_s_numpy_random, __pyx_t_2, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 4, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_ImportFrom(__pyx_t_3, __pyx_n_s_seed); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_ImportFrom(__pyx_t_3, __pyx_n_s_seed); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 4, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_seed, __pyx_t_2) < 0) __PYX_ERR(0, 2, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_seed, __pyx_t_2) < 0) __PYX_ERR(0, 4, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_ImportFrom(__pyx_t_3, __pyx_n_s_randint); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_ImportFrom(__pyx_t_3, __pyx_n_s_randint); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 4, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_randint, __pyx_t_2) < 0) __PYX_ERR(0, 2, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_randint, __pyx_t_2) < 0) __PYX_ERR(0, 4, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_ImportFrom(__pyx_t_3, __pyx_n_s_random_sample); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_ImportFrom(__pyx_t_3, __pyx_n_s_random_sample); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 4, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_random_sample, __pyx_t_2) < 0) __PYX_ERR(0, 2, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_random_sample, __pyx_t_2) < 0) __PYX_ERR(0, 4, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-  /* "randomgen.pyx":3
+  /* "randomgen.pyx":5
  * # Python imports
  * from numpy.random import seed, randint, random_sample
  * from time import time_ns             # <<<<<<<<<<<<<<
  * 
- * cimport randomgen
+ * from libcpp.string cimport string
  */
-  __pyx_t_3 = PyList_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 3, __pyx_L1_error)
+  __pyx_t_3 = PyList_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 5, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_INCREF(__pyx_n_s_time_ns);
   __Pyx_GIVEREF(__pyx_n_s_time_ns);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_s_time_ns)) __PYX_ERR(0, 3, __pyx_L1_error);
-  __pyx_t_2 = __Pyx_Import(__pyx_n_s_time, __pyx_t_3, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 3, __pyx_L1_error)
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_s_time_ns)) __PYX_ERR(0, 5, __pyx_L1_error);
+  __pyx_t_2 = __Pyx_Import(__pyx_n_s_time, __pyx_t_3, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 5, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_ImportFrom(__pyx_t_2, __pyx_n_s_time_ns); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 3, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_ImportFrom(__pyx_t_2, __pyx_n_s_time_ns); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 5, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_time_ns, __pyx_t_3) < 0) __PYX_ERR(0, 3, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_time_ns, __pyx_t_3) < 0) __PYX_ERR(0, 5, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
@@ -5882,9 +5678,9 @@ if (!__Pyx_RefNanny) {
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "randomgen.pyx":1
- * # Python imports             # <<<<<<<<<<<<<<
- * from numpy.random import seed, randint, random_sample
- * from time import time_ns
+ * # cython: c_string_type=unicode, c_string_encoding=utf8             # <<<<<<<<<<<<<<
+ * 
+ * # Python imports
  */
   __pyx_t_2 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -9354,7 +9150,7 @@ bad:
 static int __Pyx_setup_reduce_is_named(PyObject* meth, PyObject* name) {
   int ret;
   PyObject *name_attr;
-  name_attr = __Pyx_PyObject_GetAttrStrNoError(meth, __pyx_n_s_name_2);
+  name_attr = __Pyx_PyObject_GetAttrStrNoError(meth, __pyx_n_s_name);
   if (likely(name_attr)) {
       ret = PyObject_RichCompareBool(name_attr, name, Py_EQ);
   } else {
@@ -10479,7 +10275,7 @@ static __Pyx_TypeName
 __Pyx_PyType_GetName(PyTypeObject* tp)
 {
     PyObject *name = __Pyx_PyObject_GetAttrStr((PyObject *)tp,
-                                               __pyx_n_s_name_2);
+                                               __pyx_n_s_name);
     if (unlikely(name == NULL) || unlikely(!PyUnicode_Check(name))) {
         PyErr_Clear();
         Py_XDECREF(name);

@@ -17,5 +17,5 @@ cdef vector[Job] res = gen.generate_jobs_set(10)
 cdef vector[Job].iterator it = res.begin()
 
 while it != res.end():
-    print(deref(it).job_name)
+    print(deref(it).speedups_map)
     it += 1

@@ -8,16 +8,15 @@
             "../jobs/lib/Job.hpp"
         ],
         "include_dirs": [
-            "../jobs",
-            "/home/stratos/.conda/envs/hpc-sim/lib/python3.11/site-packages/numpy/core/include"
+            "../jobs"
         ],
         "language": "c++",
-        "name": "abstractgen",
+        "name": "listgen",
         "sources": [
-            "abstractgen.pyx"
+            "listgen.pyx"
         ]
     },
-    "module_name": "abstractgen"
+    "module_name": "listgen"
 }
 END: Cython Metadata */
 
@@ -1219,15 +1218,16 @@ static CYTHON_INLINE float __PYX_NAN() {
     #define __PYX_EXTERN_C extern "C++"
 #endif
 
-#define __PYX_HAVE__abstractgen
-#define __PYX_HAVE_API__abstractgen
+#define __PYX_HAVE__listgen
+#define __PYX_HAVE_API__listgen
 /* Early includes */
-#include <string.h>
-#include <string>
 #include "ios"
 #include "new"
 #include "stdexcept"
 #include "typeinfo"
+#include <vector>
+#include <string.h>
+#include <string>
 #include <utility>
 
     #if __cplusplus >= 201103L || (defined(_MSC_VER) && _MSC_VER >= 1600)
@@ -1493,7 +1493,7 @@ static const char *__pyx_filename;
 
 static const char *__pyx_f[] = {
   "<stringsource>",
-  "abstractgen.pyx",
+  "listgen.pyx",
 };
 /* #### Code section: utility_code_proto_before_types ### */
 /* ForceInitThreads.proto */
@@ -1507,6 +1507,7 @@ static const char *__pyx_f[] = {
 
 /*--- Type declarations ---*/
 struct __pyx_obj_11abstractgen_AbstractGenerator;
+struct __pyx_obj_7listgen_ListGenerator;
 
 /* "abstractgen.pxd":4
  * from job cimport Job
@@ -1524,19 +1525,45 @@ struct __pyx_obj_11abstractgen_AbstractGenerator {
 };
 
 
-
-/* "abstractgen.pyx":15
+/* "listgen.pxd":8
  * 
+ * 
+ * cdef class ListGenerator(AbstractGenerator):             # <<<<<<<<<<<<<<
+ *     cdef vector[Job] generate_jobs_set(self, vector[string]& arg)
+ */
+struct __pyx_obj_7listgen_ListGenerator {
+  struct __pyx_obj_11abstractgen_AbstractGenerator __pyx_base;
+};
+
+
+
+/* "abstractgen.pxd":4
+ * from job cimport Job
  * 
  * cdef class AbstractGenerator:             # <<<<<<<<<<<<<<
- * 
- *     def __init__(self, object load_manager):
+ *     cdef string name
+ *     cdef string description
  */
 
 struct __pyx_vtabstruct_11abstractgen_AbstractGenerator {
   Job (*generate_job)(struct __pyx_obj_11abstractgen_AbstractGenerator *, int, std::string);
 };
 static struct __pyx_vtabstruct_11abstractgen_AbstractGenerator *__pyx_vtabptr_11abstractgen_AbstractGenerator;
+
+
+/* "listgen.pyx":5
+ * from cython.operator cimport dereference as deref
+ * 
+ * cdef class ListGenerator(AbstractGenerator):             # <<<<<<<<<<<<<<
+ * 
+ *     def __init__(self, object load_manager):
+ */
+
+struct __pyx_vtabstruct_7listgen_ListGenerator {
+  struct __pyx_vtabstruct_11abstractgen_AbstractGenerator __pyx_base;
+  std::vector<Job>  (*generate_jobs_set)(struct __pyx_obj_7listgen_ListGenerator *, std::vector<std::string>  &);
+};
+static struct __pyx_vtabstruct_7listgen_ListGenerator *__pyx_vtabptr_7listgen_ListGenerator;
 /* #### Code section: utility_code_proto ### */
 
 /* --- Runtime support code (head) --- */
@@ -1704,39 +1731,11 @@ static void __Pyx_RaiseArgtupleInvalid(const char* func_name, int exact,
   #define __PYX_STD_MOVE_IF_SUPPORTED(x) x
 #endif
 
-/* PyFunctionFastCall.proto */
-#if CYTHON_FAST_PYCALL
-#if !CYTHON_VECTORCALL
-#define __Pyx_PyFunction_FastCall(func, args, nargs)\
-    __Pyx_PyFunction_FastCallDict((func), (args), (nargs), NULL)
-static PyObject *__Pyx_PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs, PyObject *kwargs);
-#endif
-#define __Pyx_BUILD_ASSERT_EXPR(cond)\
-    (sizeof(char [1 - 2*!(cond)]) - 1)
-#ifndef Py_MEMBER_SIZE
-#define Py_MEMBER_SIZE(type, member) sizeof(((type *)0)->member)
-#endif
-#if !CYTHON_VECTORCALL
-#if PY_VERSION_HEX >= 0x03080000
-  #include "frameobject.h"
-#if PY_VERSION_HEX >= 0x030b00a6 && !CYTHON_COMPILING_IN_LIMITED_API
-  #ifndef Py_BUILD_CORE
-    #define Py_BUILD_CORE 1
-  #endif
-  #include "internal/pycore_frame.h"
-#endif
-  #define __Pxy_PyFrame_Initialize_Offsets()
-  #define __Pyx_PyFrame_GetLocalsplus(frame)  ((frame)->f_localsplus)
+/* PyObjectGetAttrStr.proto */
+#if CYTHON_USE_TYPE_SLOTS
+static CYTHON_INLINE PyObject* __Pyx_PyObject_GetAttrStr(PyObject* obj, PyObject* attr_name);
 #else
-  static size_t __pyx_pyframe_localsplus_offset = 0;
-  #include "frameobject.h"
-  #define __Pxy_PyFrame_Initialize_Offsets()\
-    ((void)__Pyx_BUILD_ASSERT_EXPR(sizeof(PyFrameObject) == offsetof(PyFrameObject, f_localsplus) + Py_MEMBER_SIZE(PyFrameObject, f_localsplus)),\
-     (void)(__pyx_pyframe_localsplus_offset = ((size_t)PyFrame_Type.tp_basicsize) - Py_MEMBER_SIZE(PyFrameObject, f_localsplus)))
-  #define __Pyx_PyFrame_GetLocalsplus(frame)\
-    (assert(__pyx_pyframe_localsplus_offset), (PyObject **)(((char *)(frame)) + __pyx_pyframe_localsplus_offset))
-#endif
-#endif
+#define __Pyx_PyObject_GetAttrStr(o,n) PyObject_GetAttr(o,n)
 #endif
 
 /* PyObjectCall.proto */
@@ -1744,22 +1743,6 @@ static PyObject *__Pyx_PyFunction_FastCallDict(PyObject *func, PyObject **args, 
 static CYTHON_INLINE PyObject* __Pyx_PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw);
 #else
 #define __Pyx_PyObject_Call(func, arg, kw) PyObject_Call(func, arg, kw)
-#endif
-
-/* PyObjectCallMethO.proto */
-#if CYTHON_COMPILING_IN_CPYTHON
-static CYTHON_INLINE PyObject* __Pyx_PyObject_CallMethO(PyObject *func, PyObject *arg);
-#endif
-
-/* PyObjectFastCall.proto */
-#define __Pyx_PyObject_FastCall(func, args, nargs)  __Pyx_PyObject_FastCallDict(func, args, (size_t)(nargs), NULL)
-static CYTHON_INLINE PyObject* __Pyx_PyObject_FastCallDict(PyObject *func, PyObject **args, size_t nargs, PyObject *kwargs);
-
-/* PyObjectGetAttrStr.proto */
-#if CYTHON_USE_TYPE_SLOTS
-static CYTHON_INLINE PyObject* __Pyx_PyObject_GetAttrStr(PyObject* obj, PyObject* attr_name);
-#else
-#define __Pyx_PyObject_GetAttrStr(o,n) PyObject_GetAttr(o,n)
 #endif
 
 /* KeywordStringCheck.proto */
@@ -1890,6 +1873,50 @@ static PyObject* __Pyx_ImportFrom(PyObject* module, PyObject* name);
 /* RaiseException.proto */
 static void __Pyx_Raise(PyObject *type, PyObject *value, PyObject *tb, PyObject *cause);
 
+/* PyFunctionFastCall.proto */
+#if CYTHON_FAST_PYCALL
+#if !CYTHON_VECTORCALL
+#define __Pyx_PyFunction_FastCall(func, args, nargs)\
+    __Pyx_PyFunction_FastCallDict((func), (args), (nargs), NULL)
+static PyObject *__Pyx_PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs, PyObject *kwargs);
+#endif
+#define __Pyx_BUILD_ASSERT_EXPR(cond)\
+    (sizeof(char [1 - 2*!(cond)]) - 1)
+#ifndef Py_MEMBER_SIZE
+#define Py_MEMBER_SIZE(type, member) sizeof(((type *)0)->member)
+#endif
+#if !CYTHON_VECTORCALL
+#if PY_VERSION_HEX >= 0x03080000
+  #include "frameobject.h"
+#if PY_VERSION_HEX >= 0x030b00a6 && !CYTHON_COMPILING_IN_LIMITED_API
+  #ifndef Py_BUILD_CORE
+    #define Py_BUILD_CORE 1
+  #endif
+  #include "internal/pycore_frame.h"
+#endif
+  #define __Pxy_PyFrame_Initialize_Offsets()
+  #define __Pyx_PyFrame_GetLocalsplus(frame)  ((frame)->f_localsplus)
+#else
+  static size_t __pyx_pyframe_localsplus_offset = 0;
+  #include "frameobject.h"
+  #define __Pxy_PyFrame_Initialize_Offsets()\
+    ((void)__Pyx_BUILD_ASSERT_EXPR(sizeof(PyFrameObject) == offsetof(PyFrameObject, f_localsplus) + Py_MEMBER_SIZE(PyFrameObject, f_localsplus)),\
+     (void)(__pyx_pyframe_localsplus_offset = ((size_t)PyFrame_Type.tp_basicsize) - Py_MEMBER_SIZE(PyFrameObject, f_localsplus)))
+  #define __Pyx_PyFrame_GetLocalsplus(frame)\
+    (assert(__pyx_pyframe_localsplus_offset), (PyObject **)(((char *)(frame)) + __pyx_pyframe_localsplus_offset))
+#endif
+#endif
+#endif
+
+/* PyObjectCallMethO.proto */
+#if CYTHON_COMPILING_IN_CPYTHON
+static CYTHON_INLINE PyObject* __Pyx_PyObject_CallMethO(PyObject *func, PyObject *arg);
+#endif
+
+/* PyObjectFastCall.proto */
+#define __Pyx_PyObject_FastCall(func, args, nargs)  __Pyx_PyObject_FastCallDict(func, args, (size_t)(nargs), NULL)
+static CYTHON_INLINE PyObject* __Pyx_PyObject_FastCallDict(PyObject *func, PyObject **args, size_t nargs, PyObject *kwargs);
+
 /* GetItemInt.proto */
 #define __Pyx_GetItemInt(o, i, type, is_signed, to_py_func, is_list, wraparound, boundscheck)\
     (__Pyx_fits_Py_ssize_t(i, type, is_signed) ?\
@@ -1921,6 +1948,34 @@ static CYTHON_INLINE PyObject *__Pyx_GetAttr(PyObject *, PyObject *);
 #else
 static CYTHON_INLINE int __Pyx_HasAttr(PyObject *, PyObject *);
 #endif
+
+/* CallNextTpTraverse.proto */
+static int __Pyx_call_next_tp_traverse(PyObject* obj, visitproc v, void *a, traverseproc current_tp_traverse);
+
+/* CallNextTpClear.proto */
+static void __Pyx_call_next_tp_clear(PyObject* obj, inquiry current_tp_clear);
+
+/* TypeImport.proto */
+#ifndef __PYX_HAVE_RT_ImportType_proto_3_0_9
+#define __PYX_HAVE_RT_ImportType_proto_3_0_9
+#if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+#include <stdalign.h>
+#endif
+#if (defined (__STDC_VERSION__) && __STDC_VERSION__ >= 201112L) || __cplusplus >= 201103L
+#define __PYX_GET_STRUCT_ALIGNMENT_3_0_9(s) alignof(s)
+#else
+#define __PYX_GET_STRUCT_ALIGNMENT_3_0_9(s) sizeof(void*)
+#endif
+enum __Pyx_ImportType_CheckSize_3_0_9 {
+   __Pyx_ImportType_CheckSize_Error_3_0_9 = 0,
+   __Pyx_ImportType_CheckSize_Warn_3_0_9 = 1,
+   __Pyx_ImportType_CheckSize_Ignore_3_0_9 = 2
+};
+static PyTypeObject *__Pyx_ImportType_3_0_9(PyObject* module, const char *module_name, const char *class_name, size_t size, size_t alignment, enum __Pyx_ImportType_CheckSize_3_0_9 check_size);
+#endif
+
+/* GetVTable.proto */
+static void* __Pyx_GetVtable(PyTypeObject *type);
 
 /* IncludeStructmemberH.proto */
 #include <structmember.h>
@@ -1967,9 +2022,6 @@ static PyObject* __Pyx_PyObject_GenericGetAttr(PyObject* obj, PyObject* attr_nam
 /* SetVTable.proto */
 static int __Pyx_SetVtable(PyTypeObject* typeptr , void* vtable);
 
-/* GetVTable.proto */
-static void* __Pyx_GetVtable(PyTypeObject *type);
-
 /* MergeVTables.proto */
 #if !CYTHON_COMPILING_IN_LIMITED_API
 static int __Pyx_MergeVtables(PyTypeObject *type);
@@ -1979,42 +2031,6 @@ static int __Pyx_MergeVtables(PyTypeObject *type);
 #if !CYTHON_COMPILING_IN_LIMITED_API
 static int __Pyx_setup_reduce(PyObject* type_obj);
 #endif
-
-/* ImportDottedModule.proto */
-static PyObject *__Pyx_ImportDottedModule(PyObject *name, PyObject *parts_tuple);
-#if PY_MAJOR_VERSION >= 3
-static PyObject *__Pyx_ImportDottedModule_WalkParts(PyObject *module, PyObject *name, PyObject *parts_tuple);
-#endif
-
-/* ListAppend.proto */
-#if CYTHON_USE_PYLIST_INTERNALS && CYTHON_ASSUME_SAFE_MACROS
-static CYTHON_INLINE int __Pyx_PyList_Append(PyObject* list, PyObject* x) {
-    PyListObject* L = (PyListObject*) list;
-    Py_ssize_t len = Py_SIZE(list);
-    if (likely(L->allocated > len) & likely(len > (L->allocated >> 1))) {
-        Py_INCREF(x);
-        #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030d0000
-        L->ob_item[len] = x;
-        #else
-        PyList_SET_ITEM(list, len, x);
-        #endif
-        __Pyx_SET_SIZE(list, len + 1);
-        return 0;
-    }
-    return PyList_Append(list, x);
-}
-#else
-#define __Pyx_PyList_Append(L,x) PyList_Append(L,x)
-#endif
-
-/* PyObjectCall2Args.proto */
-static CYTHON_INLINE PyObject* __Pyx_PyObject_Call2Args(PyObject* function, PyObject* arg1, PyObject* arg2);
-
-/* PyObjectCallMethod1.proto */
-static PyObject* __Pyx_PyObject_CallMethod1(PyObject* obj, PyObject* method_name, PyObject* arg);
-
-/* append.proto */
-static CYTHON_INLINE int __Pyx_PyObject_Append(PyObject* L, PyObject* x);
 
 /* FetchSharedCythonModule.proto */
 static PyObject *__Pyx_FetchSharedCythonABIModule(void);
@@ -2184,9 +2200,6 @@ static void __pyx_insert_code_object(int code_line, PyCodeObject* code_object);
 static void __Pyx_AddTraceback(const char *funcname, int c_line,
                                int py_line, const char *filename);
 
-/* None.proto */
-#include <new>
-
 /* GCCDiagnostics.proto */
 #if !defined(__INTEL_COMPILER) && defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
 #define __Pyx_HAS_GCC_DIAGNOSTIC
@@ -2233,6 +2246,9 @@ static void __Pyx_CppExn2PyErr() {
   }
 }
 #endif
+
+/* None.proto */
+#include <new>
 
 /* CIntFromPy.proto */
 static CYTHON_INLINE long __Pyx_PyInt_As_long(PyObject *);
@@ -2281,7 +2297,9 @@ static int __Pyx_check_binary_version(unsigned long ct_version, unsigned long rt
 static int __Pyx_InitStrings(__Pyx_StringTabEntry *t);
 
 /* #### Code section: module_declarations ### */
-static Job __pyx_f_11abstractgen_17AbstractGenerator_generate_job(struct __pyx_obj_11abstractgen_AbstractGenerator *__pyx_v_self, int __pyx_v_idx, std::string __pyx_v_load_name); /* proto*/
+static std::vector<Job>  __pyx_f_7listgen_13ListGenerator_generate_jobs_set(struct __pyx_obj_7listgen_ListGenerator *__pyx_v_self, std::vector<std::string>  &__pyx_v_arg); /* proto*/
+
+/* Module declarations from "libcpp.vector" */
 
 /* Module declarations from "libc.string" */
 
@@ -2296,7 +2314,9 @@ static Job __pyx_f_11abstractgen_17AbstractGenerator_generate_job(struct __pyx_o
 /* Module declarations from "job" */
 
 /* Module declarations from "abstractgen" */
-static PyObject *__pyx_f_11abstractgen___pyx_unpickle_AbstractGenerator__set_state(struct __pyx_obj_11abstractgen_AbstractGenerator *, PyObject *); /*proto*/
+
+/* Module declarations from "listgen" */
+static PyObject *__pyx_f_7listgen___pyx_unpickle_ListGenerator__set_state(struct __pyx_obj_7listgen_ListGenerator *, PyObject *); /*proto*/
 static CYTHON_INLINE PyObject *__pyx_convert_PyObject_string_to_py_6libcpp_6string_std__in_string(std::string const &); /*proto*/
 static CYTHON_INLINE PyObject *__pyx_convert_PyUnicode_string_to_py_6libcpp_6string_std__in_string(std::string const &); /*proto*/
 static CYTHON_INLINE PyObject *__pyx_convert_PyStr_string_to_py_6libcpp_6string_std__in_string(std::string const &); /*proto*/
@@ -2305,84 +2325,64 @@ static CYTHON_INLINE PyObject *__pyx_convert_PyByteArray_string_to_py_6libcpp_6s
 static std::string __pyx_convert_string_from_py_6libcpp_6string_std__in_string(PyObject *); /*proto*/
 /* #### Code section: typeinfo ### */
 /* #### Code section: before_global_var ### */
-#define __Pyx_MODULE_NAME "abstractgen"
-extern int __pyx_module_is_main_abstractgen;
-int __pyx_module_is_main_abstractgen = 0;
+#define __Pyx_MODULE_NAME "listgen"
+extern int __pyx_module_is_main_listgen;
+int __pyx_module_is_main_listgen = 0;
 
-/* Implementation of "abstractgen" */
+/* Implementation of "listgen" */
 /* #### Code section: global_var ### */
 /* #### Code section: string_decls ### */
 static const char __pyx_k__2[] = ".";
-static const char __pyx_k__3[] = "*";
-static const char __pyx_k__4[] = "../../../";
-static const char __pyx_k__5[] = "../../";
+static const char __pyx_k__9[] = "?";
 static const char __pyx_k_gc[] = "gc";
-static const char __pyx_k_os[] = "os";
-static const char __pyx_k__12[] = "?";
 static const char __pyx_k_new[] = "__new__";
-static const char __pyx_k_sys[] = "sys";
-static const char __pyx_k_Load[] = "Load";
 static const char __pyx_k_dict[] = "__dict__";
-static const char __pyx_k_file[] = "__file__";
-static const char __pyx_k_join[] = "join";
+static const char __pyx_k_init[] = "__init__";
 static const char __pyx_k_main[] = "__main__";
 static const char __pyx_k_name[] = "__name__";
-static const char __pyx_k_path[] = "path";
 static const char __pyx_k_self[] = "self";
-static const char __pyx_k_spec[] = "__spec__";
 static const char __pyx_k_test[] = "__test__";
 static const char __pyx_k_state[] = "state";
-static const char __pyx_k_append[] = "append";
 static const char __pyx_k_dict_2[] = "_dict";
 static const char __pyx_k_enable[] = "enable";
 static const char __pyx_k_import[] = "__import__";
 static const char __pyx_k_pickle[] = "pickle";
 static const char __pyx_k_reduce[] = "__reduce__";
 static const char __pyx_k_update[] = "update";
-static const char __pyx_k_abspath[] = "abspath";
-static const char __pyx_k_coloads[] = "coloads";
-static const char __pyx_k_dirname[] = "dirname";
 static const char __pyx_k_disable[] = "disable";
+static const char __pyx_k_listgen[] = "listgen";
 static const char __pyx_k_getstate[] = "__getstate__";
 static const char __pyx_k_pyx_type[] = "__pyx_type";
 static const char __pyx_k_setstate[] = "__setstate__";
 static const char __pyx_k_isenabled[] = "isenabled";
 static const char __pyx_k_pyx_state[] = "__pyx_state";
 static const char __pyx_k_reduce_ex[] = "__reduce_ex__";
-static const char __pyx_k_api_loader[] = "api.loader";
-static const char __pyx_k_get_median[] = "get_median";
 static const char __pyx_k_pyx_result[] = "__pyx_result";
 static const char __pyx_k_pyx_vtable[] = "__pyx_vtable__";
-static const char __pyx_k_LoadManager[] = "LoadManager";
 static const char __pyx_k_PickleError[] = "PickleError";
-static const char __pyx_k_abstractgen[] = "abstractgen";
-static const char __pyx_k_initializing[] = "_initializing";
 static const char __pyx_k_is_coroutine[] = "_is_coroutine";
 static const char __pyx_k_load_manager[] = "load_manager";
 static const char __pyx_k_pyx_checksum[] = "__pyx_checksum";
 static const char __pyx_k_stringsource[] = "<stringsource>";
 static const char __pyx_k_use_setstate[] = "use_setstate";
+static const char __pyx_k_ListGenerator[] = "ListGenerator";
 static const char __pyx_k_reduce_cython[] = "__reduce_cython__";
-static const char __pyx_k_full_load_name[] = "full_load_name";
+static const char __pyx_k_List_Generator[] = "List Generator";
 static const char __pyx_k_pyx_PickleError[] = "__pyx_PickleError";
 static const char __pyx_k_setstate_cython[] = "__setstate_cython__";
-static const char __pyx_k_num_of_processes[] = "num_of_processes";
-static const char __pyx_k_AbstractGenerator[] = "AbstractGenerator";
-static const char __pyx_k_Abstract_Generator[] = "Abstract Generator";
 static const char __pyx_k_asyncio_coroutines[] = "asyncio.coroutines";
 static const char __pyx_k_cline_in_traceback[] = "cline_in_traceback";
-static const char __pyx_k_get_median_speedup[] = "get_median_speedup";
-static const char __pyx_k_pyx_unpickle_AbstractGenerator[] = "__pyx_unpickle_AbstractGenerator";
-static const char __pyx_k_AbstractGenerator___reduce_cytho[] = "AbstractGenerator.__reduce_cython__";
-static const char __pyx_k_AbstractGenerator___setstate_cyt[] = "AbstractGenerator.__setstate_cython__";
-static const char __pyx_k_Abstract_base_class_for_all_gene[] = "Abstract base class for all generators";
+static const char __pyx_k_pyx_unpickle_ListGenerator[] = "__pyx_unpickle_ListGenerator";
+static const char __pyx_k_ListGenerator___reduce_cython[] = "ListGenerator.__reduce_cython__";
+static const char __pyx_k_Generate_jobs_based_on_the_list[] = "Generate jobs based on the list of names given by the user";
+static const char __pyx_k_ListGenerator___setstate_cython[] = "ListGenerator.__setstate_cython__";
 static const char __pyx_k_Incompatible_checksums_0x_x_vs_0[] = "Incompatible checksums (0x%x vs (0x5918410, 0x5a2516b, 0xb1cf4e0) = (description, load_manager, name))";
 /* #### Code section: decls ### */
-static int __pyx_pf_11abstractgen_17AbstractGenerator___init__(struct __pyx_obj_11abstractgen_AbstractGenerator *__pyx_v_self, PyObject *__pyx_v_load_manager); /* proto */
-static PyObject *__pyx_pf_11abstractgen_17AbstractGenerator_2__reduce_cython__(struct __pyx_obj_11abstractgen_AbstractGenerator *__pyx_v_self); /* proto */
-static PyObject *__pyx_pf_11abstractgen_17AbstractGenerator_4__setstate_cython__(struct __pyx_obj_11abstractgen_AbstractGenerator *__pyx_v_self, PyObject *__pyx_v___pyx_state); /* proto */
-static PyObject *__pyx_pf_11abstractgen___pyx_unpickle_AbstractGenerator(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v___pyx_type, long __pyx_v___pyx_checksum, PyObject *__pyx_v___pyx_state); /* proto */
-static PyObject *__pyx_tp_new_11abstractgen_AbstractGenerator(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
+static int __pyx_pf_7listgen_13ListGenerator___init__(struct __pyx_obj_7listgen_ListGenerator *__pyx_v_self, PyObject *__pyx_v_load_manager); /* proto */
+static PyObject *__pyx_pf_7listgen_13ListGenerator_2__reduce_cython__(struct __pyx_obj_7listgen_ListGenerator *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_7listgen_13ListGenerator_4__setstate_cython__(struct __pyx_obj_7listgen_ListGenerator *__pyx_v_self, PyObject *__pyx_v___pyx_state); /* proto */
+static PyObject *__pyx_pf_7listgen___pyx_unpickle_ListGenerator(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v___pyx_type, long __pyx_v___pyx_checksum, PyObject *__pyx_v___pyx_state); /* proto */
+static PyObject *__pyx_tp_new_7listgen_ListGenerator(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
 /* #### Code section: late_includes ### */
 /* #### Code section: module_state ### */
 typedef struct {
@@ -2423,60 +2423,47 @@ typedef struct {
   #if CYTHON_USE_MODULE_STATE
   #endif
   #if CYTHON_USE_MODULE_STATE
-  PyObject *__pyx_type_11abstractgen_AbstractGenerator;
+  #endif
+  #if CYTHON_USE_MODULE_STATE
   #endif
   PyTypeObject *__pyx_ptype_11abstractgen_AbstractGenerator;
-  PyObject *__pyx_n_s_AbstractGenerator;
-  PyObject *__pyx_n_s_AbstractGenerator___reduce_cytho;
-  PyObject *__pyx_n_s_AbstractGenerator___setstate_cyt;
-  PyObject *__pyx_kp_b_Abstract_Generator;
-  PyObject *__pyx_kp_b_Abstract_base_class_for_all_gene;
+  #if CYTHON_USE_MODULE_STATE
+  PyObject *__pyx_type_7listgen_ListGenerator;
+  #endif
+  PyTypeObject *__pyx_ptype_7listgen_ListGenerator;
+  PyObject *__pyx_kp_b_Generate_jobs_based_on_the_list;
   PyObject *__pyx_kp_s_Incompatible_checksums_0x_x_vs_0;
-  PyObject *__pyx_n_s_Load;
-  PyObject *__pyx_n_s_LoadManager;
+  PyObject *__pyx_n_s_ListGenerator;
+  PyObject *__pyx_n_s_ListGenerator___reduce_cython;
+  PyObject *__pyx_n_s_ListGenerator___setstate_cython;
+  PyObject *__pyx_kp_b_List_Generator;
   PyObject *__pyx_n_s_PickleError;
-  PyObject *__pyx_n_s__12;
   PyObject *__pyx_kp_u__2;
-  PyObject *__pyx_n_s__3;
-  PyObject *__pyx_kp_s__4;
-  PyObject *__pyx_kp_s__5;
-  PyObject *__pyx_n_s_abspath;
-  PyObject *__pyx_n_s_abstractgen;
-  PyObject *__pyx_n_s_api_loader;
-  PyObject *__pyx_n_s_append;
+  PyObject *__pyx_n_s__9;
   PyObject *__pyx_n_s_asyncio_coroutines;
   PyObject *__pyx_n_s_cline_in_traceback;
-  PyObject *__pyx_n_s_coloads;
   PyObject *__pyx_n_s_dict;
   PyObject *__pyx_n_s_dict_2;
-  PyObject *__pyx_n_s_dirname;
   PyObject *__pyx_kp_u_disable;
   PyObject *__pyx_kp_u_enable;
-  PyObject *__pyx_n_s_file;
-  PyObject *__pyx_n_s_full_load_name;
   PyObject *__pyx_kp_u_gc;
-  PyObject *__pyx_n_s_get_median;
-  PyObject *__pyx_n_s_get_median_speedup;
   PyObject *__pyx_n_s_getstate;
   PyObject *__pyx_n_s_import;
-  PyObject *__pyx_n_s_initializing;
+  PyObject *__pyx_n_s_init;
   PyObject *__pyx_n_s_is_coroutine;
   PyObject *__pyx_kp_u_isenabled;
-  PyObject *__pyx_n_s_join;
+  PyObject *__pyx_n_s_listgen;
   PyObject *__pyx_n_s_load_manager;
   PyObject *__pyx_n_s_main;
   PyObject *__pyx_n_s_name;
   PyObject *__pyx_n_s_new;
-  PyObject *__pyx_n_s_num_of_processes;
-  PyObject *__pyx_n_s_os;
-  PyObject *__pyx_n_s_path;
   PyObject *__pyx_n_s_pickle;
   PyObject *__pyx_n_s_pyx_PickleError;
   PyObject *__pyx_n_s_pyx_checksum;
   PyObject *__pyx_n_s_pyx_result;
   PyObject *__pyx_n_s_pyx_state;
   PyObject *__pyx_n_s_pyx_type;
-  PyObject *__pyx_n_s_pyx_unpickle_AbstractGenerator;
+  PyObject *__pyx_n_s_pyx_unpickle_ListGenerator;
   PyObject *__pyx_n_s_pyx_vtable;
   PyObject *__pyx_n_s_reduce;
   PyObject *__pyx_n_s_reduce_cython;
@@ -2484,10 +2471,8 @@ typedef struct {
   PyObject *__pyx_n_s_self;
   PyObject *__pyx_n_s_setstate;
   PyObject *__pyx_n_s_setstate_cython;
-  PyObject *__pyx_n_s_spec;
   PyObject *__pyx_n_s_state;
   PyObject *__pyx_kp_s_stringsource;
-  PyObject *__pyx_n_s_sys;
   PyObject *__pyx_n_s_test;
   PyObject *__pyx_n_s_update;
   PyObject *__pyx_n_s_use_setstate;
@@ -2495,12 +2480,12 @@ typedef struct {
   PyObject *__pyx_int_94523755;
   PyObject *__pyx_int_186447072;
   PyObject *__pyx_tuple_;
-  PyObject *__pyx_tuple__6;
-  PyObject *__pyx_tuple__8;
-  PyObject *__pyx_tuple__10;
-  PyObject *__pyx_codeobj__7;
-  PyObject *__pyx_codeobj__9;
-  PyObject *__pyx_codeobj__11;
+  PyObject *__pyx_tuple__3;
+  PyObject *__pyx_tuple__5;
+  PyObject *__pyx_tuple__7;
+  PyObject *__pyx_codeobj__4;
+  PyObject *__pyx_codeobj__6;
+  PyObject *__pyx_codeobj__8;
 } __pyx_mstate;
 
 #if CYTHON_USE_MODULE_STATE
@@ -2544,58 +2529,41 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_FusedFunctionType);
   #endif
   Py_CLEAR(clear_module_state->__pyx_ptype_11abstractgen_AbstractGenerator);
-  Py_CLEAR(clear_module_state->__pyx_type_11abstractgen_AbstractGenerator);
-  Py_CLEAR(clear_module_state->__pyx_n_s_AbstractGenerator);
-  Py_CLEAR(clear_module_state->__pyx_n_s_AbstractGenerator___reduce_cytho);
-  Py_CLEAR(clear_module_state->__pyx_n_s_AbstractGenerator___setstate_cyt);
-  Py_CLEAR(clear_module_state->__pyx_kp_b_Abstract_Generator);
-  Py_CLEAR(clear_module_state->__pyx_kp_b_Abstract_base_class_for_all_gene);
+  Py_CLEAR(clear_module_state->__pyx_ptype_7listgen_ListGenerator);
+  Py_CLEAR(clear_module_state->__pyx_type_7listgen_ListGenerator);
+  Py_CLEAR(clear_module_state->__pyx_kp_b_Generate_jobs_based_on_the_list);
   Py_CLEAR(clear_module_state->__pyx_kp_s_Incompatible_checksums_0x_x_vs_0);
-  Py_CLEAR(clear_module_state->__pyx_n_s_Load);
-  Py_CLEAR(clear_module_state->__pyx_n_s_LoadManager);
+  Py_CLEAR(clear_module_state->__pyx_n_s_ListGenerator);
+  Py_CLEAR(clear_module_state->__pyx_n_s_ListGenerator___reduce_cython);
+  Py_CLEAR(clear_module_state->__pyx_n_s_ListGenerator___setstate_cython);
+  Py_CLEAR(clear_module_state->__pyx_kp_b_List_Generator);
   Py_CLEAR(clear_module_state->__pyx_n_s_PickleError);
-  Py_CLEAR(clear_module_state->__pyx_n_s__12);
   Py_CLEAR(clear_module_state->__pyx_kp_u__2);
-  Py_CLEAR(clear_module_state->__pyx_n_s__3);
-  Py_CLEAR(clear_module_state->__pyx_kp_s__4);
-  Py_CLEAR(clear_module_state->__pyx_kp_s__5);
-  Py_CLEAR(clear_module_state->__pyx_n_s_abspath);
-  Py_CLEAR(clear_module_state->__pyx_n_s_abstractgen);
-  Py_CLEAR(clear_module_state->__pyx_n_s_api_loader);
-  Py_CLEAR(clear_module_state->__pyx_n_s_append);
+  Py_CLEAR(clear_module_state->__pyx_n_s__9);
   Py_CLEAR(clear_module_state->__pyx_n_s_asyncio_coroutines);
   Py_CLEAR(clear_module_state->__pyx_n_s_cline_in_traceback);
-  Py_CLEAR(clear_module_state->__pyx_n_s_coloads);
   Py_CLEAR(clear_module_state->__pyx_n_s_dict);
   Py_CLEAR(clear_module_state->__pyx_n_s_dict_2);
-  Py_CLEAR(clear_module_state->__pyx_n_s_dirname);
   Py_CLEAR(clear_module_state->__pyx_kp_u_disable);
   Py_CLEAR(clear_module_state->__pyx_kp_u_enable);
-  Py_CLEAR(clear_module_state->__pyx_n_s_file);
-  Py_CLEAR(clear_module_state->__pyx_n_s_full_load_name);
   Py_CLEAR(clear_module_state->__pyx_kp_u_gc);
-  Py_CLEAR(clear_module_state->__pyx_n_s_get_median);
-  Py_CLEAR(clear_module_state->__pyx_n_s_get_median_speedup);
   Py_CLEAR(clear_module_state->__pyx_n_s_getstate);
   Py_CLEAR(clear_module_state->__pyx_n_s_import);
-  Py_CLEAR(clear_module_state->__pyx_n_s_initializing);
+  Py_CLEAR(clear_module_state->__pyx_n_s_init);
   Py_CLEAR(clear_module_state->__pyx_n_s_is_coroutine);
   Py_CLEAR(clear_module_state->__pyx_kp_u_isenabled);
-  Py_CLEAR(clear_module_state->__pyx_n_s_join);
+  Py_CLEAR(clear_module_state->__pyx_n_s_listgen);
   Py_CLEAR(clear_module_state->__pyx_n_s_load_manager);
   Py_CLEAR(clear_module_state->__pyx_n_s_main);
   Py_CLEAR(clear_module_state->__pyx_n_s_name);
   Py_CLEAR(clear_module_state->__pyx_n_s_new);
-  Py_CLEAR(clear_module_state->__pyx_n_s_num_of_processes);
-  Py_CLEAR(clear_module_state->__pyx_n_s_os);
-  Py_CLEAR(clear_module_state->__pyx_n_s_path);
   Py_CLEAR(clear_module_state->__pyx_n_s_pickle);
   Py_CLEAR(clear_module_state->__pyx_n_s_pyx_PickleError);
   Py_CLEAR(clear_module_state->__pyx_n_s_pyx_checksum);
   Py_CLEAR(clear_module_state->__pyx_n_s_pyx_result);
   Py_CLEAR(clear_module_state->__pyx_n_s_pyx_state);
   Py_CLEAR(clear_module_state->__pyx_n_s_pyx_type);
-  Py_CLEAR(clear_module_state->__pyx_n_s_pyx_unpickle_AbstractGenerator);
+  Py_CLEAR(clear_module_state->__pyx_n_s_pyx_unpickle_ListGenerator);
   Py_CLEAR(clear_module_state->__pyx_n_s_pyx_vtable);
   Py_CLEAR(clear_module_state->__pyx_n_s_reduce);
   Py_CLEAR(clear_module_state->__pyx_n_s_reduce_cython);
@@ -2603,10 +2571,8 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_self);
   Py_CLEAR(clear_module_state->__pyx_n_s_setstate);
   Py_CLEAR(clear_module_state->__pyx_n_s_setstate_cython);
-  Py_CLEAR(clear_module_state->__pyx_n_s_spec);
   Py_CLEAR(clear_module_state->__pyx_n_s_state);
   Py_CLEAR(clear_module_state->__pyx_kp_s_stringsource);
-  Py_CLEAR(clear_module_state->__pyx_n_s_sys);
   Py_CLEAR(clear_module_state->__pyx_n_s_test);
   Py_CLEAR(clear_module_state->__pyx_n_s_update);
   Py_CLEAR(clear_module_state->__pyx_n_s_use_setstate);
@@ -2614,12 +2580,12 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_int_94523755);
   Py_CLEAR(clear_module_state->__pyx_int_186447072);
   Py_CLEAR(clear_module_state->__pyx_tuple_);
-  Py_CLEAR(clear_module_state->__pyx_tuple__6);
-  Py_CLEAR(clear_module_state->__pyx_tuple__8);
-  Py_CLEAR(clear_module_state->__pyx_tuple__10);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__7);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__9);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__11);
+  Py_CLEAR(clear_module_state->__pyx_tuple__3);
+  Py_CLEAR(clear_module_state->__pyx_tuple__5);
+  Py_CLEAR(clear_module_state->__pyx_tuple__7);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__4);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__6);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__8);
   return 0;
 }
 #endif
@@ -2641,58 +2607,41 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_FusedFunctionType);
   #endif
   Py_VISIT(traverse_module_state->__pyx_ptype_11abstractgen_AbstractGenerator);
-  Py_VISIT(traverse_module_state->__pyx_type_11abstractgen_AbstractGenerator);
-  Py_VISIT(traverse_module_state->__pyx_n_s_AbstractGenerator);
-  Py_VISIT(traverse_module_state->__pyx_n_s_AbstractGenerator___reduce_cytho);
-  Py_VISIT(traverse_module_state->__pyx_n_s_AbstractGenerator___setstate_cyt);
-  Py_VISIT(traverse_module_state->__pyx_kp_b_Abstract_Generator);
-  Py_VISIT(traverse_module_state->__pyx_kp_b_Abstract_base_class_for_all_gene);
+  Py_VISIT(traverse_module_state->__pyx_ptype_7listgen_ListGenerator);
+  Py_VISIT(traverse_module_state->__pyx_type_7listgen_ListGenerator);
+  Py_VISIT(traverse_module_state->__pyx_kp_b_Generate_jobs_based_on_the_list);
   Py_VISIT(traverse_module_state->__pyx_kp_s_Incompatible_checksums_0x_x_vs_0);
-  Py_VISIT(traverse_module_state->__pyx_n_s_Load);
-  Py_VISIT(traverse_module_state->__pyx_n_s_LoadManager);
+  Py_VISIT(traverse_module_state->__pyx_n_s_ListGenerator);
+  Py_VISIT(traverse_module_state->__pyx_n_s_ListGenerator___reduce_cython);
+  Py_VISIT(traverse_module_state->__pyx_n_s_ListGenerator___setstate_cython);
+  Py_VISIT(traverse_module_state->__pyx_kp_b_List_Generator);
   Py_VISIT(traverse_module_state->__pyx_n_s_PickleError);
-  Py_VISIT(traverse_module_state->__pyx_n_s__12);
   Py_VISIT(traverse_module_state->__pyx_kp_u__2);
-  Py_VISIT(traverse_module_state->__pyx_n_s__3);
-  Py_VISIT(traverse_module_state->__pyx_kp_s__4);
-  Py_VISIT(traverse_module_state->__pyx_kp_s__5);
-  Py_VISIT(traverse_module_state->__pyx_n_s_abspath);
-  Py_VISIT(traverse_module_state->__pyx_n_s_abstractgen);
-  Py_VISIT(traverse_module_state->__pyx_n_s_api_loader);
-  Py_VISIT(traverse_module_state->__pyx_n_s_append);
+  Py_VISIT(traverse_module_state->__pyx_n_s__9);
   Py_VISIT(traverse_module_state->__pyx_n_s_asyncio_coroutines);
   Py_VISIT(traverse_module_state->__pyx_n_s_cline_in_traceback);
-  Py_VISIT(traverse_module_state->__pyx_n_s_coloads);
   Py_VISIT(traverse_module_state->__pyx_n_s_dict);
   Py_VISIT(traverse_module_state->__pyx_n_s_dict_2);
-  Py_VISIT(traverse_module_state->__pyx_n_s_dirname);
   Py_VISIT(traverse_module_state->__pyx_kp_u_disable);
   Py_VISIT(traverse_module_state->__pyx_kp_u_enable);
-  Py_VISIT(traverse_module_state->__pyx_n_s_file);
-  Py_VISIT(traverse_module_state->__pyx_n_s_full_load_name);
   Py_VISIT(traverse_module_state->__pyx_kp_u_gc);
-  Py_VISIT(traverse_module_state->__pyx_n_s_get_median);
-  Py_VISIT(traverse_module_state->__pyx_n_s_get_median_speedup);
   Py_VISIT(traverse_module_state->__pyx_n_s_getstate);
   Py_VISIT(traverse_module_state->__pyx_n_s_import);
-  Py_VISIT(traverse_module_state->__pyx_n_s_initializing);
+  Py_VISIT(traverse_module_state->__pyx_n_s_init);
   Py_VISIT(traverse_module_state->__pyx_n_s_is_coroutine);
   Py_VISIT(traverse_module_state->__pyx_kp_u_isenabled);
-  Py_VISIT(traverse_module_state->__pyx_n_s_join);
+  Py_VISIT(traverse_module_state->__pyx_n_s_listgen);
   Py_VISIT(traverse_module_state->__pyx_n_s_load_manager);
   Py_VISIT(traverse_module_state->__pyx_n_s_main);
   Py_VISIT(traverse_module_state->__pyx_n_s_name);
   Py_VISIT(traverse_module_state->__pyx_n_s_new);
-  Py_VISIT(traverse_module_state->__pyx_n_s_num_of_processes);
-  Py_VISIT(traverse_module_state->__pyx_n_s_os);
-  Py_VISIT(traverse_module_state->__pyx_n_s_path);
   Py_VISIT(traverse_module_state->__pyx_n_s_pickle);
   Py_VISIT(traverse_module_state->__pyx_n_s_pyx_PickleError);
   Py_VISIT(traverse_module_state->__pyx_n_s_pyx_checksum);
   Py_VISIT(traverse_module_state->__pyx_n_s_pyx_result);
   Py_VISIT(traverse_module_state->__pyx_n_s_pyx_state);
   Py_VISIT(traverse_module_state->__pyx_n_s_pyx_type);
-  Py_VISIT(traverse_module_state->__pyx_n_s_pyx_unpickle_AbstractGenerator);
+  Py_VISIT(traverse_module_state->__pyx_n_s_pyx_unpickle_ListGenerator);
   Py_VISIT(traverse_module_state->__pyx_n_s_pyx_vtable);
   Py_VISIT(traverse_module_state->__pyx_n_s_reduce);
   Py_VISIT(traverse_module_state->__pyx_n_s_reduce_cython);
@@ -2700,10 +2649,8 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_self);
   Py_VISIT(traverse_module_state->__pyx_n_s_setstate);
   Py_VISIT(traverse_module_state->__pyx_n_s_setstate_cython);
-  Py_VISIT(traverse_module_state->__pyx_n_s_spec);
   Py_VISIT(traverse_module_state->__pyx_n_s_state);
   Py_VISIT(traverse_module_state->__pyx_kp_s_stringsource);
-  Py_VISIT(traverse_module_state->__pyx_n_s_sys);
   Py_VISIT(traverse_module_state->__pyx_n_s_test);
   Py_VISIT(traverse_module_state->__pyx_n_s_update);
   Py_VISIT(traverse_module_state->__pyx_n_s_use_setstate);
@@ -2711,12 +2658,12 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_int_94523755);
   Py_VISIT(traverse_module_state->__pyx_int_186447072);
   Py_VISIT(traverse_module_state->__pyx_tuple_);
-  Py_VISIT(traverse_module_state->__pyx_tuple__6);
-  Py_VISIT(traverse_module_state->__pyx_tuple__8);
-  Py_VISIT(traverse_module_state->__pyx_tuple__10);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__7);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__9);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__11);
+  Py_VISIT(traverse_module_state->__pyx_tuple__3);
+  Py_VISIT(traverse_module_state->__pyx_tuple__5);
+  Py_VISIT(traverse_module_state->__pyx_tuple__7);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__4);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__6);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__8);
   return 0;
 }
 #endif
@@ -2758,60 +2705,47 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #if CYTHON_USE_MODULE_STATE
 #endif
 #if CYTHON_USE_MODULE_STATE
-#define __pyx_type_11abstractgen_AbstractGenerator __pyx_mstate_global->__pyx_type_11abstractgen_AbstractGenerator
+#endif
+#if CYTHON_USE_MODULE_STATE
 #endif
 #define __pyx_ptype_11abstractgen_AbstractGenerator __pyx_mstate_global->__pyx_ptype_11abstractgen_AbstractGenerator
-#define __pyx_n_s_AbstractGenerator __pyx_mstate_global->__pyx_n_s_AbstractGenerator
-#define __pyx_n_s_AbstractGenerator___reduce_cytho __pyx_mstate_global->__pyx_n_s_AbstractGenerator___reduce_cytho
-#define __pyx_n_s_AbstractGenerator___setstate_cyt __pyx_mstate_global->__pyx_n_s_AbstractGenerator___setstate_cyt
-#define __pyx_kp_b_Abstract_Generator __pyx_mstate_global->__pyx_kp_b_Abstract_Generator
-#define __pyx_kp_b_Abstract_base_class_for_all_gene __pyx_mstate_global->__pyx_kp_b_Abstract_base_class_for_all_gene
+#if CYTHON_USE_MODULE_STATE
+#define __pyx_type_7listgen_ListGenerator __pyx_mstate_global->__pyx_type_7listgen_ListGenerator
+#endif
+#define __pyx_ptype_7listgen_ListGenerator __pyx_mstate_global->__pyx_ptype_7listgen_ListGenerator
+#define __pyx_kp_b_Generate_jobs_based_on_the_list __pyx_mstate_global->__pyx_kp_b_Generate_jobs_based_on_the_list
 #define __pyx_kp_s_Incompatible_checksums_0x_x_vs_0 __pyx_mstate_global->__pyx_kp_s_Incompatible_checksums_0x_x_vs_0
-#define __pyx_n_s_Load __pyx_mstate_global->__pyx_n_s_Load
-#define __pyx_n_s_LoadManager __pyx_mstate_global->__pyx_n_s_LoadManager
+#define __pyx_n_s_ListGenerator __pyx_mstate_global->__pyx_n_s_ListGenerator
+#define __pyx_n_s_ListGenerator___reduce_cython __pyx_mstate_global->__pyx_n_s_ListGenerator___reduce_cython
+#define __pyx_n_s_ListGenerator___setstate_cython __pyx_mstate_global->__pyx_n_s_ListGenerator___setstate_cython
+#define __pyx_kp_b_List_Generator __pyx_mstate_global->__pyx_kp_b_List_Generator
 #define __pyx_n_s_PickleError __pyx_mstate_global->__pyx_n_s_PickleError
-#define __pyx_n_s__12 __pyx_mstate_global->__pyx_n_s__12
 #define __pyx_kp_u__2 __pyx_mstate_global->__pyx_kp_u__2
-#define __pyx_n_s__3 __pyx_mstate_global->__pyx_n_s__3
-#define __pyx_kp_s__4 __pyx_mstate_global->__pyx_kp_s__4
-#define __pyx_kp_s__5 __pyx_mstate_global->__pyx_kp_s__5
-#define __pyx_n_s_abspath __pyx_mstate_global->__pyx_n_s_abspath
-#define __pyx_n_s_abstractgen __pyx_mstate_global->__pyx_n_s_abstractgen
-#define __pyx_n_s_api_loader __pyx_mstate_global->__pyx_n_s_api_loader
-#define __pyx_n_s_append __pyx_mstate_global->__pyx_n_s_append
+#define __pyx_n_s__9 __pyx_mstate_global->__pyx_n_s__9
 #define __pyx_n_s_asyncio_coroutines __pyx_mstate_global->__pyx_n_s_asyncio_coroutines
 #define __pyx_n_s_cline_in_traceback __pyx_mstate_global->__pyx_n_s_cline_in_traceback
-#define __pyx_n_s_coloads __pyx_mstate_global->__pyx_n_s_coloads
 #define __pyx_n_s_dict __pyx_mstate_global->__pyx_n_s_dict
 #define __pyx_n_s_dict_2 __pyx_mstate_global->__pyx_n_s_dict_2
-#define __pyx_n_s_dirname __pyx_mstate_global->__pyx_n_s_dirname
 #define __pyx_kp_u_disable __pyx_mstate_global->__pyx_kp_u_disable
 #define __pyx_kp_u_enable __pyx_mstate_global->__pyx_kp_u_enable
-#define __pyx_n_s_file __pyx_mstate_global->__pyx_n_s_file
-#define __pyx_n_s_full_load_name __pyx_mstate_global->__pyx_n_s_full_load_name
 #define __pyx_kp_u_gc __pyx_mstate_global->__pyx_kp_u_gc
-#define __pyx_n_s_get_median __pyx_mstate_global->__pyx_n_s_get_median
-#define __pyx_n_s_get_median_speedup __pyx_mstate_global->__pyx_n_s_get_median_speedup
 #define __pyx_n_s_getstate __pyx_mstate_global->__pyx_n_s_getstate
 #define __pyx_n_s_import __pyx_mstate_global->__pyx_n_s_import
-#define __pyx_n_s_initializing __pyx_mstate_global->__pyx_n_s_initializing
+#define __pyx_n_s_init __pyx_mstate_global->__pyx_n_s_init
 #define __pyx_n_s_is_coroutine __pyx_mstate_global->__pyx_n_s_is_coroutine
 #define __pyx_kp_u_isenabled __pyx_mstate_global->__pyx_kp_u_isenabled
-#define __pyx_n_s_join __pyx_mstate_global->__pyx_n_s_join
+#define __pyx_n_s_listgen __pyx_mstate_global->__pyx_n_s_listgen
 #define __pyx_n_s_load_manager __pyx_mstate_global->__pyx_n_s_load_manager
 #define __pyx_n_s_main __pyx_mstate_global->__pyx_n_s_main
 #define __pyx_n_s_name __pyx_mstate_global->__pyx_n_s_name
 #define __pyx_n_s_new __pyx_mstate_global->__pyx_n_s_new
-#define __pyx_n_s_num_of_processes __pyx_mstate_global->__pyx_n_s_num_of_processes
-#define __pyx_n_s_os __pyx_mstate_global->__pyx_n_s_os
-#define __pyx_n_s_path __pyx_mstate_global->__pyx_n_s_path
 #define __pyx_n_s_pickle __pyx_mstate_global->__pyx_n_s_pickle
 #define __pyx_n_s_pyx_PickleError __pyx_mstate_global->__pyx_n_s_pyx_PickleError
 #define __pyx_n_s_pyx_checksum __pyx_mstate_global->__pyx_n_s_pyx_checksum
 #define __pyx_n_s_pyx_result __pyx_mstate_global->__pyx_n_s_pyx_result
 #define __pyx_n_s_pyx_state __pyx_mstate_global->__pyx_n_s_pyx_state
 #define __pyx_n_s_pyx_type __pyx_mstate_global->__pyx_n_s_pyx_type
-#define __pyx_n_s_pyx_unpickle_AbstractGenerator __pyx_mstate_global->__pyx_n_s_pyx_unpickle_AbstractGenerator
+#define __pyx_n_s_pyx_unpickle_ListGenerator __pyx_mstate_global->__pyx_n_s_pyx_unpickle_ListGenerator
 #define __pyx_n_s_pyx_vtable __pyx_mstate_global->__pyx_n_s_pyx_vtable
 #define __pyx_n_s_reduce __pyx_mstate_global->__pyx_n_s_reduce
 #define __pyx_n_s_reduce_cython __pyx_mstate_global->__pyx_n_s_reduce_cython
@@ -2819,10 +2753,8 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_self __pyx_mstate_global->__pyx_n_s_self
 #define __pyx_n_s_setstate __pyx_mstate_global->__pyx_n_s_setstate
 #define __pyx_n_s_setstate_cython __pyx_mstate_global->__pyx_n_s_setstate_cython
-#define __pyx_n_s_spec __pyx_mstate_global->__pyx_n_s_spec
 #define __pyx_n_s_state __pyx_mstate_global->__pyx_n_s_state
 #define __pyx_kp_s_stringsource __pyx_mstate_global->__pyx_kp_s_stringsource
-#define __pyx_n_s_sys __pyx_mstate_global->__pyx_n_s_sys
 #define __pyx_n_s_test __pyx_mstate_global->__pyx_n_s_test
 #define __pyx_n_s_update __pyx_mstate_global->__pyx_n_s_update
 #define __pyx_n_s_use_setstate __pyx_mstate_global->__pyx_n_s_use_setstate
@@ -2830,12 +2762,12 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_int_94523755 __pyx_mstate_global->__pyx_int_94523755
 #define __pyx_int_186447072 __pyx_mstate_global->__pyx_int_186447072
 #define __pyx_tuple_ __pyx_mstate_global->__pyx_tuple_
-#define __pyx_tuple__6 __pyx_mstate_global->__pyx_tuple__6
-#define __pyx_tuple__8 __pyx_mstate_global->__pyx_tuple__8
-#define __pyx_tuple__10 __pyx_mstate_global->__pyx_tuple__10
-#define __pyx_codeobj__7 __pyx_mstate_global->__pyx_codeobj__7
-#define __pyx_codeobj__9 __pyx_mstate_global->__pyx_codeobj__9
-#define __pyx_codeobj__11 __pyx_mstate_global->__pyx_codeobj__11
+#define __pyx_tuple__3 __pyx_mstate_global->__pyx_tuple__3
+#define __pyx_tuple__5 __pyx_mstate_global->__pyx_tuple__5
+#define __pyx_tuple__7 __pyx_mstate_global->__pyx_tuple__7
+#define __pyx_codeobj__4 __pyx_mstate_global->__pyx_codeobj__4
+#define __pyx_codeobj__6 __pyx_mstate_global->__pyx_codeobj__6
+#define __pyx_codeobj__8 __pyx_mstate_global->__pyx_codeobj__8
 /* #### Code section: module_code ### */
 
 /* "string.to_py":31
@@ -3156,17 +3088,17 @@ static std::string __pyx_convert_string_from_py_6libcpp_6string_std__in_string(P
   return __pyx_r;
 }
 
-/* "abstractgen.pyx":17
- * cdef class AbstractGenerator:
+/* "listgen.pyx":7
+ * cdef class ListGenerator(AbstractGenerator):
  * 
  *     def __init__(self, object load_manager):             # <<<<<<<<<<<<<<
- *         self.name = "Abstract Generator"
- *         self.description = "Abstract base class for all generators"
+ *         self.name = "List Generator"
+ *         self.description = "Generate jobs based on the list of names given by the user"
  */
 
 /* Python wrapper */
-static int __pyx_pw_11abstractgen_17AbstractGenerator_1__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static int __pyx_pw_11abstractgen_17AbstractGenerator_1__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static int __pyx_pw_7listgen_13ListGenerator_1__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static int __pyx_pw_7listgen_13ListGenerator_1__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyObject *__pyx_v_load_manager = 0;
   CYTHON_UNUSED Py_ssize_t __pyx_nargs;
   CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
@@ -3200,12 +3132,12 @@ static int __pyx_pw_11abstractgen_17AbstractGenerator_1__init__(PyObject *__pyx_
           (void)__Pyx_Arg_NewRef_VARARGS(values[0]);
           kw_args--;
         }
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(1, 17, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(1, 7, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "__init__") < 0)) __PYX_ERR(1, 17, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "__init__") < 0)) __PYX_ERR(1, 7, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 1)) {
       goto __pyx_L5_argtuple_error;
@@ -3216,7 +3148,7 @@ static int __pyx_pw_11abstractgen_17AbstractGenerator_1__init__(PyObject *__pyx_
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__init__", 1, 1, 1, __pyx_nargs); __PYX_ERR(1, 17, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__init__", 1, 1, 1, __pyx_nargs); __PYX_ERR(1, 7, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -3226,11 +3158,11 @@ static int __pyx_pw_11abstractgen_17AbstractGenerator_1__init__(PyObject *__pyx_
       __Pyx_Arg_XDECREF_VARARGS(values[__pyx_temp]);
     }
   }
-  __Pyx_AddTraceback("abstractgen.AbstractGenerator.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("listgen.ListGenerator.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return -1;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_11abstractgen_17AbstractGenerator___init__(((struct __pyx_obj_11abstractgen_AbstractGenerator *)__pyx_v_self), __pyx_v_load_manager);
+  __pyx_r = __pyx_pf_7listgen_13ListGenerator___init__(((struct __pyx_obj_7listgen_ListGenerator *)__pyx_v_self), __pyx_v_load_manager);
 
   /* function exit code */
   {
@@ -3243,371 +3175,192 @@ static int __pyx_pw_11abstractgen_17AbstractGenerator_1__init__(PyObject *__pyx_
   return __pyx_r;
 }
 
-static int __pyx_pf_11abstractgen_17AbstractGenerator___init__(struct __pyx_obj_11abstractgen_AbstractGenerator *__pyx_v_self, PyObject *__pyx_v_load_manager) {
+static int __pyx_pf_7listgen_13ListGenerator___init__(struct __pyx_obj_7listgen_ListGenerator *__pyx_v_self, PyObject *__pyx_v_load_manager) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   std::string __pyx_t_1;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  PyObject *__pyx_t_4 = NULL;
+  PyObject *__pyx_t_5 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__init__", 1);
 
-  /* "abstractgen.pyx":18
+  /* "listgen.pyx":8
  * 
  *     def __init__(self, object load_manager):
- *         self.name = "Abstract Generator"             # <<<<<<<<<<<<<<
- *         self.description = "Abstract base class for all generators"
- *         self.load_manager = load_manager
+ *         self.name = "List Generator"             # <<<<<<<<<<<<<<
+ *         self.description = "Generate jobs based on the list of names given by the user"
+ *         AbstractGenerator.__init__(self, load_manager=load_manager)
  */
-  __pyx_t_1 = __pyx_convert_string_from_py_6libcpp_6string_std__in_string(__pyx_kp_b_Abstract_Generator); if (unlikely(PyErr_Occurred())) __PYX_ERR(1, 18, __pyx_L1_error)
-  __pyx_v_self->name = __PYX_STD_MOVE_IF_SUPPORTED(__pyx_t_1);
+  __pyx_t_1 = __pyx_convert_string_from_py_6libcpp_6string_std__in_string(__pyx_kp_b_List_Generator); if (unlikely(PyErr_Occurred())) __PYX_ERR(1, 8, __pyx_L1_error)
+  __pyx_v_self->__pyx_base.name = __PYX_STD_MOVE_IF_SUPPORTED(__pyx_t_1);
 
-  /* "abstractgen.pyx":19
+  /* "listgen.pyx":9
  *     def __init__(self, object load_manager):
- *         self.name = "Abstract Generator"
- *         self.description = "Abstract base class for all generators"             # <<<<<<<<<<<<<<
- *         self.load_manager = load_manager
+ *         self.name = "List Generator"
+ *         self.description = "Generate jobs based on the list of names given by the user"             # <<<<<<<<<<<<<<
+ *         AbstractGenerator.__init__(self, load_manager=load_manager)
  * 
  */
-  __pyx_t_1 = __pyx_convert_string_from_py_6libcpp_6string_std__in_string(__pyx_kp_b_Abstract_base_class_for_all_gene); if (unlikely(PyErr_Occurred())) __PYX_ERR(1, 19, __pyx_L1_error)
-  __pyx_v_self->description = __PYX_STD_MOVE_IF_SUPPORTED(__pyx_t_1);
+  __pyx_t_1 = __pyx_convert_string_from_py_6libcpp_6string_std__in_string(__pyx_kp_b_Generate_jobs_based_on_the_list); if (unlikely(PyErr_Occurred())) __PYX_ERR(1, 9, __pyx_L1_error)
+  __pyx_v_self->__pyx_base.description = __PYX_STD_MOVE_IF_SUPPORTED(__pyx_t_1);
 
-  /* "abstractgen.pyx":20
- *         self.name = "Abstract Generator"
- *         self.description = "Abstract base class for all generators"
- *         self.load_manager = load_manager             # <<<<<<<<<<<<<<
+  /* "listgen.pyx":10
+ *         self.name = "List Generator"
+ *         self.description = "Generate jobs based on the list of names given by the user"
+ *         AbstractGenerator.__init__(self, load_manager=load_manager)             # <<<<<<<<<<<<<<
  * 
- *     cdef Job generate_job(self, int idx, string load_name):
+ *     cdef vector[Job] generate_jobs_set(self, vector[string]& arg):
  */
-  __Pyx_INCREF(__pyx_v_load_manager);
-  __Pyx_GIVEREF(__pyx_v_load_manager);
-  __Pyx_GOTREF(__pyx_v_self->load_manager);
-  __Pyx_DECREF(__pyx_v_self->load_manager);
-  __pyx_v_self->load_manager = __pyx_v_load_manager;
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_ptype_11abstractgen_AbstractGenerator), __pyx_n_s_init); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 10, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 10, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_INCREF((PyObject *)__pyx_v_self);
+  __Pyx_GIVEREF((PyObject *)__pyx_v_self);
+  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_3, 0, ((PyObject *)__pyx_v_self))) __PYX_ERR(1, 10, __pyx_L1_error);
+  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(1, 10, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_load_manager, __pyx_v_load_manager) < 0) __PYX_ERR(1, 10, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_3, __pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(1, 10, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-  /* "abstractgen.pyx":17
- * cdef class AbstractGenerator:
+  /* "listgen.pyx":7
+ * cdef class ListGenerator(AbstractGenerator):
  * 
  *     def __init__(self, object load_manager):             # <<<<<<<<<<<<<<
- *         self.name = "Abstract Generator"
- *         self.description = "Abstract base class for all generators"
+ *         self.name = "List Generator"
+ *         self.description = "Generate jobs based on the list of names given by the user"
  */
 
   /* function exit code */
   __pyx_r = 0;
   goto __pyx_L0;
   __pyx_L1_error:;
-  __Pyx_AddTraceback("abstractgen.AbstractGenerator.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_XDECREF(__pyx_t_5);
+  __Pyx_AddTraceback("listgen.ListGenerator.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = -1;
   __pyx_L0:;
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "abstractgen.pyx":22
- *         self.load_manager = load_manager
+/* "listgen.pyx":12
+ *         AbstractGenerator.__init__(self, load_manager=load_manager)
  * 
- *     cdef Job generate_job(self, int idx, string load_name):             # <<<<<<<<<<<<<<
+ *     cdef vector[Job] generate_jobs_set(self, vector[string]& arg):             # <<<<<<<<<<<<<<
  * 
- *         # Get python object Load
+ *         cdef vector[Job] jobs_set
  */
 
-static Job __pyx_f_11abstractgen_17AbstractGenerator_generate_job(struct __pyx_obj_11abstractgen_AbstractGenerator *__pyx_v_self, int __pyx_v_idx, std::string __pyx_v_load_name) {
-  PyObject *__pyx_v_load = NULL;
-  std::string __pyx_v_name;
-  double __pyx_v_speedup;
-  std::unordered_map<std::string,double>  __pyx_v_speedups_map;
-  PyObject *__pyx_v_coload_name = NULL;
-  Job __pyx_r;
-  __Pyx_RefNannyDeclarations
-  PyObject *__pyx_t_1 = NULL;
-  PyObject *__pyx_t_2 = NULL;
-  PyObject *__pyx_t_3 = NULL;
-  PyObject *__pyx_t_4 = NULL;
-  int __pyx_t_5;
-  Py_ssize_t __pyx_t_6;
-  PyObject *(*__pyx_t_7)(PyObject *);
-  std::string __pyx_t_8;
-  double __pyx_t_9;
-  long __pyx_t_10;
-  long __pyx_t_11;
-  Job __pyx_t_12;
+static std::vector<Job>  __pyx_f_7listgen_13ListGenerator_generate_jobs_set(struct __pyx_obj_7listgen_ListGenerator *__pyx_v_self, std::vector<std::string>  &__pyx_v_arg) {
+  std::vector<Job>  __pyx_v_jobs_set;
+  int __pyx_v_idx;
+  std::string __pyx_v_load_name;
+  std::vector<std::string> ::iterator __pyx_v_it;
+  std::vector<Job>  __pyx_r;
+  int __pyx_t_1;
+  Job __pyx_t_2;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
-  __Pyx_RefNannySetupContext("generate_job", 1);
 
-  /* "abstractgen.pyx":25
+  /* "listgen.pyx":16
+ *         cdef vector[Job] jobs_set
  * 
- *         # Get python object Load
- *         load = self.load_manager(load_name)             # <<<<<<<<<<<<<<
- * 
- *         cdef string name
+ *         cdef int idx = 0             # <<<<<<<<<<<<<<
+ *         cdef string load_name
+ *         cdef vector[string].iterator it = arg.begin()
  */
-  __pyx_t_2 = __pyx_convert_PyUnicode_string_to_py_6libcpp_6string_std__in_string(__pyx_v_load_name); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 25, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_INCREF(__pyx_v_self->load_manager);
-  __pyx_t_3 = __pyx_v_self->load_manager; __pyx_t_4 = NULL;
-  __pyx_t_5 = 0;
-  #if CYTHON_UNPACK_METHODS
-  if (likely(PyMethod_Check(__pyx_t_3))) {
-    __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_3);
-    if (likely(__pyx_t_4)) {
-      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_3);
-      __Pyx_INCREF(__pyx_t_4);
-      __Pyx_INCREF(function);
-      __Pyx_DECREF_SET(__pyx_t_3, function);
-      __pyx_t_5 = 1;
+  __pyx_v_idx = 0;
+
+  /* "listgen.pyx":18
+ *         cdef int idx = 0
+ *         cdef string load_name
+ *         cdef vector[string].iterator it = arg.begin()             # <<<<<<<<<<<<<<
+ * 
+ *         while it != arg.end():
+ */
+  __pyx_v_it = __pyx_v_arg.begin();
+
+  /* "listgen.pyx":20
+ *         cdef vector[string].iterator it = arg.begin()
+ * 
+ *         while it != arg.end():             # <<<<<<<<<<<<<<
+ *             load_name = deref(it)
+ *             jobs_set.push_back( <Job>self.generate_job(idx, load_name) )
+ */
+  while (1) {
+    __pyx_t_1 = (__pyx_v_it != __pyx_v_arg.end());
+    if (!__pyx_t_1) break;
+
+    /* "listgen.pyx":21
+ * 
+ *         while it != arg.end():
+ *             load_name = deref(it)             # <<<<<<<<<<<<<<
+ *             jobs_set.push_back( <Job>self.generate_job(idx, load_name) )
+ *             idx += 1
+ */
+    __pyx_v_load_name = (*__pyx_v_it);
+
+    /* "listgen.pyx":22
+ *         while it != arg.end():
+ *             load_name = deref(it)
+ *             jobs_set.push_back( <Job>self.generate_job(idx, load_name) )             # <<<<<<<<<<<<<<
+ *             idx += 1
+ *             it += 1
+ */
+    __pyx_t_2 = ((struct __pyx_vtabstruct_7listgen_ListGenerator *)__pyx_v_self->__pyx_base.__pyx_vtab)->__pyx_base.generate_job(((struct __pyx_obj_11abstractgen_AbstractGenerator *)__pyx_v_self), __pyx_v_idx, __pyx_v_load_name); if (unlikely(PyErr_Occurred())) __PYX_ERR(1, 22, __pyx_L1_error)
+    try {
+      __pyx_v_jobs_set.push_back(((Job)__pyx_t_2));
+    } catch(...) {
+      __Pyx_CppExn2PyErr();
+      __PYX_ERR(1, 22, __pyx_L1_error)
     }
+
+    /* "listgen.pyx":23
+ *             load_name = deref(it)
+ *             jobs_set.push_back( <Job>self.generate_job(idx, load_name) )
+ *             idx += 1             # <<<<<<<<<<<<<<
+ *             it += 1
+ * 
+ */
+    __pyx_v_idx = (__pyx_v_idx + 1);
+
+    /* "listgen.pyx":24
+ *             jobs_set.push_back( <Job>self.generate_job(idx, load_name) )
+ *             idx += 1
+ *             it += 1             # <<<<<<<<<<<<<<
+ * 
+ */
+    __pyx_v_it += 1;
   }
-  #endif
-  {
-    PyObject *__pyx_callargs[2] = {__pyx_t_4, __pyx_t_2};
-    __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_5, 1+__pyx_t_5);
-    __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 25, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  }
-  __pyx_v_load = __pyx_t_1;
-  __pyx_t_1 = 0;
 
-  /* "abstractgen.pyx":31
- *         cdef unordered_map[string, double] speedups_map
+  /* "listgen.pyx":12
+ *         AbstractGenerator.__init__(self, load_manager=load_manager)
  * 
- *         for coload_name in load.coloads:             # <<<<<<<<<<<<<<
+ *     cdef vector[Job] generate_jobs_set(self, vector[string]& arg):             # <<<<<<<<<<<<<<
  * 
- *             name = <string>coload_name
- */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_load, __pyx_n_s_coloads); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 31, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (likely(PyList_CheckExact(__pyx_t_1)) || PyTuple_CheckExact(__pyx_t_1)) {
-    __pyx_t_3 = __pyx_t_1; __Pyx_INCREF(__pyx_t_3);
-    __pyx_t_6 = 0;
-    __pyx_t_7 = NULL;
-  } else {
-    __pyx_t_6 = -1; __pyx_t_3 = PyObject_GetIter(__pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 31, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_7 = __Pyx_PyObject_GetIterNextFunc(__pyx_t_3); if (unlikely(!__pyx_t_7)) __PYX_ERR(1, 31, __pyx_L1_error)
-  }
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  for (;;) {
-    if (likely(!__pyx_t_7)) {
-      if (likely(PyList_CheckExact(__pyx_t_3))) {
-        {
-          Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_3);
-          #if !CYTHON_ASSUME_SAFE_MACROS
-          if (unlikely((__pyx_temp < 0))) __PYX_ERR(1, 31, __pyx_L1_error)
-          #endif
-          if (__pyx_t_6 >= __pyx_temp) break;
-        }
-        #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_1 = PyList_GET_ITEM(__pyx_t_3, __pyx_t_6); __Pyx_INCREF(__pyx_t_1); __pyx_t_6++; if (unlikely((0 < 0))) __PYX_ERR(1, 31, __pyx_L1_error)
-        #else
-        __pyx_t_1 = __Pyx_PySequence_ITEM(__pyx_t_3, __pyx_t_6); __pyx_t_6++; if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 31, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_1);
-        #endif
-      } else {
-        {
-          Py_ssize_t __pyx_temp = __Pyx_PyTuple_GET_SIZE(__pyx_t_3);
-          #if !CYTHON_ASSUME_SAFE_MACROS
-          if (unlikely((__pyx_temp < 0))) __PYX_ERR(1, 31, __pyx_L1_error)
-          #endif
-          if (__pyx_t_6 >= __pyx_temp) break;
-        }
-        #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_1 = PyTuple_GET_ITEM(__pyx_t_3, __pyx_t_6); __Pyx_INCREF(__pyx_t_1); __pyx_t_6++; if (unlikely((0 < 0))) __PYX_ERR(1, 31, __pyx_L1_error)
-        #else
-        __pyx_t_1 = __Pyx_PySequence_ITEM(__pyx_t_3, __pyx_t_6); __pyx_t_6++; if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 31, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_1);
-        #endif
-      }
-    } else {
-      __pyx_t_1 = __pyx_t_7(__pyx_t_3);
-      if (unlikely(!__pyx_t_1)) {
-        PyObject* exc_type = PyErr_Occurred();
-        if (exc_type) {
-          if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(1, 31, __pyx_L1_error)
-        }
-        break;
-      }
-      __Pyx_GOTREF(__pyx_t_1);
-    }
-    __Pyx_XDECREF_SET(__pyx_v_coload_name, __pyx_t_1);
-    __pyx_t_1 = 0;
-
-    /* "abstractgen.pyx":33
- *         for coload_name in load.coloads:
- * 
- *             name = <string>coload_name             # <<<<<<<<<<<<<<
- *             speedup = <double>(load.get_median_speedup( coload_name ))
- * 
- */
-    __pyx_t_8 = __pyx_convert_string_from_py_6libcpp_6string_std__in_string(__pyx_v_coload_name); if (unlikely(PyErr_Occurred())) __PYX_ERR(1, 33, __pyx_L1_error)
-    __pyx_v_name = ((std::string)__pyx_t_8);
-
-    /* "abstractgen.pyx":34
- * 
- *             name = <string>coload_name
- *             speedup = <double>(load.get_median_speedup( coload_name ))             # <<<<<<<<<<<<<<
- * 
- *             speedups_map[name] = speedup
- */
-    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_load, __pyx_n_s_get_median_speedup); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 34, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_4 = NULL;
-    __pyx_t_5 = 0;
-    #if CYTHON_UNPACK_METHODS
-    if (likely(PyMethod_Check(__pyx_t_2))) {
-      __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_2);
-      if (likely(__pyx_t_4)) {
-        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
-        __Pyx_INCREF(__pyx_t_4);
-        __Pyx_INCREF(function);
-        __Pyx_DECREF_SET(__pyx_t_2, function);
-        __pyx_t_5 = 1;
-      }
-    }
-    #endif
-    {
-      PyObject *__pyx_callargs[2] = {__pyx_t_4, __pyx_v_coload_name};
-      __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_5, 1+__pyx_t_5);
-      __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-      if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 34, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_1);
-      __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    }
-    __pyx_t_9 = __pyx_PyFloat_AsDouble(__pyx_t_1); if (unlikely((__pyx_t_9 == (double)-1) && PyErr_Occurred())) __PYX_ERR(1, 34, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __pyx_v_speedup = ((double)__pyx_t_9);
-
-    /* "abstractgen.pyx":36
- *             speedup = <double>(load.get_median_speedup( coload_name ))
- * 
- *             speedups_map[name] = speedup             # <<<<<<<<<<<<<<
- * 
- *         return Job(speedups_map,
- */
-    (__pyx_v_speedups_map[__pyx_v_name]) = __pyx_v_speedup;
-
-    /* "abstractgen.pyx":31
- *         cdef unordered_map[string, double] speedups_map
- * 
- *         for coload_name in load.coloads:             # <<<<<<<<<<<<<<
- * 
- *             name = <string>coload_name
- */
-  }
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-
-  /* "abstractgen.pyx":40
- *         return Job(speedups_map,
- *                    idx,
- *                    <string>load.full_load_name,             # <<<<<<<<<<<<<<
- *                    <long>load.num_of_processes,
- *                    <long>load.num_of_processes,
- */
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_load, __pyx_n_s_full_load_name); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 40, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_8 = __pyx_convert_string_from_py_6libcpp_6string_std__in_string(__pyx_t_3); if (unlikely(PyErr_Occurred())) __PYX_ERR(1, 40, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-
-  /* "abstractgen.pyx":41
- *                    idx,
- *                    <string>load.full_load_name,
- *                    <long>load.num_of_processes,             # <<<<<<<<<<<<<<
- *                    <long>load.num_of_processes,
- *                    <double>load.get_median(),
- */
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_load, __pyx_n_s_num_of_processes); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 41, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_10 = __Pyx_PyInt_As_long(__pyx_t_3); if (unlikely((__pyx_t_10 == (long)-1) && PyErr_Occurred())) __PYX_ERR(1, 41, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-
-  /* "abstractgen.pyx":42
- *                    <string>load.full_load_name,
- *                    <long>load.num_of_processes,
- *                    <long>load.num_of_processes,             # <<<<<<<<<<<<<<
- *                    <double>load.get_median(),
- *                    0.0,
- */
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_load, __pyx_n_s_num_of_processes); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 42, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_11 = __Pyx_PyInt_As_long(__pyx_t_3); if (unlikely((__pyx_t_11 == (long)-1) && PyErr_Occurred())) __PYX_ERR(1, 42, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-
-  /* "abstractgen.pyx":43
- *                    <long>load.num_of_processes,
- *                    <long>load.num_of_processes,
- *                    <double>load.get_median(),             # <<<<<<<<<<<<<<
- *                    0.0,
- *                    0.0,
- */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_load, __pyx_n_s_get_median); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 43, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = NULL;
-  __pyx_t_5 = 0;
-  #if CYTHON_UNPACK_METHODS
-  if (likely(PyMethod_Check(__pyx_t_1))) {
-    __pyx_t_2 = PyMethod_GET_SELF(__pyx_t_1);
-    if (likely(__pyx_t_2)) {
-      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
-      __Pyx_INCREF(__pyx_t_2);
-      __Pyx_INCREF(function);
-      __Pyx_DECREF_SET(__pyx_t_1, function);
-      __pyx_t_5 = 1;
-    }
-  }
-  #endif
-  {
-    PyObject *__pyx_callargs[2] = {__pyx_t_2, NULL};
-    __pyx_t_3 = __Pyx_PyObject_FastCall(__pyx_t_1, __pyx_callargs+1-__pyx_t_5, 0+__pyx_t_5);
-    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-    if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 43, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
-    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  }
-  __pyx_t_9 = __pyx_PyFloat_AsDouble(__pyx_t_3); if (unlikely((__pyx_t_9 == (double)-1) && PyErr_Occurred())) __PYX_ERR(1, 43, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-
-  /* "abstractgen.pyx":38
- *             speedups_map[name] = speedup
- * 
- *         return Job(speedups_map,             # <<<<<<<<<<<<<<
- *                    idx,
- *                    <string>load.full_load_name,
- */
-  try {
-    __pyx_t_12 = Job(__pyx_v_speedups_map, __pyx_v_idx, ((std::string)__pyx_t_8), ((long)__pyx_t_10), ((long)__pyx_t_11), ((double)__pyx_t_9), 0.0, 0.0, 0.0);
-  } catch(...) {
-    __Pyx_CppExn2PyErr();
-    __PYX_ERR(1, 38, __pyx_L1_error)
-  }
-  __pyx_r = __pyx_t_12;
-  goto __pyx_L0;
-
-  /* "abstractgen.pyx":22
- *         self.load_manager = load_manager
- * 
- *     cdef Job generate_job(self, int idx, string load_name):             # <<<<<<<<<<<<<<
- * 
- *         # Get python object Load
+ *         cdef vector[Job] jobs_set
  */
 
   /* function exit code */
+  __Pyx_pretend_to_initialize(&__pyx_r);
+  goto __pyx_L0;
   __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_XDECREF(__pyx_t_2);
-  __Pyx_XDECREF(__pyx_t_3);
-  __Pyx_XDECREF(__pyx_t_4);
-  __Pyx_AddTraceback("abstractgen.AbstractGenerator.generate_job", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("listgen.ListGenerator.generate_jobs_set", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_pretend_to_initialize(&__pyx_r);
   __pyx_L0:;
-  __Pyx_XDECREF(__pyx_v_load);
-  __Pyx_XDECREF(__pyx_v_coload_name);
-  __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
@@ -3618,15 +3371,15 @@ static Job __pyx_f_11abstractgen_17AbstractGenerator_generate_job(struct __pyx_o
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_11abstractgen_17AbstractGenerator_3__reduce_cython__(PyObject *__pyx_v_self, 
+static PyObject *__pyx_pw_7listgen_13ListGenerator_3__reduce_cython__(PyObject *__pyx_v_self, 
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
 PyObject *__pyx_args, PyObject *__pyx_kwds
 #endif
 ); /*proto*/
-static PyMethodDef __pyx_mdef_11abstractgen_17AbstractGenerator_3__reduce_cython__ = {"__reduce_cython__", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_11abstractgen_17AbstractGenerator_3__reduce_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
-static PyObject *__pyx_pw_11abstractgen_17AbstractGenerator_3__reduce_cython__(PyObject *__pyx_v_self, 
+static PyMethodDef __pyx_mdef_7listgen_13ListGenerator_3__reduce_cython__ = {"__reduce_cython__", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7listgen_13ListGenerator_3__reduce_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_7listgen_13ListGenerator_3__reduce_cython__(PyObject *__pyx_v_self, 
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
@@ -3651,14 +3404,14 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   if (unlikely(__pyx_nargs > 0)) {
     __Pyx_RaiseArgtupleInvalid("__reduce_cython__", 1, 0, 0, __pyx_nargs); return NULL;}
   if (unlikely(__pyx_kwds) && __Pyx_NumKwargs_FASTCALL(__pyx_kwds) && unlikely(!__Pyx_CheckKeywordStrings(__pyx_kwds, "__reduce_cython__", 0))) return NULL;
-  __pyx_r = __pyx_pf_11abstractgen_17AbstractGenerator_2__reduce_cython__(((struct __pyx_obj_11abstractgen_AbstractGenerator *)__pyx_v_self));
+  __pyx_r = __pyx_pf_7listgen_13ListGenerator_2__reduce_cython__(((struct __pyx_obj_7listgen_ListGenerator *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_11abstractgen_17AbstractGenerator_2__reduce_cython__(struct __pyx_obj_11abstractgen_AbstractGenerator *__pyx_v_self) {
+static PyObject *__pyx_pf_7listgen_13ListGenerator_2__reduce_cython__(struct __pyx_obj_7listgen_ListGenerator *__pyx_v_self) {
   PyObject *__pyx_v_state = 0;
   PyObject *__pyx_v__dict = 0;
   int __pyx_v_use_setstate;
@@ -3680,17 +3433,17 @@ static PyObject *__pyx_pf_11abstractgen_17AbstractGenerator_2__reduce_cython__(s
  *     _dict = getattr(self, '__dict__', None)
  *     if _dict is not None:
  */
-  __pyx_t_1 = __pyx_convert_PyUnicode_string_to_py_6libcpp_6string_std__in_string(__pyx_v_self->description); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 5, __pyx_L1_error)
+  __pyx_t_1 = __pyx_convert_PyUnicode_string_to_py_6libcpp_6string_std__in_string(__pyx_v_self->__pyx_base.description); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 5, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __pyx_convert_PyUnicode_string_to_py_6libcpp_6string_std__in_string(__pyx_v_self->name); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 5, __pyx_L1_error)
+  __pyx_t_2 = __pyx_convert_PyUnicode_string_to_py_6libcpp_6string_std__in_string(__pyx_v_self->__pyx_base.name); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 5, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = PyTuple_New(3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 5, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_GIVEREF(__pyx_t_1);
   if (__Pyx_PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_1)) __PYX_ERR(0, 5, __pyx_L1_error);
-  __Pyx_INCREF(__pyx_v_self->load_manager);
-  __Pyx_GIVEREF(__pyx_v_self->load_manager);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_v_self->load_manager)) __PYX_ERR(0, 5, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_v_self->__pyx_base.load_manager);
+  __Pyx_GIVEREF(__pyx_v_self->__pyx_base.load_manager);
+  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_v_self->__pyx_base.load_manager)) __PYX_ERR(0, 5, __pyx_L1_error);
   __Pyx_GIVEREF(__pyx_t_2);
   if (__Pyx_PyTuple_SET_ITEM(__pyx_t_3, 2, __pyx_t_2)) __PYX_ERR(0, 5, __pyx_L1_error);
   __pyx_t_1 = 0;
@@ -3762,10 +3515,10 @@ static PyObject *__pyx_pf_11abstractgen_17AbstractGenerator_2__reduce_cython__(s
  *     else:
  *         use_setstate = self.load_manager is not None             # <<<<<<<<<<<<<<
  *     if use_setstate:
- *         return __pyx_unpickle_AbstractGenerator, (type(self), 0x5918410, None), state
+ *         return __pyx_unpickle_ListGenerator, (type(self), 0x5918410, None), state
  */
   /*else*/ {
-    __pyx_t_4 = (__pyx_v_self->load_manager != Py_None);
+    __pyx_t_4 = (__pyx_v_self->__pyx_base.load_manager != Py_None);
     __pyx_v_use_setstate = __pyx_t_4;
   }
   __pyx_L3:;
@@ -3774,7 +3527,7 @@ static PyObject *__pyx_pf_11abstractgen_17AbstractGenerator_2__reduce_cython__(s
  *     else:
  *         use_setstate = self.load_manager is not None
  *     if use_setstate:             # <<<<<<<<<<<<<<
- *         return __pyx_unpickle_AbstractGenerator, (type(self), 0x5918410, None), state
+ *         return __pyx_unpickle_ListGenerator, (type(self), 0x5918410, None), state
  *     else:
  */
   if (__pyx_v_use_setstate) {
@@ -3782,12 +3535,12 @@ static PyObject *__pyx_pf_11abstractgen_17AbstractGenerator_2__reduce_cython__(s
     /* "(tree fragment)":13
  *         use_setstate = self.load_manager is not None
  *     if use_setstate:
- *         return __pyx_unpickle_AbstractGenerator, (type(self), 0x5918410, None), state             # <<<<<<<<<<<<<<
+ *         return __pyx_unpickle_ListGenerator, (type(self), 0x5918410, None), state             # <<<<<<<<<<<<<<
  *     else:
- *         return __pyx_unpickle_AbstractGenerator, (type(self), 0x5918410, state)
+ *         return __pyx_unpickle_ListGenerator, (type(self), 0x5918410, state)
  */
     __Pyx_XDECREF(__pyx_r);
-    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_pyx_unpickle_AbstractGenerator); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 13, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_pyx_unpickle_ListGenerator); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 13, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __pyx_t_3 = PyTuple_New(3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 13, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
@@ -3819,21 +3572,21 @@ static PyObject *__pyx_pf_11abstractgen_17AbstractGenerator_2__reduce_cython__(s
  *     else:
  *         use_setstate = self.load_manager is not None
  *     if use_setstate:             # <<<<<<<<<<<<<<
- *         return __pyx_unpickle_AbstractGenerator, (type(self), 0x5918410, None), state
+ *         return __pyx_unpickle_ListGenerator, (type(self), 0x5918410, None), state
  *     else:
  */
   }
 
   /* "(tree fragment)":15
- *         return __pyx_unpickle_AbstractGenerator, (type(self), 0x5918410, None), state
+ *         return __pyx_unpickle_ListGenerator, (type(self), 0x5918410, None), state
  *     else:
- *         return __pyx_unpickle_AbstractGenerator, (type(self), 0x5918410, state)             # <<<<<<<<<<<<<<
+ *         return __pyx_unpickle_ListGenerator, (type(self), 0x5918410, state)             # <<<<<<<<<<<<<<
  * def __setstate_cython__(self, __pyx_state):
- *     __pyx_unpickle_AbstractGenerator__set_state(self, __pyx_state)
+ *     __pyx_unpickle_ListGenerator__set_state(self, __pyx_state)
  */
   /*else*/ {
     __Pyx_XDECREF(__pyx_r);
-    __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_pyx_unpickle_AbstractGenerator); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 15, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_pyx_unpickle_ListGenerator); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 15, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __pyx_t_3 = PyTuple_New(3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 15, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
@@ -3870,7 +3623,7 @@ static PyObject *__pyx_pf_11abstractgen_17AbstractGenerator_2__reduce_cython__(s
   __Pyx_XDECREF(__pyx_t_1);
   __Pyx_XDECREF(__pyx_t_2);
   __Pyx_XDECREF(__pyx_t_3);
-  __Pyx_AddTraceback("abstractgen.AbstractGenerator.__reduce_cython__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("listgen.ListGenerator.__reduce_cython__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_state);
@@ -3882,21 +3635,21 @@ static PyObject *__pyx_pf_11abstractgen_17AbstractGenerator_2__reduce_cython__(s
 
 /* "(tree fragment)":16
  *     else:
- *         return __pyx_unpickle_AbstractGenerator, (type(self), 0x5918410, state)
+ *         return __pyx_unpickle_ListGenerator, (type(self), 0x5918410, state)
  * def __setstate_cython__(self, __pyx_state):             # <<<<<<<<<<<<<<
- *     __pyx_unpickle_AbstractGenerator__set_state(self, __pyx_state)
+ *     __pyx_unpickle_ListGenerator__set_state(self, __pyx_state)
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_11abstractgen_17AbstractGenerator_5__setstate_cython__(PyObject *__pyx_v_self, 
+static PyObject *__pyx_pw_7listgen_13ListGenerator_5__setstate_cython__(PyObject *__pyx_v_self, 
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
 PyObject *__pyx_args, PyObject *__pyx_kwds
 #endif
 ); /*proto*/
-static PyMethodDef __pyx_mdef_11abstractgen_17AbstractGenerator_5__setstate_cython__ = {"__setstate_cython__", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_11abstractgen_17AbstractGenerator_5__setstate_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
-static PyObject *__pyx_pw_11abstractgen_17AbstractGenerator_5__setstate_cython__(PyObject *__pyx_v_self, 
+static PyMethodDef __pyx_mdef_7listgen_13ListGenerator_5__setstate_cython__ = {"__setstate_cython__", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7listgen_13ListGenerator_5__setstate_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_7listgen_13ListGenerator_5__setstate_cython__(PyObject *__pyx_v_self, 
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
@@ -3966,11 +3719,11 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       __Pyx_Arg_XDECREF_FASTCALL(values[__pyx_temp]);
     }
   }
-  __Pyx_AddTraceback("abstractgen.AbstractGenerator.__setstate_cython__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("listgen.ListGenerator.__setstate_cython__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_11abstractgen_17AbstractGenerator_4__setstate_cython__(((struct __pyx_obj_11abstractgen_AbstractGenerator *)__pyx_v_self), __pyx_v___pyx_state);
+  __pyx_r = __pyx_pf_7listgen_13ListGenerator_4__setstate_cython__(((struct __pyx_obj_7listgen_ListGenerator *)__pyx_v_self), __pyx_v___pyx_state);
 
   /* function exit code */
   {
@@ -3983,7 +3736,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_11abstractgen_17AbstractGenerator_4__setstate_cython__(struct __pyx_obj_11abstractgen_AbstractGenerator *__pyx_v_self, PyObject *__pyx_v___pyx_state) {
+static PyObject *__pyx_pf_7listgen_13ListGenerator_4__setstate_cython__(struct __pyx_obj_7listgen_ListGenerator *__pyx_v_self, PyObject *__pyx_v___pyx_state) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -3993,20 +3746,20 @@ static PyObject *__pyx_pf_11abstractgen_17AbstractGenerator_4__setstate_cython__
   __Pyx_RefNannySetupContext("__setstate_cython__", 1);
 
   /* "(tree fragment)":17
- *         return __pyx_unpickle_AbstractGenerator, (type(self), 0x5918410, state)
+ *         return __pyx_unpickle_ListGenerator, (type(self), 0x5918410, state)
  * def __setstate_cython__(self, __pyx_state):
- *     __pyx_unpickle_AbstractGenerator__set_state(self, __pyx_state)             # <<<<<<<<<<<<<<
+ *     __pyx_unpickle_ListGenerator__set_state(self, __pyx_state)             # <<<<<<<<<<<<<<
  */
   if (!(likely(PyTuple_CheckExact(__pyx_v___pyx_state))||((__pyx_v___pyx_state) == Py_None) || __Pyx_RaiseUnexpectedTypeError("tuple", __pyx_v___pyx_state))) __PYX_ERR(0, 17, __pyx_L1_error)
-  __pyx_t_1 = __pyx_f_11abstractgen___pyx_unpickle_AbstractGenerator__set_state(__pyx_v_self, ((PyObject*)__pyx_v___pyx_state)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 17, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7listgen___pyx_unpickle_ListGenerator__set_state(__pyx_v_self, ((PyObject*)__pyx_v___pyx_state)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 17, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "(tree fragment)":16
  *     else:
- *         return __pyx_unpickle_AbstractGenerator, (type(self), 0x5918410, state)
+ *         return __pyx_unpickle_ListGenerator, (type(self), 0x5918410, state)
  * def __setstate_cython__(self, __pyx_state):             # <<<<<<<<<<<<<<
- *     __pyx_unpickle_AbstractGenerator__set_state(self, __pyx_state)
+ *     __pyx_unpickle_ListGenerator__set_state(self, __pyx_state)
  */
 
   /* function exit code */
@@ -4014,7 +3767,7 @@ static PyObject *__pyx_pf_11abstractgen_17AbstractGenerator_4__setstate_cython__
   goto __pyx_L0;
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("abstractgen.AbstractGenerator.__setstate_cython__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("listgen.ListGenerator.__setstate_cython__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -4023,21 +3776,21 @@ static PyObject *__pyx_pf_11abstractgen_17AbstractGenerator_4__setstate_cython__
 }
 
 /* "(tree fragment)":1
- * def __pyx_unpickle_AbstractGenerator(__pyx_type, long __pyx_checksum, __pyx_state):             # <<<<<<<<<<<<<<
+ * def __pyx_unpickle_ListGenerator(__pyx_type, long __pyx_checksum, __pyx_state):             # <<<<<<<<<<<<<<
  *     cdef object __pyx_PickleError
  *     cdef object __pyx_result
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_11abstractgen_1__pyx_unpickle_AbstractGenerator(PyObject *__pyx_self, 
+static PyObject *__pyx_pw_7listgen_1__pyx_unpickle_ListGenerator(PyObject *__pyx_self, 
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
 PyObject *__pyx_args, PyObject *__pyx_kwds
 #endif
 ); /*proto*/
-static PyMethodDef __pyx_mdef_11abstractgen_1__pyx_unpickle_AbstractGenerator = {"__pyx_unpickle_AbstractGenerator", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_11abstractgen_1__pyx_unpickle_AbstractGenerator, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
-static PyObject *__pyx_pw_11abstractgen_1__pyx_unpickle_AbstractGenerator(PyObject *__pyx_self, 
+static PyMethodDef __pyx_mdef_7listgen_1__pyx_unpickle_ListGenerator = {"__pyx_unpickle_ListGenerator", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7listgen_1__pyx_unpickle_ListGenerator, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_7listgen_1__pyx_unpickle_ListGenerator(PyObject *__pyx_self, 
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
@@ -4057,7 +3810,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   int __pyx_clineno = 0;
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
-  __Pyx_RefNannySetupContext("__pyx_unpickle_AbstractGenerator (wrapper)", 0);
+  __Pyx_RefNannySetupContext("__pyx_unpickle_ListGenerator (wrapper)", 0);
   #if !CYTHON_METH_FASTCALL
   #if CYTHON_ASSUME_SAFE_MACROS
   __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
@@ -4097,7 +3850,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
         }
         else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 1, __pyx_L3_error)
         else {
-          __Pyx_RaiseArgtupleInvalid("__pyx_unpickle_AbstractGenerator", 1, 3, 3, 1); __PYX_ERR(0, 1, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("__pyx_unpickle_ListGenerator", 1, 3, 3, 1); __PYX_ERR(0, 1, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
@@ -4107,12 +3860,12 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
         }
         else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 1, __pyx_L3_error)
         else {
-          __Pyx_RaiseArgtupleInvalid("__pyx_unpickle_AbstractGenerator", 1, 3, 3, 2); __PYX_ERR(0, 1, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("__pyx_unpickle_ListGenerator", 1, 3, 3, 2); __PYX_ERR(0, 1, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "__pyx_unpickle_AbstractGenerator") < 0)) __PYX_ERR(0, 1, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "__pyx_unpickle_ListGenerator") < 0)) __PYX_ERR(0, 1, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 3)) {
       goto __pyx_L5_argtuple_error;
@@ -4127,7 +3880,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__pyx_unpickle_AbstractGenerator", 1, 3, 3, __pyx_nargs); __PYX_ERR(0, 1, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__pyx_unpickle_ListGenerator", 1, 3, 3, __pyx_nargs); __PYX_ERR(0, 1, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -4137,11 +3890,11 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       __Pyx_Arg_XDECREF_FASTCALL(values[__pyx_temp]);
     }
   }
-  __Pyx_AddTraceback("abstractgen.__pyx_unpickle_AbstractGenerator", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("listgen.__pyx_unpickle_ListGenerator", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_11abstractgen___pyx_unpickle_AbstractGenerator(__pyx_self, __pyx_v___pyx_type, __pyx_v___pyx_checksum, __pyx_v___pyx_state);
+  __pyx_r = __pyx_pf_7listgen___pyx_unpickle_ListGenerator(__pyx_self, __pyx_v___pyx_type, __pyx_v___pyx_checksum, __pyx_v___pyx_state);
 
   /* function exit code */
   {
@@ -4154,7 +3907,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_11abstractgen___pyx_unpickle_AbstractGenerator(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v___pyx_type, long __pyx_v___pyx_checksum, PyObject *__pyx_v___pyx_state) {
+static PyObject *__pyx_pf_7listgen___pyx_unpickle_ListGenerator(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v___pyx_type, long __pyx_v___pyx_checksum, PyObject *__pyx_v___pyx_state) {
   PyObject *__pyx_v___pyx_PickleError = 0;
   PyObject *__pyx_v___pyx_result = 0;
   PyObject *__pyx_r = NULL;
@@ -4167,7 +3920,7 @@ static PyObject *__pyx_pf_11abstractgen___pyx_unpickle_AbstractGenerator(CYTHON_
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
-  __Pyx_RefNannySetupContext("__pyx_unpickle_AbstractGenerator", 1);
+  __Pyx_RefNannySetupContext("__pyx_unpickle_ListGenerator", 1);
 
   /* "(tree fragment)":4
  *     cdef object __pyx_PickleError
@@ -4187,7 +3940,7 @@ static PyObject *__pyx_pf_11abstractgen___pyx_unpickle_AbstractGenerator(CYTHON_
  *     if __pyx_checksum not in (0x5918410, 0x5a2516b, 0xb1cf4e0):
  *         from pickle import PickleError as __pyx_PickleError             # <<<<<<<<<<<<<<
  *         raise __pyx_PickleError, "Incompatible checksums (0x%x vs (0x5918410, 0x5a2516b, 0xb1cf4e0) = (description, load_manager, name))" % __pyx_checksum
- *     __pyx_result = AbstractGenerator.__new__(__pyx_type)
+ *     __pyx_result = ListGenerator.__new__(__pyx_type)
  */
     __pyx_t_1 = PyList_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 5, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
@@ -4208,7 +3961,7 @@ static PyObject *__pyx_pf_11abstractgen___pyx_unpickle_AbstractGenerator(CYTHON_
  *     if __pyx_checksum not in (0x5918410, 0x5a2516b, 0xb1cf4e0):
  *         from pickle import PickleError as __pyx_PickleError
  *         raise __pyx_PickleError, "Incompatible checksums (0x%x vs (0x5918410, 0x5a2516b, 0xb1cf4e0) = (description, load_manager, name))" % __pyx_checksum             # <<<<<<<<<<<<<<
- *     __pyx_result = AbstractGenerator.__new__(__pyx_type)
+ *     __pyx_result = ListGenerator.__new__(__pyx_type)
  *     if __pyx_state is not None:
  */
     __pyx_t_3 = __Pyx_PyInt_From_long(__pyx_v___pyx_checksum); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 6, __pyx_L1_error)
@@ -4232,11 +3985,11 @@ static PyObject *__pyx_pf_11abstractgen___pyx_unpickle_AbstractGenerator(CYTHON_
   /* "(tree fragment)":7
  *         from pickle import PickleError as __pyx_PickleError
  *         raise __pyx_PickleError, "Incompatible checksums (0x%x vs (0x5918410, 0x5a2516b, 0xb1cf4e0) = (description, load_manager, name))" % __pyx_checksum
- *     __pyx_result = AbstractGenerator.__new__(__pyx_type)             # <<<<<<<<<<<<<<
+ *     __pyx_result = ListGenerator.__new__(__pyx_type)             # <<<<<<<<<<<<<<
  *     if __pyx_state is not None:
- *         __pyx_unpickle_AbstractGenerator__set_state(<AbstractGenerator> __pyx_result, __pyx_state)
+ *         __pyx_unpickle_ListGenerator__set_state(<ListGenerator> __pyx_result, __pyx_state)
  */
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_ptype_11abstractgen_AbstractGenerator), __pyx_n_s_new); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 7, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_ptype_7listgen_ListGenerator), __pyx_n_s_new); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 7, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_t_4 = NULL;
   __pyx_t_5 = 0;
@@ -4265,40 +4018,40 @@ static PyObject *__pyx_pf_11abstractgen___pyx_unpickle_AbstractGenerator(CYTHON_
 
   /* "(tree fragment)":8
  *         raise __pyx_PickleError, "Incompatible checksums (0x%x vs (0x5918410, 0x5a2516b, 0xb1cf4e0) = (description, load_manager, name))" % __pyx_checksum
- *     __pyx_result = AbstractGenerator.__new__(__pyx_type)
+ *     __pyx_result = ListGenerator.__new__(__pyx_type)
  *     if __pyx_state is not None:             # <<<<<<<<<<<<<<
- *         __pyx_unpickle_AbstractGenerator__set_state(<AbstractGenerator> __pyx_result, __pyx_state)
+ *         __pyx_unpickle_ListGenerator__set_state(<ListGenerator> __pyx_result, __pyx_state)
  *     return __pyx_result
  */
   __pyx_t_2 = (__pyx_v___pyx_state != Py_None);
   if (__pyx_t_2) {
 
     /* "(tree fragment)":9
- *     __pyx_result = AbstractGenerator.__new__(__pyx_type)
+ *     __pyx_result = ListGenerator.__new__(__pyx_type)
  *     if __pyx_state is not None:
- *         __pyx_unpickle_AbstractGenerator__set_state(<AbstractGenerator> __pyx_result, __pyx_state)             # <<<<<<<<<<<<<<
+ *         __pyx_unpickle_ListGenerator__set_state(<ListGenerator> __pyx_result, __pyx_state)             # <<<<<<<<<<<<<<
  *     return __pyx_result
- * cdef __pyx_unpickle_AbstractGenerator__set_state(AbstractGenerator __pyx_result, tuple __pyx_state):
+ * cdef __pyx_unpickle_ListGenerator__set_state(ListGenerator __pyx_result, tuple __pyx_state):
  */
     if (!(likely(PyTuple_CheckExact(__pyx_v___pyx_state))||((__pyx_v___pyx_state) == Py_None) || __Pyx_RaiseUnexpectedTypeError("tuple", __pyx_v___pyx_state))) __PYX_ERR(0, 9, __pyx_L1_error)
-    __pyx_t_1 = __pyx_f_11abstractgen___pyx_unpickle_AbstractGenerator__set_state(((struct __pyx_obj_11abstractgen_AbstractGenerator *)__pyx_v___pyx_result), ((PyObject*)__pyx_v___pyx_state)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 9, __pyx_L1_error)
+    __pyx_t_1 = __pyx_f_7listgen___pyx_unpickle_ListGenerator__set_state(((struct __pyx_obj_7listgen_ListGenerator *)__pyx_v___pyx_result), ((PyObject*)__pyx_v___pyx_state)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 9, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
     /* "(tree fragment)":8
  *         raise __pyx_PickleError, "Incompatible checksums (0x%x vs (0x5918410, 0x5a2516b, 0xb1cf4e0) = (description, load_manager, name))" % __pyx_checksum
- *     __pyx_result = AbstractGenerator.__new__(__pyx_type)
+ *     __pyx_result = ListGenerator.__new__(__pyx_type)
  *     if __pyx_state is not None:             # <<<<<<<<<<<<<<
- *         __pyx_unpickle_AbstractGenerator__set_state(<AbstractGenerator> __pyx_result, __pyx_state)
+ *         __pyx_unpickle_ListGenerator__set_state(<ListGenerator> __pyx_result, __pyx_state)
  *     return __pyx_result
  */
   }
 
   /* "(tree fragment)":10
  *     if __pyx_state is not None:
- *         __pyx_unpickle_AbstractGenerator__set_state(<AbstractGenerator> __pyx_result, __pyx_state)
+ *         __pyx_unpickle_ListGenerator__set_state(<ListGenerator> __pyx_result, __pyx_state)
  *     return __pyx_result             # <<<<<<<<<<<<<<
- * cdef __pyx_unpickle_AbstractGenerator__set_state(AbstractGenerator __pyx_result, tuple __pyx_state):
+ * cdef __pyx_unpickle_ListGenerator__set_state(ListGenerator __pyx_result, tuple __pyx_state):
  *     __pyx_result.description = __pyx_state[0]; __pyx_result.load_manager = __pyx_state[1]; __pyx_result.name = __pyx_state[2]
  */
   __Pyx_XDECREF(__pyx_r);
@@ -4307,7 +4060,7 @@ static PyObject *__pyx_pf_11abstractgen___pyx_unpickle_AbstractGenerator(CYTHON_
   goto __pyx_L0;
 
   /* "(tree fragment)":1
- * def __pyx_unpickle_AbstractGenerator(__pyx_type, long __pyx_checksum, __pyx_state):             # <<<<<<<<<<<<<<
+ * def __pyx_unpickle_ListGenerator(__pyx_type, long __pyx_checksum, __pyx_state):             # <<<<<<<<<<<<<<
  *     cdef object __pyx_PickleError
  *     cdef object __pyx_result
  */
@@ -4317,7 +4070,7 @@ static PyObject *__pyx_pf_11abstractgen___pyx_unpickle_AbstractGenerator(CYTHON_
   __Pyx_XDECREF(__pyx_t_1);
   __Pyx_XDECREF(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_4);
-  __Pyx_AddTraceback("abstractgen.__pyx_unpickle_AbstractGenerator", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("listgen.__pyx_unpickle_ListGenerator", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v___pyx_PickleError);
@@ -4328,14 +4081,14 @@ static PyObject *__pyx_pf_11abstractgen___pyx_unpickle_AbstractGenerator(CYTHON_
 }
 
 /* "(tree fragment)":11
- *         __pyx_unpickle_AbstractGenerator__set_state(<AbstractGenerator> __pyx_result, __pyx_state)
+ *         __pyx_unpickle_ListGenerator__set_state(<ListGenerator> __pyx_result, __pyx_state)
  *     return __pyx_result
- * cdef __pyx_unpickle_AbstractGenerator__set_state(AbstractGenerator __pyx_result, tuple __pyx_state):             # <<<<<<<<<<<<<<
+ * cdef __pyx_unpickle_ListGenerator__set_state(ListGenerator __pyx_result, tuple __pyx_state):             # <<<<<<<<<<<<<<
  *     __pyx_result.description = __pyx_state[0]; __pyx_result.load_manager = __pyx_state[1]; __pyx_result.name = __pyx_state[2]
  *     if len(__pyx_state) > 3 and hasattr(__pyx_result, '__dict__'):
  */
 
-static PyObject *__pyx_f_11abstractgen___pyx_unpickle_AbstractGenerator__set_state(struct __pyx_obj_11abstractgen_AbstractGenerator *__pyx_v___pyx_result, PyObject *__pyx_v___pyx_state) {
+static PyObject *__pyx_f_7listgen___pyx_unpickle_ListGenerator__set_state(struct __pyx_obj_7listgen_ListGenerator *__pyx_v___pyx_result, PyObject *__pyx_v___pyx_state) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -4350,11 +4103,11 @@ static PyObject *__pyx_f_11abstractgen___pyx_unpickle_AbstractGenerator__set_sta
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
-  __Pyx_RefNannySetupContext("__pyx_unpickle_AbstractGenerator__set_state", 1);
+  __Pyx_RefNannySetupContext("__pyx_unpickle_ListGenerator__set_state", 1);
 
   /* "(tree fragment)":12
  *     return __pyx_result
- * cdef __pyx_unpickle_AbstractGenerator__set_state(AbstractGenerator __pyx_result, tuple __pyx_state):
+ * cdef __pyx_unpickle_ListGenerator__set_state(ListGenerator __pyx_result, tuple __pyx_state):
  *     __pyx_result.description = __pyx_state[0]; __pyx_result.load_manager = __pyx_state[1]; __pyx_result.name = __pyx_state[2]             # <<<<<<<<<<<<<<
  *     if len(__pyx_state) > 3 and hasattr(__pyx_result, '__dict__'):
  *         __pyx_result.__dict__.update(__pyx_state[3])
@@ -4367,7 +4120,7 @@ static PyObject *__pyx_f_11abstractgen___pyx_unpickle_AbstractGenerator__set_sta
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = __pyx_convert_string_from_py_6libcpp_6string_std__in_string(__pyx_t_1); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 12, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_v___pyx_result->description = __PYX_STD_MOVE_IF_SUPPORTED(__pyx_t_2);
+  __pyx_v___pyx_result->__pyx_base.description = __PYX_STD_MOVE_IF_SUPPORTED(__pyx_t_2);
   if (unlikely(__pyx_v___pyx_state == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
     __PYX_ERR(0, 12, __pyx_L1_error)
@@ -4375,9 +4128,9 @@ static PyObject *__pyx_f_11abstractgen___pyx_unpickle_AbstractGenerator__set_sta
   __pyx_t_1 = __Pyx_GetItemInt_Tuple(__pyx_v___pyx_state, 1, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 12, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_1);
-  __Pyx_GOTREF(__pyx_v___pyx_result->load_manager);
-  __Pyx_DECREF(__pyx_v___pyx_result->load_manager);
-  __pyx_v___pyx_result->load_manager = __pyx_t_1;
+  __Pyx_GOTREF(__pyx_v___pyx_result->__pyx_base.load_manager);
+  __Pyx_DECREF(__pyx_v___pyx_result->__pyx_base.load_manager);
+  __pyx_v___pyx_result->__pyx_base.load_manager = __pyx_t_1;
   __pyx_t_1 = 0;
   if (unlikely(__pyx_v___pyx_state == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
@@ -4387,10 +4140,10 @@ static PyObject *__pyx_f_11abstractgen___pyx_unpickle_AbstractGenerator__set_sta
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = __pyx_convert_string_from_py_6libcpp_6string_std__in_string(__pyx_t_1); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 12, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_v___pyx_result->name = __PYX_STD_MOVE_IF_SUPPORTED(__pyx_t_2);
+  __pyx_v___pyx_result->__pyx_base.name = __PYX_STD_MOVE_IF_SUPPORTED(__pyx_t_2);
 
   /* "(tree fragment)":13
- * cdef __pyx_unpickle_AbstractGenerator__set_state(AbstractGenerator __pyx_result, tuple __pyx_state):
+ * cdef __pyx_unpickle_ListGenerator__set_state(ListGenerator __pyx_result, tuple __pyx_state):
  *     __pyx_result.description = __pyx_state[0]; __pyx_result.load_manager = __pyx_state[1]; __pyx_result.name = __pyx_state[2]
  *     if len(__pyx_state) > 3 and hasattr(__pyx_result, '__dict__'):             # <<<<<<<<<<<<<<
  *         __pyx_result.__dict__.update(__pyx_state[3])
@@ -4453,7 +4206,7 @@ static PyObject *__pyx_f_11abstractgen___pyx_unpickle_AbstractGenerator__set_sta
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
     /* "(tree fragment)":13
- * cdef __pyx_unpickle_AbstractGenerator__set_state(AbstractGenerator __pyx_result, tuple __pyx_state):
+ * cdef __pyx_unpickle_ListGenerator__set_state(ListGenerator __pyx_result, tuple __pyx_state):
  *     __pyx_result.description = __pyx_state[0]; __pyx_result.load_manager = __pyx_state[1]; __pyx_result.name = __pyx_state[2]
  *     if len(__pyx_state) > 3 and hasattr(__pyx_result, '__dict__'):             # <<<<<<<<<<<<<<
  *         __pyx_result.__dict__.update(__pyx_state[3])
@@ -4461,9 +4214,9 @@ static PyObject *__pyx_f_11abstractgen___pyx_unpickle_AbstractGenerator__set_sta
   }
 
   /* "(tree fragment)":11
- *         __pyx_unpickle_AbstractGenerator__set_state(<AbstractGenerator> __pyx_result, __pyx_state)
+ *         __pyx_unpickle_ListGenerator__set_state(<ListGenerator> __pyx_result, __pyx_state)
  *     return __pyx_result
- * cdef __pyx_unpickle_AbstractGenerator__set_state(AbstractGenerator __pyx_result, tuple __pyx_state):             # <<<<<<<<<<<<<<
+ * cdef __pyx_unpickle_ListGenerator__set_state(ListGenerator __pyx_result, tuple __pyx_state):             # <<<<<<<<<<<<<<
  *     __pyx_result.description = __pyx_state[0]; __pyx_result.load_manager = __pyx_state[1]; __pyx_result.name = __pyx_state[2]
  *     if len(__pyx_state) > 3 and hasattr(__pyx_result, '__dict__'):
  */
@@ -4476,108 +4229,64 @@ static PyObject *__pyx_f_11abstractgen___pyx_unpickle_AbstractGenerator__set_sta
   __Pyx_XDECREF(__pyx_t_6);
   __Pyx_XDECREF(__pyx_t_7);
   __Pyx_XDECREF(__pyx_t_8);
-  __Pyx_AddTraceback("abstractgen.__pyx_unpickle_AbstractGenerator__set_state", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("listgen.__pyx_unpickle_ListGenerator__set_state", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = 0;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
-static struct __pyx_vtabstruct_11abstractgen_AbstractGenerator __pyx_vtable_11abstractgen_AbstractGenerator;
+static struct __pyx_vtabstruct_7listgen_ListGenerator __pyx_vtable_7listgen_ListGenerator;
 
-static PyObject *__pyx_tp_new_11abstractgen_AbstractGenerator(PyTypeObject *t, CYTHON_UNUSED PyObject *a, CYTHON_UNUSED PyObject *k) {
-  struct __pyx_obj_11abstractgen_AbstractGenerator *p;
-  PyObject *o;
-  #if CYTHON_COMPILING_IN_LIMITED_API
-  allocfunc alloc_func = (allocfunc)PyType_GetSlot(t, Py_tp_alloc);
-  o = alloc_func(t, 0);
-  #else
-  if (likely(!__Pyx_PyType_HasFeature(t, Py_TPFLAGS_IS_ABSTRACT))) {
-    o = (*t->tp_alloc)(t, 0);
-  } else {
-    o = (PyObject *) PyBaseObject_Type.tp_new(t, __pyx_empty_tuple, 0);
-  }
+static PyObject *__pyx_tp_new_7listgen_ListGenerator(PyTypeObject *t, PyObject *a, PyObject *k) {
+  struct __pyx_obj_7listgen_ListGenerator *p;
+  PyObject *o = __Pyx_PyType_GetSlot(__pyx_ptype_11abstractgen_AbstractGenerator, tp_new, newfunc)(t, a, k);
   if (unlikely(!o)) return 0;
-  #endif
-  p = ((struct __pyx_obj_11abstractgen_AbstractGenerator *)o);
-  p->__pyx_vtab = __pyx_vtabptr_11abstractgen_AbstractGenerator;
-  new((void*)&(p->name)) std::string();
-  new((void*)&(p->description)) std::string();
-  p->load_manager = Py_None; Py_INCREF(Py_None);
+  p = ((struct __pyx_obj_7listgen_ListGenerator *)o);
+  p->__pyx_base.__pyx_vtab = (struct __pyx_vtabstruct_11abstractgen_AbstractGenerator*)__pyx_vtabptr_7listgen_ListGenerator;
   return o;
 }
 
-static void __pyx_tp_dealloc_11abstractgen_AbstractGenerator(PyObject *o) {
-  struct __pyx_obj_11abstractgen_AbstractGenerator *p = (struct __pyx_obj_11abstractgen_AbstractGenerator *)o;
-  #if CYTHON_USE_TP_FINALIZE
-  if (unlikely((PY_VERSION_HEX >= 0x03080000 || __Pyx_PyType_HasFeature(Py_TYPE(o), Py_TPFLAGS_HAVE_FINALIZE)) && __Pyx_PyObject_GetSlot(o, tp_finalize, destructor)) && !__Pyx_PyObject_GC_IsFinalized(o)) {
-    if (__Pyx_PyObject_GetSlot(o, tp_dealloc, destructor) == __pyx_tp_dealloc_11abstractgen_AbstractGenerator) {
-      if (PyObject_CallFinalizerFromDealloc(o)) return;
-    }
-  }
-  #endif
-  PyObject_GC_UnTrack(o);
-  __Pyx_call_destructor(p->name);
-  __Pyx_call_destructor(p->description);
-  Py_CLEAR(p->load_manager);
-  #if CYTHON_USE_TYPE_SLOTS || CYTHON_COMPILING_IN_PYPY
-  (*Py_TYPE(o)->tp_free)(o);
-  #else
-  {
-    freefunc tp_free = (freefunc)PyType_GetSlot(Py_TYPE(o), Py_tp_free);
-    if (tp_free) tp_free(o);
-  }
-  #endif
-}
-
-static int __pyx_tp_traverse_11abstractgen_AbstractGenerator(PyObject *o, visitproc v, void *a) {
+static int __pyx_tp_traverse_7listgen_ListGenerator(PyObject *o, visitproc v, void *a) {
   int e;
-  struct __pyx_obj_11abstractgen_AbstractGenerator *p = (struct __pyx_obj_11abstractgen_AbstractGenerator *)o;
-  if (p->load_manager) {
-    e = (*v)(p->load_manager, a); if (e) return e;
-  }
+  e = ((likely(__pyx_ptype_11abstractgen_AbstractGenerator)) ? ((__pyx_ptype_11abstractgen_AbstractGenerator->tp_traverse) ? __pyx_ptype_11abstractgen_AbstractGenerator->tp_traverse(o, v, a) : 0) : __Pyx_call_next_tp_traverse(o, v, a, __pyx_tp_traverse_7listgen_ListGenerator)); if (e) return e;
   return 0;
 }
 
-static int __pyx_tp_clear_11abstractgen_AbstractGenerator(PyObject *o) {
-  PyObject* tmp;
-  struct __pyx_obj_11abstractgen_AbstractGenerator *p = (struct __pyx_obj_11abstractgen_AbstractGenerator *)o;
-  tmp = ((PyObject*)p->load_manager);
-  p->load_manager = Py_None; Py_INCREF(Py_None);
-  Py_XDECREF(tmp);
+static int __pyx_tp_clear_7listgen_ListGenerator(PyObject *o) {
+  if (likely(__pyx_ptype_11abstractgen_AbstractGenerator)) { if (__pyx_ptype_11abstractgen_AbstractGenerator->tp_clear) __pyx_ptype_11abstractgen_AbstractGenerator->tp_clear(o); } else __Pyx_call_next_tp_clear(o, __pyx_tp_clear_7listgen_ListGenerator);
   return 0;
 }
 
-static PyMethodDef __pyx_methods_11abstractgen_AbstractGenerator[] = {
-  {"__reduce_cython__", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_11abstractgen_17AbstractGenerator_3__reduce_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0},
-  {"__setstate_cython__", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_11abstractgen_17AbstractGenerator_5__setstate_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0},
+static PyMethodDef __pyx_methods_7listgen_ListGenerator[] = {
+  {"__reduce_cython__", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7listgen_13ListGenerator_3__reduce_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0},
+  {"__setstate_cython__", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7listgen_13ListGenerator_5__setstate_cython__, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0},
   {0, 0, 0, 0}
 };
 #if CYTHON_USE_TYPE_SPECS
-static PyType_Slot __pyx_type_11abstractgen_AbstractGenerator_slots[] = {
-  {Py_tp_dealloc, (void *)__pyx_tp_dealloc_11abstractgen_AbstractGenerator},
-  {Py_tp_traverse, (void *)__pyx_tp_traverse_11abstractgen_AbstractGenerator},
-  {Py_tp_clear, (void *)__pyx_tp_clear_11abstractgen_AbstractGenerator},
-  {Py_tp_methods, (void *)__pyx_methods_11abstractgen_AbstractGenerator},
-  {Py_tp_init, (void *)__pyx_pw_11abstractgen_17AbstractGenerator_1__init__},
-  {Py_tp_new, (void *)__pyx_tp_new_11abstractgen_AbstractGenerator},
+static PyType_Slot __pyx_type_7listgen_ListGenerator_slots[] = {
+  {Py_tp_traverse, (void *)__pyx_tp_traverse_7listgen_ListGenerator},
+  {Py_tp_clear, (void *)__pyx_tp_clear_7listgen_ListGenerator},
+  {Py_tp_methods, (void *)__pyx_methods_7listgen_ListGenerator},
+  {Py_tp_init, (void *)__pyx_pw_7listgen_13ListGenerator_1__init__},
+  {Py_tp_new, (void *)__pyx_tp_new_7listgen_ListGenerator},
   {0, 0},
 };
-static PyType_Spec __pyx_type_11abstractgen_AbstractGenerator_spec = {
-  "abstractgen.AbstractGenerator",
-  sizeof(struct __pyx_obj_11abstractgen_AbstractGenerator),
+static PyType_Spec __pyx_type_7listgen_ListGenerator_spec = {
+  "listgen.ListGenerator",
+  sizeof(struct __pyx_obj_7listgen_ListGenerator),
   0,
-  Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_VERSION_TAG|Py_TPFLAGS_CHECKTYPES|Py_TPFLAGS_HAVE_NEWBUFFER|Py_TPFLAGS_BASETYPE|Py_TPFLAGS_HAVE_GC,
-  __pyx_type_11abstractgen_AbstractGenerator_slots,
+  Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_VERSION_TAG|Py_TPFLAGS_CHECKTYPES|Py_TPFLAGS_HAVE_NEWBUFFER|Py_TPFLAGS_BASETYPE|Py_TPFLAGS_HAVE_GC|Py_TPFLAGS_HAVE_FINALIZE,
+  __pyx_type_7listgen_ListGenerator_slots,
 };
 #else
 
-static PyTypeObject __pyx_type_11abstractgen_AbstractGenerator = {
+static PyTypeObject __pyx_type_7listgen_ListGenerator = {
   PyVarObject_HEAD_INIT(0, 0)
-  "abstractgen.""AbstractGenerator", /*tp_name*/
-  sizeof(struct __pyx_obj_11abstractgen_AbstractGenerator), /*tp_basicsize*/
+  "listgen.""ListGenerator", /*tp_name*/
+  sizeof(struct __pyx_obj_7listgen_ListGenerator), /*tp_basicsize*/
   0, /*tp_itemsize*/
-  __pyx_tp_dealloc_11abstractgen_AbstractGenerator, /*tp_dealloc*/
+  0, /*tp_dealloc*/
   #if PY_VERSION_HEX < 0x030800b4
   0, /*tp_print*/
   #endif
@@ -4602,15 +4311,15 @@ static PyTypeObject __pyx_type_11abstractgen_AbstractGenerator = {
   0, /*tp_getattro*/
   0, /*tp_setattro*/
   0, /*tp_as_buffer*/
-  Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_VERSION_TAG|Py_TPFLAGS_CHECKTYPES|Py_TPFLAGS_HAVE_NEWBUFFER|Py_TPFLAGS_BASETYPE|Py_TPFLAGS_HAVE_GC, /*tp_flags*/
+  Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_VERSION_TAG|Py_TPFLAGS_CHECKTYPES|Py_TPFLAGS_HAVE_NEWBUFFER|Py_TPFLAGS_BASETYPE|Py_TPFLAGS_HAVE_GC|Py_TPFLAGS_HAVE_FINALIZE, /*tp_flags*/
   0, /*tp_doc*/
-  __pyx_tp_traverse_11abstractgen_AbstractGenerator, /*tp_traverse*/
-  __pyx_tp_clear_11abstractgen_AbstractGenerator, /*tp_clear*/
+  __pyx_tp_traverse_7listgen_ListGenerator, /*tp_traverse*/
+  __pyx_tp_clear_7listgen_ListGenerator, /*tp_clear*/
   0, /*tp_richcompare*/
   0, /*tp_weaklistoffset*/
   0, /*tp_iter*/
   0, /*tp_iternext*/
-  __pyx_methods_11abstractgen_AbstractGenerator, /*tp_methods*/
+  __pyx_methods_7listgen_ListGenerator, /*tp_methods*/
   0, /*tp_members*/
   0, /*tp_getset*/
   0, /*tp_base*/
@@ -4620,9 +4329,9 @@ static PyTypeObject __pyx_type_11abstractgen_AbstractGenerator = {
   #if !CYTHON_USE_TYPE_SPECS
   0, /*tp_dictoffset*/
   #endif
-  __pyx_pw_11abstractgen_17AbstractGenerator_1__init__, /*tp_init*/
+  __pyx_pw_7listgen_13ListGenerator_1__init__, /*tp_init*/
   0, /*tp_alloc*/
-  __pyx_tp_new_11abstractgen_AbstractGenerator, /*tp_new*/
+  __pyx_tp_new_7listgen_ListGenerator, /*tp_new*/
   0, /*tp_free*/
   0, /*tp_is_gc*/
   0, /*tp_bases*/
@@ -4670,57 +4379,39 @@ static PyMethodDef __pyx_methods[] = {
 
 static int __Pyx_CreateStringTabAndInitStrings(void) {
   __Pyx_StringTabEntry __pyx_string_tab[] = {
-    {&__pyx_n_s_AbstractGenerator, __pyx_k_AbstractGenerator, sizeof(__pyx_k_AbstractGenerator), 0, 0, 1, 1},
-    {&__pyx_n_s_AbstractGenerator___reduce_cytho, __pyx_k_AbstractGenerator___reduce_cytho, sizeof(__pyx_k_AbstractGenerator___reduce_cytho), 0, 0, 1, 1},
-    {&__pyx_n_s_AbstractGenerator___setstate_cyt, __pyx_k_AbstractGenerator___setstate_cyt, sizeof(__pyx_k_AbstractGenerator___setstate_cyt), 0, 0, 1, 1},
-    {&__pyx_kp_b_Abstract_Generator, __pyx_k_Abstract_Generator, sizeof(__pyx_k_Abstract_Generator), 0, 0, 0, 0},
-    {&__pyx_kp_b_Abstract_base_class_for_all_gene, __pyx_k_Abstract_base_class_for_all_gene, sizeof(__pyx_k_Abstract_base_class_for_all_gene), 0, 0, 0, 0},
+    {&__pyx_kp_b_Generate_jobs_based_on_the_list, __pyx_k_Generate_jobs_based_on_the_list, sizeof(__pyx_k_Generate_jobs_based_on_the_list), 0, 0, 0, 0},
     {&__pyx_kp_s_Incompatible_checksums_0x_x_vs_0, __pyx_k_Incompatible_checksums_0x_x_vs_0, sizeof(__pyx_k_Incompatible_checksums_0x_x_vs_0), 0, 0, 1, 0},
-    {&__pyx_n_s_Load, __pyx_k_Load, sizeof(__pyx_k_Load), 0, 0, 1, 1},
-    {&__pyx_n_s_LoadManager, __pyx_k_LoadManager, sizeof(__pyx_k_LoadManager), 0, 0, 1, 1},
+    {&__pyx_n_s_ListGenerator, __pyx_k_ListGenerator, sizeof(__pyx_k_ListGenerator), 0, 0, 1, 1},
+    {&__pyx_n_s_ListGenerator___reduce_cython, __pyx_k_ListGenerator___reduce_cython, sizeof(__pyx_k_ListGenerator___reduce_cython), 0, 0, 1, 1},
+    {&__pyx_n_s_ListGenerator___setstate_cython, __pyx_k_ListGenerator___setstate_cython, sizeof(__pyx_k_ListGenerator___setstate_cython), 0, 0, 1, 1},
+    {&__pyx_kp_b_List_Generator, __pyx_k_List_Generator, sizeof(__pyx_k_List_Generator), 0, 0, 0, 0},
     {&__pyx_n_s_PickleError, __pyx_k_PickleError, sizeof(__pyx_k_PickleError), 0, 0, 1, 1},
-    {&__pyx_n_s__12, __pyx_k__12, sizeof(__pyx_k__12), 0, 0, 1, 1},
     {&__pyx_kp_u__2, __pyx_k__2, sizeof(__pyx_k__2), 0, 1, 0, 0},
-    {&__pyx_n_s__3, __pyx_k__3, sizeof(__pyx_k__3), 0, 0, 1, 1},
-    {&__pyx_kp_s__4, __pyx_k__4, sizeof(__pyx_k__4), 0, 0, 1, 0},
-    {&__pyx_kp_s__5, __pyx_k__5, sizeof(__pyx_k__5), 0, 0, 1, 0},
-    {&__pyx_n_s_abspath, __pyx_k_abspath, sizeof(__pyx_k_abspath), 0, 0, 1, 1},
-    {&__pyx_n_s_abstractgen, __pyx_k_abstractgen, sizeof(__pyx_k_abstractgen), 0, 0, 1, 1},
-    {&__pyx_n_s_api_loader, __pyx_k_api_loader, sizeof(__pyx_k_api_loader), 0, 0, 1, 1},
-    {&__pyx_n_s_append, __pyx_k_append, sizeof(__pyx_k_append), 0, 0, 1, 1},
+    {&__pyx_n_s__9, __pyx_k__9, sizeof(__pyx_k__9), 0, 0, 1, 1},
     {&__pyx_n_s_asyncio_coroutines, __pyx_k_asyncio_coroutines, sizeof(__pyx_k_asyncio_coroutines), 0, 0, 1, 1},
     {&__pyx_n_s_cline_in_traceback, __pyx_k_cline_in_traceback, sizeof(__pyx_k_cline_in_traceback), 0, 0, 1, 1},
-    {&__pyx_n_s_coloads, __pyx_k_coloads, sizeof(__pyx_k_coloads), 0, 0, 1, 1},
     {&__pyx_n_s_dict, __pyx_k_dict, sizeof(__pyx_k_dict), 0, 0, 1, 1},
     {&__pyx_n_s_dict_2, __pyx_k_dict_2, sizeof(__pyx_k_dict_2), 0, 0, 1, 1},
-    {&__pyx_n_s_dirname, __pyx_k_dirname, sizeof(__pyx_k_dirname), 0, 0, 1, 1},
     {&__pyx_kp_u_disable, __pyx_k_disable, sizeof(__pyx_k_disable), 0, 1, 0, 0},
     {&__pyx_kp_u_enable, __pyx_k_enable, sizeof(__pyx_k_enable), 0, 1, 0, 0},
-    {&__pyx_n_s_file, __pyx_k_file, sizeof(__pyx_k_file), 0, 0, 1, 1},
-    {&__pyx_n_s_full_load_name, __pyx_k_full_load_name, sizeof(__pyx_k_full_load_name), 0, 0, 1, 1},
     {&__pyx_kp_u_gc, __pyx_k_gc, sizeof(__pyx_k_gc), 0, 1, 0, 0},
-    {&__pyx_n_s_get_median, __pyx_k_get_median, sizeof(__pyx_k_get_median), 0, 0, 1, 1},
-    {&__pyx_n_s_get_median_speedup, __pyx_k_get_median_speedup, sizeof(__pyx_k_get_median_speedup), 0, 0, 1, 1},
     {&__pyx_n_s_getstate, __pyx_k_getstate, sizeof(__pyx_k_getstate), 0, 0, 1, 1},
     {&__pyx_n_s_import, __pyx_k_import, sizeof(__pyx_k_import), 0, 0, 1, 1},
-    {&__pyx_n_s_initializing, __pyx_k_initializing, sizeof(__pyx_k_initializing), 0, 0, 1, 1},
+    {&__pyx_n_s_init, __pyx_k_init, sizeof(__pyx_k_init), 0, 0, 1, 1},
     {&__pyx_n_s_is_coroutine, __pyx_k_is_coroutine, sizeof(__pyx_k_is_coroutine), 0, 0, 1, 1},
     {&__pyx_kp_u_isenabled, __pyx_k_isenabled, sizeof(__pyx_k_isenabled), 0, 1, 0, 0},
-    {&__pyx_n_s_join, __pyx_k_join, sizeof(__pyx_k_join), 0, 0, 1, 1},
+    {&__pyx_n_s_listgen, __pyx_k_listgen, sizeof(__pyx_k_listgen), 0, 0, 1, 1},
     {&__pyx_n_s_load_manager, __pyx_k_load_manager, sizeof(__pyx_k_load_manager), 0, 0, 1, 1},
     {&__pyx_n_s_main, __pyx_k_main, sizeof(__pyx_k_main), 0, 0, 1, 1},
     {&__pyx_n_s_name, __pyx_k_name, sizeof(__pyx_k_name), 0, 0, 1, 1},
     {&__pyx_n_s_new, __pyx_k_new, sizeof(__pyx_k_new), 0, 0, 1, 1},
-    {&__pyx_n_s_num_of_processes, __pyx_k_num_of_processes, sizeof(__pyx_k_num_of_processes), 0, 0, 1, 1},
-    {&__pyx_n_s_os, __pyx_k_os, sizeof(__pyx_k_os), 0, 0, 1, 1},
-    {&__pyx_n_s_path, __pyx_k_path, sizeof(__pyx_k_path), 0, 0, 1, 1},
     {&__pyx_n_s_pickle, __pyx_k_pickle, sizeof(__pyx_k_pickle), 0, 0, 1, 1},
     {&__pyx_n_s_pyx_PickleError, __pyx_k_pyx_PickleError, sizeof(__pyx_k_pyx_PickleError), 0, 0, 1, 1},
     {&__pyx_n_s_pyx_checksum, __pyx_k_pyx_checksum, sizeof(__pyx_k_pyx_checksum), 0, 0, 1, 1},
     {&__pyx_n_s_pyx_result, __pyx_k_pyx_result, sizeof(__pyx_k_pyx_result), 0, 0, 1, 1},
     {&__pyx_n_s_pyx_state, __pyx_k_pyx_state, sizeof(__pyx_k_pyx_state), 0, 0, 1, 1},
     {&__pyx_n_s_pyx_type, __pyx_k_pyx_type, sizeof(__pyx_k_pyx_type), 0, 0, 1, 1},
-    {&__pyx_n_s_pyx_unpickle_AbstractGenerator, __pyx_k_pyx_unpickle_AbstractGenerator, sizeof(__pyx_k_pyx_unpickle_AbstractGenerator), 0, 0, 1, 1},
+    {&__pyx_n_s_pyx_unpickle_ListGenerator, __pyx_k_pyx_unpickle_ListGenerator, sizeof(__pyx_k_pyx_unpickle_ListGenerator), 0, 0, 1, 1},
     {&__pyx_n_s_pyx_vtable, __pyx_k_pyx_vtable, sizeof(__pyx_k_pyx_vtable), 0, 0, 1, 1},
     {&__pyx_n_s_reduce, __pyx_k_reduce, sizeof(__pyx_k_reduce), 0, 0, 1, 1},
     {&__pyx_n_s_reduce_cython, __pyx_k_reduce_cython, sizeof(__pyx_k_reduce_cython), 0, 0, 1, 1},
@@ -4728,10 +4419,8 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_self, __pyx_k_self, sizeof(__pyx_k_self), 0, 0, 1, 1},
     {&__pyx_n_s_setstate, __pyx_k_setstate, sizeof(__pyx_k_setstate), 0, 0, 1, 1},
     {&__pyx_n_s_setstate_cython, __pyx_k_setstate_cython, sizeof(__pyx_k_setstate_cython), 0, 0, 1, 1},
-    {&__pyx_n_s_spec, __pyx_k_spec, sizeof(__pyx_k_spec), 0, 0, 1, 1},
     {&__pyx_n_s_state, __pyx_k_state, sizeof(__pyx_k_state), 0, 0, 1, 1},
     {&__pyx_kp_s_stringsource, __pyx_k_stringsource, sizeof(__pyx_k_stringsource), 0, 0, 1, 0},
-    {&__pyx_n_s_sys, __pyx_k_sys, sizeof(__pyx_k_sys), 0, 0, 1, 1},
     {&__pyx_n_s_test, __pyx_k_test, sizeof(__pyx_k_test), 0, 0, 1, 1},
     {&__pyx_n_s_update, __pyx_k_update, sizeof(__pyx_k_update), 0, 0, 1, 1},
     {&__pyx_n_s_use_setstate, __pyx_k_use_setstate, sizeof(__pyx_k_use_setstate), 0, 0, 1, 1},
@@ -4765,31 +4454,31 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     cdef tuple state
  *     cdef object _dict
  */
-  __pyx_tuple__6 = PyTuple_Pack(4, __pyx_n_s_self, __pyx_n_s_state, __pyx_n_s_dict_2, __pyx_n_s_use_setstate); if (unlikely(!__pyx_tuple__6)) __PYX_ERR(0, 1, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__6);
-  __Pyx_GIVEREF(__pyx_tuple__6);
-  __pyx_codeobj__7 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__6, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_stringsource, __pyx_n_s_reduce_cython, 1, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__7)) __PYX_ERR(0, 1, __pyx_L1_error)
+  __pyx_tuple__3 = PyTuple_Pack(4, __pyx_n_s_self, __pyx_n_s_state, __pyx_n_s_dict_2, __pyx_n_s_use_setstate); if (unlikely(!__pyx_tuple__3)) __PYX_ERR(0, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__3);
+  __Pyx_GIVEREF(__pyx_tuple__3);
+  __pyx_codeobj__4 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__3, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_stringsource, __pyx_n_s_reduce_cython, 1, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__4)) __PYX_ERR(0, 1, __pyx_L1_error)
 
   /* "(tree fragment)":16
  *     else:
- *         return __pyx_unpickle_AbstractGenerator, (type(self), 0x5918410, state)
+ *         return __pyx_unpickle_ListGenerator, (type(self), 0x5918410, state)
  * def __setstate_cython__(self, __pyx_state):             # <<<<<<<<<<<<<<
- *     __pyx_unpickle_AbstractGenerator__set_state(self, __pyx_state)
+ *     __pyx_unpickle_ListGenerator__set_state(self, __pyx_state)
  */
-  __pyx_tuple__8 = PyTuple_Pack(2, __pyx_n_s_self, __pyx_n_s_pyx_state); if (unlikely(!__pyx_tuple__8)) __PYX_ERR(0, 16, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__8);
-  __Pyx_GIVEREF(__pyx_tuple__8);
-  __pyx_codeobj__9 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__8, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_stringsource, __pyx_n_s_setstate_cython, 16, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__9)) __PYX_ERR(0, 16, __pyx_L1_error)
+  __pyx_tuple__5 = PyTuple_Pack(2, __pyx_n_s_self, __pyx_n_s_pyx_state); if (unlikely(!__pyx_tuple__5)) __PYX_ERR(0, 16, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__5);
+  __Pyx_GIVEREF(__pyx_tuple__5);
+  __pyx_codeobj__6 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__5, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_stringsource, __pyx_n_s_setstate_cython, 16, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__6)) __PYX_ERR(0, 16, __pyx_L1_error)
 
   /* "(tree fragment)":1
- * def __pyx_unpickle_AbstractGenerator(__pyx_type, long __pyx_checksum, __pyx_state):             # <<<<<<<<<<<<<<
+ * def __pyx_unpickle_ListGenerator(__pyx_type, long __pyx_checksum, __pyx_state):             # <<<<<<<<<<<<<<
  *     cdef object __pyx_PickleError
  *     cdef object __pyx_result
  */
-  __pyx_tuple__10 = PyTuple_Pack(5, __pyx_n_s_pyx_type, __pyx_n_s_pyx_checksum, __pyx_n_s_pyx_state, __pyx_n_s_pyx_PickleError, __pyx_n_s_pyx_result); if (unlikely(!__pyx_tuple__10)) __PYX_ERR(0, 1, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__10);
-  __Pyx_GIVEREF(__pyx_tuple__10);
-  __pyx_codeobj__11 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__10, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_stringsource, __pyx_n_s_pyx_unpickle_AbstractGenerator, 1, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__11)) __PYX_ERR(0, 1, __pyx_L1_error)
+  __pyx_tuple__7 = PyTuple_Pack(5, __pyx_n_s_pyx_type, __pyx_n_s_pyx_checksum, __pyx_n_s_pyx_state, __pyx_n_s_pyx_PickleError, __pyx_n_s_pyx_result); if (unlikely(!__pyx_tuple__7)) __PYX_ERR(0, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__7);
+  __Pyx_GIVEREF(__pyx_tuple__7);
+  __pyx_codeobj__8 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_stringsource, __pyx_n_s_pyx_unpickle_ListGenerator, 1, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__8)) __PYX_ERR(0, 1, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -4848,43 +4537,59 @@ static int __Pyx_modinit_function_export_code(void) {
 
 static int __Pyx_modinit_type_init_code(void) {
   __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__Pyx_modinit_type_init_code", 0);
   /*--- Type init code ---*/
-  __pyx_vtabptr_11abstractgen_AbstractGenerator = &__pyx_vtable_11abstractgen_AbstractGenerator;
-  __pyx_vtable_11abstractgen_AbstractGenerator.generate_job = (Job (*)(struct __pyx_obj_11abstractgen_AbstractGenerator *, int, std::string))__pyx_f_11abstractgen_17AbstractGenerator_generate_job;
+  __pyx_t_1 = PyImport_ImportModule("abstractgen"); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_ptype_11abstractgen_AbstractGenerator = __Pyx_ImportType_3_0_9(__pyx_t_1, "abstractgen", "AbstractGenerator", sizeof(struct __pyx_obj_11abstractgen_AbstractGenerator), __PYX_GET_STRUCT_ALIGNMENT_3_0_9(struct __pyx_obj_11abstractgen_AbstractGenerator),__Pyx_ImportType_CheckSize_Warn_3_0_9); if (!__pyx_ptype_11abstractgen_AbstractGenerator) __PYX_ERR(1, 1, __pyx_L1_error)
+  __pyx_vtabptr_11abstractgen_AbstractGenerator = (struct __pyx_vtabstruct_11abstractgen_AbstractGenerator*)__Pyx_GetVtable(__pyx_ptype_11abstractgen_AbstractGenerator); if (unlikely(!__pyx_vtabptr_11abstractgen_AbstractGenerator)) __PYX_ERR(1, 1, __pyx_L1_error)
+  __pyx_vtabptr_7listgen_ListGenerator = &__pyx_vtable_7listgen_ListGenerator;
+  __pyx_vtable_7listgen_ListGenerator.__pyx_base = *__pyx_vtabptr_11abstractgen_AbstractGenerator;
+  __pyx_vtable_7listgen_ListGenerator.generate_jobs_set = (std::vector<Job>  (*)(struct __pyx_obj_7listgen_ListGenerator *, std::vector<std::string>  &))__pyx_f_7listgen_13ListGenerator_generate_jobs_set;
   #if CYTHON_USE_TYPE_SPECS
-  __pyx_ptype_11abstractgen_AbstractGenerator = (PyTypeObject *) __Pyx_PyType_FromModuleAndSpec(__pyx_m, &__pyx_type_11abstractgen_AbstractGenerator_spec, NULL); if (unlikely(!__pyx_ptype_11abstractgen_AbstractGenerator)) __PYX_ERR(1, 15, __pyx_L1_error)
-  if (__Pyx_fix_up_extension_type_from_spec(&__pyx_type_11abstractgen_AbstractGenerator_spec, __pyx_ptype_11abstractgen_AbstractGenerator) < 0) __PYX_ERR(1, 15, __pyx_L1_error)
+  __pyx_t_2 = PyTuple_Pack(1, (PyObject *)__pyx_ptype_11abstractgen_AbstractGenerator); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 5, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_ptype_7listgen_ListGenerator = (PyTypeObject *) __Pyx_PyType_FromModuleAndSpec(__pyx_m, &__pyx_type_7listgen_ListGenerator_spec, __pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (unlikely(!__pyx_ptype_7listgen_ListGenerator)) __PYX_ERR(1, 5, __pyx_L1_error)
+  if (__Pyx_fix_up_extension_type_from_spec(&__pyx_type_7listgen_ListGenerator_spec, __pyx_ptype_7listgen_ListGenerator) < 0) __PYX_ERR(1, 5, __pyx_L1_error)
   #else
-  __pyx_ptype_11abstractgen_AbstractGenerator = &__pyx_type_11abstractgen_AbstractGenerator;
+  __pyx_ptype_7listgen_ListGenerator = &__pyx_type_7listgen_ListGenerator;
   #endif
   #if !CYTHON_COMPILING_IN_LIMITED_API
+  __pyx_ptype_7listgen_ListGenerator->tp_dealloc = __pyx_ptype_11abstractgen_AbstractGenerator->tp_dealloc;
+  __pyx_ptype_7listgen_ListGenerator->tp_base = __pyx_ptype_11abstractgen_AbstractGenerator;
   #endif
   #if !CYTHON_USE_TYPE_SPECS
-  if (__Pyx_PyType_Ready(__pyx_ptype_11abstractgen_AbstractGenerator) < 0) __PYX_ERR(1, 15, __pyx_L1_error)
+  if (__Pyx_PyType_Ready(__pyx_ptype_7listgen_ListGenerator) < 0) __PYX_ERR(1, 5, __pyx_L1_error)
   #endif
   #if PY_MAJOR_VERSION < 3
-  __pyx_ptype_11abstractgen_AbstractGenerator->tp_print = 0;
+  __pyx_ptype_7listgen_ListGenerator->tp_print = 0;
   #endif
   #if !CYTHON_COMPILING_IN_LIMITED_API
-  if ((CYTHON_USE_TYPE_SLOTS && CYTHON_USE_PYTYPE_LOOKUP) && likely(!__pyx_ptype_11abstractgen_AbstractGenerator->tp_dictoffset && __pyx_ptype_11abstractgen_AbstractGenerator->tp_getattro == PyObject_GenericGetAttr)) {
-    __pyx_ptype_11abstractgen_AbstractGenerator->tp_getattro = __Pyx_PyObject_GenericGetAttr;
+  if ((CYTHON_USE_TYPE_SLOTS && CYTHON_USE_PYTYPE_LOOKUP) && likely(!__pyx_ptype_7listgen_ListGenerator->tp_dictoffset && __pyx_ptype_7listgen_ListGenerator->tp_getattro == PyObject_GenericGetAttr)) {
+    __pyx_ptype_7listgen_ListGenerator->tp_getattro = __Pyx_PyObject_GenericGetAttr;
   }
   #endif
-  if (__Pyx_SetVtable(__pyx_ptype_11abstractgen_AbstractGenerator, __pyx_vtabptr_11abstractgen_AbstractGenerator) < 0) __PYX_ERR(1, 15, __pyx_L1_error)
+  if (__Pyx_SetVtable(__pyx_ptype_7listgen_ListGenerator, __pyx_vtabptr_7listgen_ListGenerator) < 0) __PYX_ERR(1, 5, __pyx_L1_error)
   #if !CYTHON_COMPILING_IN_LIMITED_API
-  if (__Pyx_MergeVtables(__pyx_ptype_11abstractgen_AbstractGenerator) < 0) __PYX_ERR(1, 15, __pyx_L1_error)
+  if (__Pyx_MergeVtables(__pyx_ptype_7listgen_ListGenerator) < 0) __PYX_ERR(1, 5, __pyx_L1_error)
   #endif
-  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_AbstractGenerator, (PyObject *) __pyx_ptype_11abstractgen_AbstractGenerator) < 0) __PYX_ERR(1, 15, __pyx_L1_error)
+  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_ListGenerator, (PyObject *) __pyx_ptype_7listgen_ListGenerator) < 0) __PYX_ERR(1, 5, __pyx_L1_error)
   #if !CYTHON_COMPILING_IN_LIMITED_API
-  if (__Pyx_setup_reduce((PyObject *) __pyx_ptype_11abstractgen_AbstractGenerator) < 0) __PYX_ERR(1, 15, __pyx_L1_error)
+  if (__Pyx_setup_reduce((PyObject *) __pyx_ptype_7listgen_ListGenerator) < 0) __PYX_ERR(1, 5, __pyx_L1_error)
   #endif
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
   __Pyx_RefNannyFinishContext();
   return -1;
 }
@@ -4917,10 +4622,10 @@ static int __Pyx_modinit_function_import_code(void) {
 #if PY_MAJOR_VERSION >= 3
 #if CYTHON_PEP489_MULTI_PHASE_INIT
 static PyObject* __pyx_pymod_create(PyObject *spec, PyModuleDef *def); /*proto*/
-static int __pyx_pymod_exec_abstractgen(PyObject* module); /*proto*/
+static int __pyx_pymod_exec_listgen(PyObject* module); /*proto*/
 static PyModuleDef_Slot __pyx_moduledef_slots[] = {
   {Py_mod_create, (void*)__pyx_pymod_create},
-  {Py_mod_exec, (void*)__pyx_pymod_exec_abstractgen},
+  {Py_mod_exec, (void*)__pyx_pymod_exec_listgen},
   {0, NULL}
 };
 #endif
@@ -4933,7 +4638,7 @@ namespace {
   #endif
   {
       PyModuleDef_HEAD_INIT,
-      "abstractgen",
+      "listgen",
       0, /* m_doc */
     #if CYTHON_PEP489_MULTI_PHASE_INIT
       0, /* m_size */
@@ -4981,11 +4686,11 @@ namespace {
 
 
 #if PY_MAJOR_VERSION < 3
-__Pyx_PyMODINIT_FUNC initabstractgen(void) CYTHON_SMALL_CODE; /*proto*/
-__Pyx_PyMODINIT_FUNC initabstractgen(void)
+__Pyx_PyMODINIT_FUNC initlistgen(void) CYTHON_SMALL_CODE; /*proto*/
+__Pyx_PyMODINIT_FUNC initlistgen(void)
 #else
-__Pyx_PyMODINIT_FUNC PyInit_abstractgen(void) CYTHON_SMALL_CODE; /*proto*/
-__Pyx_PyMODINIT_FUNC PyInit_abstractgen(void)
+__Pyx_PyMODINIT_FUNC PyInit_listgen(void) CYTHON_SMALL_CODE; /*proto*/
+__Pyx_PyMODINIT_FUNC PyInit_listgen(void)
 #if CYTHON_PEP489_MULTI_PHASE_INIT
 {
   return PyModuleDef_Init(&__pyx_moduledef);
@@ -5066,7 +4771,7 @@ bad:
 }
 
 
-static CYTHON_SMALL_CODE int __pyx_pymod_exec_abstractgen(PyObject *__pyx_pyinit_module)
+static CYTHON_SMALL_CODE int __pyx_pymod_exec_listgen(PyObject *__pyx_pyinit_module)
 #endif
 #endif
 {
@@ -5076,12 +4781,6 @@ static CYTHON_SMALL_CODE int __pyx_pymod_exec_abstractgen(PyObject *__pyx_pyinit
   #endif
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
-  PyObject *__pyx_t_3 = NULL;
-  PyObject *__pyx_t_4 = NULL;
-  PyObject *__pyx_t_5 = NULL;
-  PyObject *__pyx_t_6 = NULL;
-  PyObject *__pyx_t_7 = NULL;
-  int __pyx_t_8;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
@@ -5089,7 +4788,7 @@ static CYTHON_SMALL_CODE int __pyx_pymod_exec_abstractgen(PyObject *__pyx_pyinit
   #if CYTHON_PEP489_MULTI_PHASE_INIT
   if (__pyx_m) {
     if (__pyx_m == __pyx_pyinit_module) return 0;
-    PyErr_SetString(PyExc_RuntimeError, "Module 'abstractgen' has already been imported. Re-initialisation is not supported.");
+    PyErr_SetString(PyExc_RuntimeError, "Module 'listgen' has already been imported. Re-initialisation is not supported.");
     return -1;
   }
   #elif PY_MAJOR_VERSION >= 3
@@ -5101,13 +4800,13 @@ static CYTHON_SMALL_CODE int __pyx_pymod_exec_abstractgen(PyObject *__pyx_pyinit
   Py_INCREF(__pyx_m);
   #else
   #if PY_MAJOR_VERSION < 3
-  __pyx_m = Py_InitModule4("abstractgen", __pyx_methods, 0, 0, PYTHON_API_VERSION); Py_XINCREF(__pyx_m);
+  __pyx_m = Py_InitModule4("listgen", __pyx_methods, 0, 0, PYTHON_API_VERSION); Py_XINCREF(__pyx_m);
   if (unlikely(!__pyx_m)) __PYX_ERR(1, 1, __pyx_L1_error)
   #elif CYTHON_USE_MODULE_STATE
   __pyx_t_1 = PyModule_Create(&__pyx_moduledef); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 1, __pyx_L1_error)
   {
     int add_module_result = PyState_AddModule(__pyx_t_1, &__pyx_moduledef);
-    __pyx_t_1 = 0; /* transfer ownership from __pyx_t_1 to "abstractgen" pseudovariable */
+    __pyx_t_1 = 0; /* transfer ownership from __pyx_t_1 to "listgen" pseudovariable */
     if (unlikely((add_module_result < 0))) __PYX_ERR(1, 1, __pyx_L1_error)
     pystate_addmodule_run = 1;
   }
@@ -5131,7 +4830,7 @@ if (!__Pyx_RefNanny) {
       Py_FatalError("failed to import 'refnanny' module");
 }
 #endif
-  __Pyx_RefNannySetupContext("__Pyx_PyMODINIT_FUNC PyInit_abstractgen(void)", 0);
+  __Pyx_RefNannySetupContext("__Pyx_PyMODINIT_FUNC PyInit_listgen(void)", 0);
   if (__Pyx_check_binary_version(__PYX_LIMITED_VERSION_HEX, __Pyx_get_runtime_version(), CYTHON_COMPILING_IN_LIMITED_API) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
   #ifdef __Pxy_PyFrame_Initialize_Offsets
   __Pxy_PyFrame_Initialize_Offsets();
@@ -5169,14 +4868,14 @@ if (!__Pyx_RefNanny) {
   #if PY_MAJOR_VERSION < 3 && (__PYX_DEFAULT_STRING_ENCODING_IS_ASCII || __PYX_DEFAULT_STRING_ENCODING_IS_DEFAULT)
   if (__Pyx_init_sys_getdefaultencoding_params() < 0) __PYX_ERR(1, 1, __pyx_L1_error)
   #endif
-  if (__pyx_module_is_main_abstractgen) {
+  if (__pyx_module_is_main_listgen) {
     if (PyObject_SetAttr(__pyx_m, __pyx_n_s_name, __pyx_n_s_main) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
   }
   #if PY_MAJOR_VERSION >= 3
   {
     PyObject *modules = PyImport_GetModuleDict(); if (unlikely(!modules)) __PYX_ERR(1, 1, __pyx_L1_error)
-    if (!PyDict_GetItemString(modules, "abstractgen")) {
-      if (unlikely((PyDict_SetItemString(modules, "abstractgen", __pyx_m) < 0))) __PYX_ERR(1, 1, __pyx_L1_error)
+    if (!PyDict_GetItemString(modules, "listgen")) {
+      if (unlikely((PyDict_SetItemString(modules, "listgen", __pyx_m) < 0))) __PYX_ERR(1, 1, __pyx_L1_error)
     }
   }
   #endif
@@ -5197,238 +4896,57 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_patch_abc() < 0) __PYX_ERR(1, 1, __pyx_L1_error)
   #endif
 
-  /* "abstractgen.pyx":4
- * 
- * # Python libraries
- * import os             # <<<<<<<<<<<<<<
- * import sys
- * sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
- */
-  __pyx_t_2 = __Pyx_ImportDottedModule(__pyx_n_s_os, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 4, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_os, __pyx_t_2) < 0) __PYX_ERR(1, 4, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-
-  /* "abstractgen.pyx":5
- * # Python libraries
- * import os
- * import sys             # <<<<<<<<<<<<<<
- * sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
- * from api.loader import Load, LoadManager
- */
-  __pyx_t_2 = __Pyx_ImportDottedModule(__pyx_n_s_sys, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 5, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_sys, __pyx_t_2) < 0) __PYX_ERR(1, 5, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-
-  /* "abstractgen.pyx":6
- * import os
- * import sys
- * sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))             # <<<<<<<<<<<<<<
- * from api.loader import Load, LoadManager
- * sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
- */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_sys); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 6, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_path); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 6, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_os); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 6, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_path); if (unlikely(!__pyx_t_4)) __PYX_ERR(1, 6, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_abspath); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 6, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_os); if (unlikely(!__pyx_t_4)) __PYX_ERR(1, 6, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_path); if (unlikely(!__pyx_t_5)) __PYX_ERR(1, 6, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_join); if (unlikely(!__pyx_t_4)) __PYX_ERR(1, 6, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_os); if (unlikely(!__pyx_t_5)) __PYX_ERR(1, 6, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_path); if (unlikely(!__pyx_t_6)) __PYX_ERR(1, 6, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_6);
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_dirname); if (unlikely(!__pyx_t_5)) __PYX_ERR(1, 6, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_n_s_file); if (unlikely(!__pyx_t_6)) __PYX_ERR(1, 6, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_6);
-  __pyx_t_7 = __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_t_6); if (unlikely(!__pyx_t_7)) __PYX_ERR(1, 6, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_7);
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_t_6 = PyTuple_New(2); if (unlikely(!__pyx_t_6)) __PYX_ERR(1, 6, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_6);
-  __Pyx_GIVEREF(__pyx_t_7);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_7)) __PYX_ERR(1, 6, __pyx_L1_error);
-  __Pyx_INCREF(__pyx_kp_s__4);
-  __Pyx_GIVEREF(__pyx_kp_s__4);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_6, 1, __pyx_kp_s__4)) __PYX_ERR(1, 6, __pyx_L1_error);
-  __pyx_t_7 = 0;
-  __pyx_t_7 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_6, NULL); if (unlikely(!__pyx_t_7)) __PYX_ERR(1, 6, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_7);
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_t_6 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_7); if (unlikely(!__pyx_t_6)) __PYX_ERR(1, 6, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_6);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-  __pyx_t_8 = __Pyx_PyObject_Append(__pyx_t_3, __pyx_t_6); if (unlikely(__pyx_t_8 == ((int)-1))) __PYX_ERR(1, 6, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-
-  /* "abstractgen.pyx":7
- * import sys
- * sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
- * from api.loader import Load, LoadManager             # <<<<<<<<<<<<<<
- * sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
- * 
- */
-  __pyx_t_6 = PyList_New(2); if (unlikely(!__pyx_t_6)) __PYX_ERR(1, 7, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_6);
-  __Pyx_INCREF(__pyx_n_s_Load);
-  __Pyx_GIVEREF(__pyx_n_s_Load);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_6, 0, __pyx_n_s_Load)) __PYX_ERR(1, 7, __pyx_L1_error);
-  __Pyx_INCREF(__pyx_n_s_LoadManager);
-  __Pyx_GIVEREF(__pyx_n_s_LoadManager);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_6, 1, __pyx_n_s_LoadManager)) __PYX_ERR(1, 7, __pyx_L1_error);
-  __pyx_t_3 = __Pyx_Import(__pyx_n_s_api_loader, __pyx_t_6, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 7, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_t_6 = __Pyx_ImportFrom(__pyx_t_3, __pyx_n_s_Load); if (unlikely(!__pyx_t_6)) __PYX_ERR(1, 7, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_6);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_Load, __pyx_t_6) < 0) __PYX_ERR(1, 7, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_t_6 = __Pyx_ImportFrom(__pyx_t_3, __pyx_n_s_LoadManager); if (unlikely(!__pyx_t_6)) __PYX_ERR(1, 7, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_6);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_LoadManager, __pyx_t_6) < 0) __PYX_ERR(1, 7, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-
-  /* "abstractgen.pyx":8
- * sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
- * from api.loader import Load, LoadManager
- * sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))             # <<<<<<<<<<<<<<
- * 
- * # Cython libraries
- */
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_sys); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 8, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_path); if (unlikely(!__pyx_t_6)) __PYX_ERR(1, 8, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_6);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_os); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 8, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_path); if (unlikely(!__pyx_t_7)) __PYX_ERR(1, 8, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_7);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_7, __pyx_n_s_abspath); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 8, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-  __Pyx_GetModuleGlobalName(__pyx_t_7, __pyx_n_s_os); if (unlikely(!__pyx_t_7)) __PYX_ERR(1, 8, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_7);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_7, __pyx_n_s_path); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 8, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_join); if (unlikely(!__pyx_t_7)) __PYX_ERR(1, 8, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_7);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_os); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 8, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_path); if (unlikely(!__pyx_t_4)) __PYX_ERR(1, 8, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_dirname); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 8, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_file); if (unlikely(!__pyx_t_4)) __PYX_ERR(1, 8, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(1, 8, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(1, 8, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_GIVEREF(__pyx_t_5);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_5)) __PYX_ERR(1, 8, __pyx_L1_error);
-  __Pyx_INCREF(__pyx_kp_s__5);
-  __Pyx_GIVEREF(__pyx_kp_s__5);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_kp_s__5)) __PYX_ERR(1, 8, __pyx_L1_error);
-  __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_7, __pyx_t_4, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(1, 8, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_5); if (unlikely(!__pyx_t_4)) __PYX_ERR(1, 8, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_8 = __Pyx_PyObject_Append(__pyx_t_6, __pyx_t_4); if (unlikely(__pyx_t_8 == ((int)-1))) __PYX_ERR(1, 8, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-
   /* "(tree fragment)":1
  * def __reduce_cython__(self):             # <<<<<<<<<<<<<<
  *     cdef tuple state
  *     cdef object _dict
  */
-  __pyx_t_4 = __Pyx_CyFunction_New(&__pyx_mdef_11abstractgen_17AbstractGenerator_3__reduce_cython__, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_AbstractGenerator___reduce_cytho, NULL, __pyx_n_s_abstractgen, __pyx_d, ((PyObject *)__pyx_codeobj__7)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_11abstractgen_AbstractGenerator, __pyx_n_s_reduce_cython, __pyx_t_4) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  PyType_Modified(__pyx_ptype_11abstractgen_AbstractGenerator);
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7listgen_13ListGenerator_3__reduce_cython__, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_ListGenerator___reduce_cython, NULL, __pyx_n_s_listgen, __pyx_d, ((PyObject *)__pyx_codeobj__4)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7listgen_ListGenerator, __pyx_n_s_reduce_cython, __pyx_t_2) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  PyType_Modified(__pyx_ptype_7listgen_ListGenerator);
 
   /* "(tree fragment)":16
  *     else:
- *         return __pyx_unpickle_AbstractGenerator, (type(self), 0x5918410, state)
+ *         return __pyx_unpickle_ListGenerator, (type(self), 0x5918410, state)
  * def __setstate_cython__(self, __pyx_state):             # <<<<<<<<<<<<<<
- *     __pyx_unpickle_AbstractGenerator__set_state(self, __pyx_state)
+ *     __pyx_unpickle_ListGenerator__set_state(self, __pyx_state)
  */
-  __pyx_t_4 = __Pyx_CyFunction_New(&__pyx_mdef_11abstractgen_17AbstractGenerator_5__setstate_cython__, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_AbstractGenerator___setstate_cyt, NULL, __pyx_n_s_abstractgen, __pyx_d, ((PyObject *)__pyx_codeobj__9)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 16, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_11abstractgen_AbstractGenerator, __pyx_n_s_setstate_cython, __pyx_t_4) < 0) __PYX_ERR(0, 16, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  PyType_Modified(__pyx_ptype_11abstractgen_AbstractGenerator);
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7listgen_13ListGenerator_5__setstate_cython__, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_ListGenerator___setstate_cython, NULL, __pyx_n_s_listgen, __pyx_d, ((PyObject *)__pyx_codeobj__6)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 16, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_7listgen_ListGenerator, __pyx_n_s_setstate_cython, __pyx_t_2) < 0) __PYX_ERR(0, 16, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  PyType_Modified(__pyx_ptype_7listgen_ListGenerator);
 
   /* "(tree fragment)":1
- * def __pyx_unpickle_AbstractGenerator(__pyx_type, long __pyx_checksum, __pyx_state):             # <<<<<<<<<<<<<<
+ * def __pyx_unpickle_ListGenerator(__pyx_type, long __pyx_checksum, __pyx_state):             # <<<<<<<<<<<<<<
  *     cdef object __pyx_PickleError
  *     cdef object __pyx_result
  */
-  __pyx_t_4 = __Pyx_CyFunction_New(&__pyx_mdef_11abstractgen_1__pyx_unpickle_AbstractGenerator, 0, __pyx_n_s_pyx_unpickle_AbstractGenerator, NULL, __pyx_n_s_abstractgen, __pyx_d, ((PyObject *)__pyx_codeobj__11)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_pyx_unpickle_AbstractGenerator, __pyx_t_4) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7listgen_1__pyx_unpickle_ListGenerator, 0, __pyx_n_s_pyx_unpickle_ListGenerator, NULL, __pyx_n_s_listgen, __pyx_d, ((PyObject *)__pyx_codeobj__8)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_pyx_unpickle_ListGenerator, __pyx_t_2) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "abstractgen.pyx":1
+  /* "listgen.pyx":1
  * # cython: c_string_type=unicode, c_string_encoding=utf8             # <<<<<<<<<<<<<<
  * 
- * # Python libraries
+ * from cython.operator cimport dereference as deref
  */
-  __pyx_t_4 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(1, 1, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_test, __pyx_t_4) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_test, __pyx_t_2) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /*--- Wrapped vars code ---*/
 
   goto __pyx_L0;
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_2);
-  __Pyx_XDECREF(__pyx_t_3);
-  __Pyx_XDECREF(__pyx_t_4);
-  __Pyx_XDECREF(__pyx_t_5);
-  __Pyx_XDECREF(__pyx_t_6);
-  __Pyx_XDECREF(__pyx_t_7);
   if (__pyx_m) {
     if (__pyx_d && stringtab_initialized) {
-      __Pyx_AddTraceback("init abstractgen", __pyx_clineno, __pyx_lineno, __pyx_filename);
+      __Pyx_AddTraceback("init listgen", __pyx_clineno, __pyx_lineno, __pyx_filename);
     }
     #if !CYTHON_USE_MODULE_STATE
     Py_CLEAR(__pyx_m);
@@ -5442,7 +4960,7 @@ if (!__Pyx_RefNanny) {
     }
     #endif
   } else if (!PyErr_Occurred()) {
-    PyErr_SetString(PyExc_ImportError, "init abstractgen");
+    PyErr_SetString(PyExc_ImportError, "init listgen");
   }
   __pyx_L0:;
   __Pyx_RefNannyFinishContext();
@@ -5910,126 +5428,17 @@ static void __Pyx_RaiseArgtupleInvalid(
                  (num_expected == 1) ? "" : "s", num_found);
 }
 
-/* PyFunctionFastCall */
-#if CYTHON_FAST_PYCALL && !CYTHON_VECTORCALL
-static PyObject* __Pyx_PyFunction_FastCallNoKw(PyCodeObject *co, PyObject **args, Py_ssize_t na,
-                                               PyObject *globals) {
-    PyFrameObject *f;
-    PyThreadState *tstate = __Pyx_PyThreadState_Current;
-    PyObject **fastlocals;
-    Py_ssize_t i;
-    PyObject *result;
-    assert(globals != NULL);
-    /* XXX Perhaps we should create a specialized
-       PyFrame_New() that doesn't take locals, but does
-       take builtins without sanity checking them.
-       */
-    assert(tstate != NULL);
-    f = PyFrame_New(tstate, co, globals, NULL);
-    if (f == NULL) {
-        return NULL;
-    }
-    fastlocals = __Pyx_PyFrame_GetLocalsplus(f);
-    for (i = 0; i < na; i++) {
-        Py_INCREF(*args);
-        fastlocals[i] = *args++;
-    }
-    result = PyEval_EvalFrameEx(f,0);
-    ++tstate->recursion_depth;
-    Py_DECREF(f);
-    --tstate->recursion_depth;
-    return result;
-}
-static PyObject *__Pyx_PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs, PyObject *kwargs) {
-    PyCodeObject *co = (PyCodeObject *)PyFunction_GET_CODE(func);
-    PyObject *globals = PyFunction_GET_GLOBALS(func);
-    PyObject *argdefs = PyFunction_GET_DEFAULTS(func);
-    PyObject *closure;
-#if PY_MAJOR_VERSION >= 3
-    PyObject *kwdefs;
+/* PyObjectGetAttrStr */
+#if CYTHON_USE_TYPE_SLOTS
+static CYTHON_INLINE PyObject* __Pyx_PyObject_GetAttrStr(PyObject* obj, PyObject* attr_name) {
+    PyTypeObject* tp = Py_TYPE(obj);
+    if (likely(tp->tp_getattro))
+        return tp->tp_getattro(obj, attr_name);
+#if PY_MAJOR_VERSION < 3
+    if (likely(tp->tp_getattr))
+        return tp->tp_getattr(obj, PyString_AS_STRING(attr_name));
 #endif
-    PyObject *kwtuple, **k;
-    PyObject **d;
-    Py_ssize_t nd;
-    Py_ssize_t nk;
-    PyObject *result;
-    assert(kwargs == NULL || PyDict_Check(kwargs));
-    nk = kwargs ? PyDict_Size(kwargs) : 0;
-    #if PY_MAJOR_VERSION < 3
-    if (unlikely(Py_EnterRecursiveCall((char*)" while calling a Python object"))) {
-        return NULL;
-    }
-    #else
-    if (unlikely(Py_EnterRecursiveCall(" while calling a Python object"))) {
-        return NULL;
-    }
-    #endif
-    if (
-#if PY_MAJOR_VERSION >= 3
-            co->co_kwonlyargcount == 0 &&
-#endif
-            likely(kwargs == NULL || nk == 0) &&
-            co->co_flags == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE)) {
-        if (argdefs == NULL && co->co_argcount == nargs) {
-            result = __Pyx_PyFunction_FastCallNoKw(co, args, nargs, globals);
-            goto done;
-        }
-        else if (nargs == 0 && argdefs != NULL
-                 && co->co_argcount == Py_SIZE(argdefs)) {
-            /* function called with no arguments, but all parameters have
-               a default value: use default values as arguments .*/
-            args = &PyTuple_GET_ITEM(argdefs, 0);
-            result =__Pyx_PyFunction_FastCallNoKw(co, args, Py_SIZE(argdefs), globals);
-            goto done;
-        }
-    }
-    if (kwargs != NULL) {
-        Py_ssize_t pos, i;
-        kwtuple = PyTuple_New(2 * nk);
-        if (kwtuple == NULL) {
-            result = NULL;
-            goto done;
-        }
-        k = &PyTuple_GET_ITEM(kwtuple, 0);
-        pos = i = 0;
-        while (PyDict_Next(kwargs, &pos, &k[i], &k[i+1])) {
-            Py_INCREF(k[i]);
-            Py_INCREF(k[i+1]);
-            i += 2;
-        }
-        nk = i / 2;
-    }
-    else {
-        kwtuple = NULL;
-        k = NULL;
-    }
-    closure = PyFunction_GET_CLOSURE(func);
-#if PY_MAJOR_VERSION >= 3
-    kwdefs = PyFunction_GET_KW_DEFAULTS(func);
-#endif
-    if (argdefs != NULL) {
-        d = &PyTuple_GET_ITEM(argdefs, 0);
-        nd = Py_SIZE(argdefs);
-    }
-    else {
-        d = NULL;
-        nd = 0;
-    }
-#if PY_MAJOR_VERSION >= 3
-    result = PyEval_EvalCodeEx((PyObject*)co, globals, (PyObject *)NULL,
-                               args, (int)nargs,
-                               k, (int)nk,
-                               d, (int)nd, kwdefs, closure);
-#else
-    result = PyEval_EvalCodeEx(co, globals, (PyObject *)NULL,
-                               args, (int)nargs,
-                               k, (int)nk,
-                               d, (int)nd, closure);
-#endif
-    Py_XDECREF(kwtuple);
-done:
-    Py_LeaveRecursiveCall();
-    return result;
+    return PyObject_GetAttr(obj, attr_name);
 }
 #endif
 
@@ -6055,123 +5464,6 @@ static CYTHON_INLINE PyObject* __Pyx_PyObject_Call(PyObject *func, PyObject *arg
             "NULL result without error in PyObject_Call");
     }
     return result;
-}
-#endif
-
-/* PyObjectCallMethO */
-#if CYTHON_COMPILING_IN_CPYTHON
-static CYTHON_INLINE PyObject* __Pyx_PyObject_CallMethO(PyObject *func, PyObject *arg) {
-    PyObject *self, *result;
-    PyCFunction cfunc;
-    cfunc = __Pyx_CyOrPyCFunction_GET_FUNCTION(func);
-    self = __Pyx_CyOrPyCFunction_GET_SELF(func);
-    #if PY_MAJOR_VERSION < 3
-    if (unlikely(Py_EnterRecursiveCall((char*)" while calling a Python object")))
-        return NULL;
-    #else
-    if (unlikely(Py_EnterRecursiveCall(" while calling a Python object")))
-        return NULL;
-    #endif
-    result = cfunc(self, arg);
-    Py_LeaveRecursiveCall();
-    if (unlikely(!result) && unlikely(!PyErr_Occurred())) {
-        PyErr_SetString(
-            PyExc_SystemError,
-            "NULL result without error in PyObject_Call");
-    }
-    return result;
-}
-#endif
-
-/* PyObjectFastCall */
-#if PY_VERSION_HEX < 0x03090000 || CYTHON_COMPILING_IN_LIMITED_API
-static PyObject* __Pyx_PyObject_FastCall_fallback(PyObject *func, PyObject **args, size_t nargs, PyObject *kwargs) {
-    PyObject *argstuple;
-    PyObject *result = 0;
-    size_t i;
-    argstuple = PyTuple_New((Py_ssize_t)nargs);
-    if (unlikely(!argstuple)) return NULL;
-    for (i = 0; i < nargs; i++) {
-        Py_INCREF(args[i]);
-        if (__Pyx_PyTuple_SET_ITEM(argstuple, (Py_ssize_t)i, args[i]) < 0) goto bad;
-    }
-    result = __Pyx_PyObject_Call(func, argstuple, kwargs);
-  bad:
-    Py_DECREF(argstuple);
-    return result;
-}
-#endif
-static CYTHON_INLINE PyObject* __Pyx_PyObject_FastCallDict(PyObject *func, PyObject **args, size_t _nargs, PyObject *kwargs) {
-    Py_ssize_t nargs = __Pyx_PyVectorcall_NARGS(_nargs);
-#if CYTHON_COMPILING_IN_CPYTHON
-    if (nargs == 0 && kwargs == NULL) {
-        if (__Pyx_CyOrPyCFunction_Check(func) && likely( __Pyx_CyOrPyCFunction_GET_FLAGS(func) & METH_NOARGS))
-            return __Pyx_PyObject_CallMethO(func, NULL);
-    }
-    else if (nargs == 1 && kwargs == NULL) {
-        if (__Pyx_CyOrPyCFunction_Check(func) && likely( __Pyx_CyOrPyCFunction_GET_FLAGS(func) & METH_O))
-            return __Pyx_PyObject_CallMethO(func, args[0]);
-    }
-#endif
-    #if PY_VERSION_HEX < 0x030800B1
-    #if CYTHON_FAST_PYCCALL
-    if (PyCFunction_Check(func)) {
-        if (kwargs) {
-            return _PyCFunction_FastCallDict(func, args, nargs, kwargs);
-        } else {
-            return _PyCFunction_FastCallKeywords(func, args, nargs, NULL);
-        }
-    }
-    #if PY_VERSION_HEX >= 0x030700A1
-    if (!kwargs && __Pyx_IS_TYPE(func, &PyMethodDescr_Type)) {
-        return _PyMethodDescr_FastCallKeywords(func, args, nargs, NULL);
-    }
-    #endif
-    #endif
-    #if CYTHON_FAST_PYCALL
-    if (PyFunction_Check(func)) {
-        return __Pyx_PyFunction_FastCallDict(func, args, nargs, kwargs);
-    }
-    #endif
-    #endif
-    if (kwargs == NULL) {
-        #if CYTHON_VECTORCALL
-        #if PY_VERSION_HEX < 0x03090000
-        vectorcallfunc f = _PyVectorcall_Function(func);
-        #else
-        vectorcallfunc f = PyVectorcall_Function(func);
-        #endif
-        if (f) {
-            return f(func, args, (size_t)nargs, NULL);
-        }
-        #elif defined(__Pyx_CyFunction_USED) && CYTHON_BACKPORT_VECTORCALL
-        if (__Pyx_CyFunction_CheckExact(func)) {
-            __pyx_vectorcallfunc f = __Pyx_CyFunction_func_vectorcall(func);
-            if (f) return f(func, args, (size_t)nargs, NULL);
-        }
-        #endif
-    }
-    if (nargs == 0) {
-        return __Pyx_PyObject_Call(func, __pyx_empty_tuple, kwargs);
-    }
-    #if PY_VERSION_HEX >= 0x03090000 && !CYTHON_COMPILING_IN_LIMITED_API
-    return PyObject_VectorcallDict(func, args, (size_t)nargs, kwargs);
-    #else
-    return __Pyx_PyObject_FastCall_fallback(func, args, (size_t)nargs, kwargs);
-    #endif
-}
-
-/* PyObjectGetAttrStr */
-#if CYTHON_USE_TYPE_SLOTS
-static CYTHON_INLINE PyObject* __Pyx_PyObject_GetAttrStr(PyObject* obj, PyObject* attr_name) {
-    PyTypeObject* tp = Py_TYPE(obj);
-    if (likely(tp->tp_getattro))
-        return tp->tp_getattro(obj, attr_name);
-#if PY_MAJOR_VERSION < 3
-    if (likely(tp->tp_getattr))
-        return tp->tp_getattr(obj, PyString_AS_STRING(attr_name));
-#endif
-    return PyObject_GetAttr(obj, attr_name);
 }
 #endif
 
@@ -6768,6 +6060,232 @@ bad:
 }
 #endif
 
+/* PyFunctionFastCall */
+#if CYTHON_FAST_PYCALL && !CYTHON_VECTORCALL
+static PyObject* __Pyx_PyFunction_FastCallNoKw(PyCodeObject *co, PyObject **args, Py_ssize_t na,
+                                               PyObject *globals) {
+    PyFrameObject *f;
+    PyThreadState *tstate = __Pyx_PyThreadState_Current;
+    PyObject **fastlocals;
+    Py_ssize_t i;
+    PyObject *result;
+    assert(globals != NULL);
+    /* XXX Perhaps we should create a specialized
+       PyFrame_New() that doesn't take locals, but does
+       take builtins without sanity checking them.
+       */
+    assert(tstate != NULL);
+    f = PyFrame_New(tstate, co, globals, NULL);
+    if (f == NULL) {
+        return NULL;
+    }
+    fastlocals = __Pyx_PyFrame_GetLocalsplus(f);
+    for (i = 0; i < na; i++) {
+        Py_INCREF(*args);
+        fastlocals[i] = *args++;
+    }
+    result = PyEval_EvalFrameEx(f,0);
+    ++tstate->recursion_depth;
+    Py_DECREF(f);
+    --tstate->recursion_depth;
+    return result;
+}
+static PyObject *__Pyx_PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs, PyObject *kwargs) {
+    PyCodeObject *co = (PyCodeObject *)PyFunction_GET_CODE(func);
+    PyObject *globals = PyFunction_GET_GLOBALS(func);
+    PyObject *argdefs = PyFunction_GET_DEFAULTS(func);
+    PyObject *closure;
+#if PY_MAJOR_VERSION >= 3
+    PyObject *kwdefs;
+#endif
+    PyObject *kwtuple, **k;
+    PyObject **d;
+    Py_ssize_t nd;
+    Py_ssize_t nk;
+    PyObject *result;
+    assert(kwargs == NULL || PyDict_Check(kwargs));
+    nk = kwargs ? PyDict_Size(kwargs) : 0;
+    #if PY_MAJOR_VERSION < 3
+    if (unlikely(Py_EnterRecursiveCall((char*)" while calling a Python object"))) {
+        return NULL;
+    }
+    #else
+    if (unlikely(Py_EnterRecursiveCall(" while calling a Python object"))) {
+        return NULL;
+    }
+    #endif
+    if (
+#if PY_MAJOR_VERSION >= 3
+            co->co_kwonlyargcount == 0 &&
+#endif
+            likely(kwargs == NULL || nk == 0) &&
+            co->co_flags == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE)) {
+        if (argdefs == NULL && co->co_argcount == nargs) {
+            result = __Pyx_PyFunction_FastCallNoKw(co, args, nargs, globals);
+            goto done;
+        }
+        else if (nargs == 0 && argdefs != NULL
+                 && co->co_argcount == Py_SIZE(argdefs)) {
+            /* function called with no arguments, but all parameters have
+               a default value: use default values as arguments .*/
+            args = &PyTuple_GET_ITEM(argdefs, 0);
+            result =__Pyx_PyFunction_FastCallNoKw(co, args, Py_SIZE(argdefs), globals);
+            goto done;
+        }
+    }
+    if (kwargs != NULL) {
+        Py_ssize_t pos, i;
+        kwtuple = PyTuple_New(2 * nk);
+        if (kwtuple == NULL) {
+            result = NULL;
+            goto done;
+        }
+        k = &PyTuple_GET_ITEM(kwtuple, 0);
+        pos = i = 0;
+        while (PyDict_Next(kwargs, &pos, &k[i], &k[i+1])) {
+            Py_INCREF(k[i]);
+            Py_INCREF(k[i+1]);
+            i += 2;
+        }
+        nk = i / 2;
+    }
+    else {
+        kwtuple = NULL;
+        k = NULL;
+    }
+    closure = PyFunction_GET_CLOSURE(func);
+#if PY_MAJOR_VERSION >= 3
+    kwdefs = PyFunction_GET_KW_DEFAULTS(func);
+#endif
+    if (argdefs != NULL) {
+        d = &PyTuple_GET_ITEM(argdefs, 0);
+        nd = Py_SIZE(argdefs);
+    }
+    else {
+        d = NULL;
+        nd = 0;
+    }
+#if PY_MAJOR_VERSION >= 3
+    result = PyEval_EvalCodeEx((PyObject*)co, globals, (PyObject *)NULL,
+                               args, (int)nargs,
+                               k, (int)nk,
+                               d, (int)nd, kwdefs, closure);
+#else
+    result = PyEval_EvalCodeEx(co, globals, (PyObject *)NULL,
+                               args, (int)nargs,
+                               k, (int)nk,
+                               d, (int)nd, closure);
+#endif
+    Py_XDECREF(kwtuple);
+done:
+    Py_LeaveRecursiveCall();
+    return result;
+}
+#endif
+
+/* PyObjectCallMethO */
+#if CYTHON_COMPILING_IN_CPYTHON
+static CYTHON_INLINE PyObject* __Pyx_PyObject_CallMethO(PyObject *func, PyObject *arg) {
+    PyObject *self, *result;
+    PyCFunction cfunc;
+    cfunc = __Pyx_CyOrPyCFunction_GET_FUNCTION(func);
+    self = __Pyx_CyOrPyCFunction_GET_SELF(func);
+    #if PY_MAJOR_VERSION < 3
+    if (unlikely(Py_EnterRecursiveCall((char*)" while calling a Python object")))
+        return NULL;
+    #else
+    if (unlikely(Py_EnterRecursiveCall(" while calling a Python object")))
+        return NULL;
+    #endif
+    result = cfunc(self, arg);
+    Py_LeaveRecursiveCall();
+    if (unlikely(!result) && unlikely(!PyErr_Occurred())) {
+        PyErr_SetString(
+            PyExc_SystemError,
+            "NULL result without error in PyObject_Call");
+    }
+    return result;
+}
+#endif
+
+/* PyObjectFastCall */
+#if PY_VERSION_HEX < 0x03090000 || CYTHON_COMPILING_IN_LIMITED_API
+static PyObject* __Pyx_PyObject_FastCall_fallback(PyObject *func, PyObject **args, size_t nargs, PyObject *kwargs) {
+    PyObject *argstuple;
+    PyObject *result = 0;
+    size_t i;
+    argstuple = PyTuple_New((Py_ssize_t)nargs);
+    if (unlikely(!argstuple)) return NULL;
+    for (i = 0; i < nargs; i++) {
+        Py_INCREF(args[i]);
+        if (__Pyx_PyTuple_SET_ITEM(argstuple, (Py_ssize_t)i, args[i]) < 0) goto bad;
+    }
+    result = __Pyx_PyObject_Call(func, argstuple, kwargs);
+  bad:
+    Py_DECREF(argstuple);
+    return result;
+}
+#endif
+static CYTHON_INLINE PyObject* __Pyx_PyObject_FastCallDict(PyObject *func, PyObject **args, size_t _nargs, PyObject *kwargs) {
+    Py_ssize_t nargs = __Pyx_PyVectorcall_NARGS(_nargs);
+#if CYTHON_COMPILING_IN_CPYTHON
+    if (nargs == 0 && kwargs == NULL) {
+        if (__Pyx_CyOrPyCFunction_Check(func) && likely( __Pyx_CyOrPyCFunction_GET_FLAGS(func) & METH_NOARGS))
+            return __Pyx_PyObject_CallMethO(func, NULL);
+    }
+    else if (nargs == 1 && kwargs == NULL) {
+        if (__Pyx_CyOrPyCFunction_Check(func) && likely( __Pyx_CyOrPyCFunction_GET_FLAGS(func) & METH_O))
+            return __Pyx_PyObject_CallMethO(func, args[0]);
+    }
+#endif
+    #if PY_VERSION_HEX < 0x030800B1
+    #if CYTHON_FAST_PYCCALL
+    if (PyCFunction_Check(func)) {
+        if (kwargs) {
+            return _PyCFunction_FastCallDict(func, args, nargs, kwargs);
+        } else {
+            return _PyCFunction_FastCallKeywords(func, args, nargs, NULL);
+        }
+    }
+    #if PY_VERSION_HEX >= 0x030700A1
+    if (!kwargs && __Pyx_IS_TYPE(func, &PyMethodDescr_Type)) {
+        return _PyMethodDescr_FastCallKeywords(func, args, nargs, NULL);
+    }
+    #endif
+    #endif
+    #if CYTHON_FAST_PYCALL
+    if (PyFunction_Check(func)) {
+        return __Pyx_PyFunction_FastCallDict(func, args, nargs, kwargs);
+    }
+    #endif
+    #endif
+    if (kwargs == NULL) {
+        #if CYTHON_VECTORCALL
+        #if PY_VERSION_HEX < 0x03090000
+        vectorcallfunc f = _PyVectorcall_Function(func);
+        #else
+        vectorcallfunc f = PyVectorcall_Function(func);
+        #endif
+        if (f) {
+            return f(func, args, (size_t)nargs, NULL);
+        }
+        #elif defined(__Pyx_CyFunction_USED) && CYTHON_BACKPORT_VECTORCALL
+        if (__Pyx_CyFunction_CheckExact(func)) {
+            __pyx_vectorcallfunc f = __Pyx_CyFunction_func_vectorcall(func);
+            if (f) return f(func, args, (size_t)nargs, NULL);
+        }
+        #endif
+    }
+    if (nargs == 0) {
+        return __Pyx_PyObject_Call(func, __pyx_empty_tuple, kwargs);
+    }
+    #if PY_VERSION_HEX >= 0x03090000 && !CYTHON_COMPILING_IN_LIMITED_API
+    return PyObject_VectorcallDict(func, args, (size_t)nargs, kwargs);
+    #else
+    return __Pyx_PyObject_FastCall_fallback(func, args, (size_t)nargs, kwargs);
+    #endif
+}
+
 /* GetItemInt */
 static PyObject *__Pyx_GetItemInt_Generic(PyObject *o, PyObject* j) {
     PyObject *r;
@@ -6895,6 +6413,131 @@ static CYTHON_INLINE int __Pyx_HasAttr(PyObject *o, PyObject *n) {
     }
 }
 #endif
+
+/* CallNextTpTraverse */
+static int __Pyx_call_next_tp_traverse(PyObject* obj, visitproc v, void *a, traverseproc current_tp_traverse) {
+    PyTypeObject* type = Py_TYPE(obj);
+    traverseproc tp_traverse = NULL;
+    while (type && __Pyx_PyType_GetSlot(type, tp_traverse, traverseproc) != current_tp_traverse)
+        type = __Pyx_PyType_GetSlot(type, tp_base, PyTypeObject*);
+    while (type && (tp_traverse = __Pyx_PyType_GetSlot(type, tp_traverse, traverseproc)) == current_tp_traverse)
+        type = __Pyx_PyType_GetSlot(type, tp_base, PyTypeObject*);
+    if (type && tp_traverse)
+        return tp_traverse(obj, v, a);
+    return 0;
+}
+
+/* CallNextTpClear */
+static void __Pyx_call_next_tp_clear(PyObject* obj, inquiry current_tp_clear) {
+    PyTypeObject* type = Py_TYPE(obj);
+    inquiry tp_clear = NULL;
+    while (type && __Pyx_PyType_GetSlot(type, tp_clear, inquiry) != current_tp_clear)
+        type = __Pyx_PyType_GetSlot(type, tp_base, PyTypeObject*);
+    while (type && (tp_clear = __Pyx_PyType_GetSlot(type, tp_clear, inquiry)) == current_tp_clear)
+        type = __Pyx_PyType_GetSlot(type, tp_base, PyTypeObject*);
+    if (type && tp_clear)
+        tp_clear(obj);
+}
+
+/* TypeImport */
+#ifndef __PYX_HAVE_RT_ImportType_3_0_9
+#define __PYX_HAVE_RT_ImportType_3_0_9
+static PyTypeObject *__Pyx_ImportType_3_0_9(PyObject *module, const char *module_name, const char *class_name,
+    size_t size, size_t alignment, enum __Pyx_ImportType_CheckSize_3_0_9 check_size)
+{
+    PyObject *result = 0;
+    char warning[200];
+    Py_ssize_t basicsize;
+    Py_ssize_t itemsize;
+#if CYTHON_COMPILING_IN_LIMITED_API
+    PyObject *py_basicsize;
+    PyObject *py_itemsize;
+#endif
+    result = PyObject_GetAttrString(module, class_name);
+    if (!result)
+        goto bad;
+    if (!PyType_Check(result)) {
+        PyErr_Format(PyExc_TypeError,
+            "%.200s.%.200s is not a type object",
+            module_name, class_name);
+        goto bad;
+    }
+#if !CYTHON_COMPILING_IN_LIMITED_API
+    basicsize = ((PyTypeObject *)result)->tp_basicsize;
+    itemsize = ((PyTypeObject *)result)->tp_itemsize;
+#else
+    py_basicsize = PyObject_GetAttrString(result, "__basicsize__");
+    if (!py_basicsize)
+        goto bad;
+    basicsize = PyLong_AsSsize_t(py_basicsize);
+    Py_DECREF(py_basicsize);
+    py_basicsize = 0;
+    if (basicsize == (Py_ssize_t)-1 && PyErr_Occurred())
+        goto bad;
+    py_itemsize = PyObject_GetAttrString(result, "__itemsize__");
+    if (!py_itemsize)
+        goto bad;
+    itemsize = PyLong_AsSsize_t(py_itemsize);
+    Py_DECREF(py_itemsize);
+    py_itemsize = 0;
+    if (itemsize == (Py_ssize_t)-1 && PyErr_Occurred())
+        goto bad;
+#endif
+    if (itemsize) {
+        if (size % alignment) {
+            alignment = size % alignment;
+        }
+        if (itemsize < (Py_ssize_t)alignment)
+            itemsize = (Py_ssize_t)alignment;
+    }
+    if ((size_t)(basicsize + itemsize) < size) {
+        PyErr_Format(PyExc_ValueError,
+            "%.200s.%.200s size changed, may indicate binary incompatibility. "
+            "Expected %zd from C header, got %zd from PyObject",
+            module_name, class_name, size, basicsize+itemsize);
+        goto bad;
+    }
+    if (check_size == __Pyx_ImportType_CheckSize_Error_3_0_9 &&
+            ((size_t)basicsize > size || (size_t)(basicsize + itemsize) < size)) {
+        PyErr_Format(PyExc_ValueError,
+            "%.200s.%.200s size changed, may indicate binary incompatibility. "
+            "Expected %zd from C header, got %zd-%zd from PyObject",
+            module_name, class_name, size, basicsize, basicsize+itemsize);
+        goto bad;
+    }
+    else if (check_size == __Pyx_ImportType_CheckSize_Warn_3_0_9 && (size_t)basicsize > size) {
+        PyOS_snprintf(warning, sizeof(warning),
+            "%s.%s size changed, may indicate binary incompatibility. "
+            "Expected %zd from C header, got %zd from PyObject",
+            module_name, class_name, size, basicsize);
+        if (PyErr_WarnEx(NULL, warning, 0) < 0) goto bad;
+    }
+    return (PyTypeObject *)result;
+bad:
+    Py_XDECREF(result);
+    return NULL;
+}
+#endif
+
+/* GetVTable */
+static void* __Pyx_GetVtable(PyTypeObject *type) {
+    void* ptr;
+#if CYTHON_COMPILING_IN_LIMITED_API
+    PyObject *ob = PyObject_GetAttr((PyObject *)type, __pyx_n_s_pyx_vtable);
+#else
+    PyObject *ob = PyObject_GetItem(type->tp_dict, __pyx_n_s_pyx_vtable);
+#endif
+    if (!ob)
+        goto bad;
+    ptr = PyCapsule_GetPointer(ob, 0);
+    if (!ptr && !PyErr_Occurred())
+        PyErr_SetString(PyExc_RuntimeError, "invalid vtable found for imported type");
+    Py_DECREF(ob);
+    return ptr;
+bad:
+    Py_XDECREF(ob);
+    return NULL;
+}
 
 /* FixUpExtensionType */
 #if CYTHON_USE_TYPE_SPECS
@@ -7335,26 +6978,6 @@ bad:
     return -1;
 }
 
-/* GetVTable */
-static void* __Pyx_GetVtable(PyTypeObject *type) {
-    void* ptr;
-#if CYTHON_COMPILING_IN_LIMITED_API
-    PyObject *ob = PyObject_GetAttr((PyObject *)type, __pyx_n_s_pyx_vtable);
-#else
-    PyObject *ob = PyObject_GetItem(type->tp_dict, __pyx_n_s_pyx_vtable);
-#endif
-    if (!ob)
-        goto bad;
-    ptr = PyCapsule_GetPointer(ob, 0);
-    if (!ptr && !PyErr_Occurred())
-        PyErr_SetString(PyExc_RuntimeError, "invalid vtable found for imported type");
-    Py_DECREF(ob);
-    return ptr;
-bad:
-    Py_XDECREF(ob);
-    return NULL;
-}
-
 /* MergeVTables */
 #if !CYTHON_COMPILING_IN_LIMITED_API
 static int __Pyx_MergeVtables(PyTypeObject *type) {
@@ -7518,181 +7141,6 @@ __PYX_GOOD:
     return ret;
 }
 #endif
-
-/* ImportDottedModule */
-#if PY_MAJOR_VERSION >= 3
-static PyObject *__Pyx__ImportDottedModule_Error(PyObject *name, PyObject *parts_tuple, Py_ssize_t count) {
-    PyObject *partial_name = NULL, *slice = NULL, *sep = NULL;
-    if (unlikely(PyErr_Occurred())) {
-        PyErr_Clear();
-    }
-    if (likely(PyTuple_GET_SIZE(parts_tuple) == count)) {
-        partial_name = name;
-    } else {
-        slice = PySequence_GetSlice(parts_tuple, 0, count);
-        if (unlikely(!slice))
-            goto bad;
-        sep = PyUnicode_FromStringAndSize(".", 1);
-        if (unlikely(!sep))
-            goto bad;
-        partial_name = PyUnicode_Join(sep, slice);
-    }
-    PyErr_Format(
-#if PY_MAJOR_VERSION < 3
-        PyExc_ImportError,
-        "No module named '%s'", PyString_AS_STRING(partial_name));
-#else
-#if PY_VERSION_HEX >= 0x030600B1
-        PyExc_ModuleNotFoundError,
-#else
-        PyExc_ImportError,
-#endif
-        "No module named '%U'", partial_name);
-#endif
-bad:
-    Py_XDECREF(sep);
-    Py_XDECREF(slice);
-    Py_XDECREF(partial_name);
-    return NULL;
-}
-#endif
-#if PY_MAJOR_VERSION >= 3
-static PyObject *__Pyx__ImportDottedModule_Lookup(PyObject *name) {
-    PyObject *imported_module;
-#if PY_VERSION_HEX < 0x030700A1 || (CYTHON_COMPILING_IN_PYPY && PYPY_VERSION_NUM  < 0x07030400)
-    PyObject *modules = PyImport_GetModuleDict();
-    if (unlikely(!modules))
-        return NULL;
-    imported_module = __Pyx_PyDict_GetItemStr(modules, name);
-    Py_XINCREF(imported_module);
-#else
-    imported_module = PyImport_GetModule(name);
-#endif
-    return imported_module;
-}
-#endif
-#if PY_MAJOR_VERSION >= 3
-static PyObject *__Pyx_ImportDottedModule_WalkParts(PyObject *module, PyObject *name, PyObject *parts_tuple) {
-    Py_ssize_t i, nparts;
-    nparts = PyTuple_GET_SIZE(parts_tuple);
-    for (i=1; i < nparts && module; i++) {
-        PyObject *part, *submodule;
-#if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        part = PyTuple_GET_ITEM(parts_tuple, i);
-#else
-        part = PySequence_ITEM(parts_tuple, i);
-#endif
-        submodule = __Pyx_PyObject_GetAttrStrNoError(module, part);
-#if !(CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS)
-        Py_DECREF(part);
-#endif
-        Py_DECREF(module);
-        module = submodule;
-    }
-    if (unlikely(!module)) {
-        return __Pyx__ImportDottedModule_Error(name, parts_tuple, i);
-    }
-    return module;
-}
-#endif
-static PyObject *__Pyx__ImportDottedModule(PyObject *name, PyObject *parts_tuple) {
-#if PY_MAJOR_VERSION < 3
-    PyObject *module, *from_list, *star = __pyx_n_s__3;
-    CYTHON_UNUSED_VAR(parts_tuple);
-    from_list = PyList_New(1);
-    if (unlikely(!from_list))
-        return NULL;
-    Py_INCREF(star);
-    PyList_SET_ITEM(from_list, 0, star);
-    module = __Pyx_Import(name, from_list, 0);
-    Py_DECREF(from_list);
-    return module;
-#else
-    PyObject *imported_module;
-    PyObject *module = __Pyx_Import(name, NULL, 0);
-    if (!parts_tuple || unlikely(!module))
-        return module;
-    imported_module = __Pyx__ImportDottedModule_Lookup(name);
-    if (likely(imported_module)) {
-        Py_DECREF(module);
-        return imported_module;
-    }
-    PyErr_Clear();
-    return __Pyx_ImportDottedModule_WalkParts(module, name, parts_tuple);
-#endif
-}
-static PyObject *__Pyx_ImportDottedModule(PyObject *name, PyObject *parts_tuple) {
-#if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030400B1
-    PyObject *module = __Pyx__ImportDottedModule_Lookup(name);
-    if (likely(module)) {
-        PyObject *spec = __Pyx_PyObject_GetAttrStrNoError(module, __pyx_n_s_spec);
-        if (likely(spec)) {
-            PyObject *unsafe = __Pyx_PyObject_GetAttrStrNoError(spec, __pyx_n_s_initializing);
-            if (likely(!unsafe || !__Pyx_PyObject_IsTrue(unsafe))) {
-                Py_DECREF(spec);
-                spec = NULL;
-            }
-            Py_XDECREF(unsafe);
-        }
-        if (likely(!spec)) {
-            PyErr_Clear();
-            return module;
-        }
-        Py_DECREF(spec);
-        Py_DECREF(module);
-    } else if (PyErr_Occurred()) {
-        PyErr_Clear();
-    }
-#endif
-    return __Pyx__ImportDottedModule(name, parts_tuple);
-}
-
-/* PyObjectCall2Args */
-static CYTHON_INLINE PyObject* __Pyx_PyObject_Call2Args(PyObject* function, PyObject* arg1, PyObject* arg2) {
-    PyObject *args[3] = {NULL, arg1, arg2};
-    return __Pyx_PyObject_FastCall(function, args+1, 2 | __Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET);
-}
-
-/* PyObjectCallMethod1 */
-#if !(CYTHON_VECTORCALL && __PYX_LIMITED_VERSION_HEX >= 0x030C00A2)
-static PyObject* __Pyx__PyObject_CallMethod1(PyObject* method, PyObject* arg) {
-    PyObject *result = __Pyx_PyObject_CallOneArg(method, arg);
-    Py_DECREF(method);
-    return result;
-}
-#endif
-static PyObject* __Pyx_PyObject_CallMethod1(PyObject* obj, PyObject* method_name, PyObject* arg) {
-#if CYTHON_VECTORCALL && __PYX_LIMITED_VERSION_HEX >= 0x030C00A2
-    PyObject *args[2] = {obj, arg};
-    (void) __Pyx_PyObject_GetMethod;
-    (void) __Pyx_PyObject_CallOneArg;
-    (void) __Pyx_PyObject_Call2Args;
-    return PyObject_VectorcallMethod(method_name, args, 2 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
-#else
-    PyObject *method = NULL, *result;
-    int is_method = __Pyx_PyObject_GetMethod(obj, method_name, &method);
-    if (likely(is_method)) {
-        result = __Pyx_PyObject_Call2Args(method, obj, arg);
-        Py_DECREF(method);
-        return result;
-    }
-    if (unlikely(!method)) return NULL;
-    return __Pyx__PyObject_CallMethod1(method, arg);
-#endif
-}
-
-/* append */
-static CYTHON_INLINE int __Pyx_PyObject_Append(PyObject* L, PyObject* x) {
-    if (likely(PyList_CheckExact(L))) {
-        if (unlikely(__Pyx_PyList_Append(L, x) < 0)) return -1;
-    } else {
-        PyObject* retval = __Pyx_PyObject_CallMethod1(L, __pyx_n_s_append, x);
-        if (unlikely(!retval))
-            return -1;
-        Py_DECREF(retval);
-    }
-    return 0;
-}
 
 /* FetchSharedCythonModule */
 static PyObject *__Pyx_FetchSharedCythonABIModule(void) {
@@ -9557,7 +9005,7 @@ __Pyx_PyType_GetName(PyTypeObject* tp)
     if (unlikely(name == NULL) || unlikely(!PyUnicode_Check(name))) {
         PyErr_Clear();
         Py_XDECREF(name);
-        name = __Pyx_NewRef(__pyx_n_s__12);
+        name = __Pyx_NewRef(__pyx_n_s__9);
     }
     return name;
 }

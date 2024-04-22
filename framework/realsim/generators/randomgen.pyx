@@ -1,7 +1,10 @@
+# cython: c_string_type=unicode, c_string_encoding=utf8
+
 # Python imports
 from numpy.random import seed, randint, random_sample
 from time import time_ns
 
+from libcpp.string cimport string
 cimport randomgen
 
 cdef class RandomGenerator(AbstractGenerator):
@@ -23,13 +26,11 @@ cdef class RandomGenerator(AbstractGenerator):
 
         # Get the names of the loads
         names = list(map(lambda i: keys[i], ints))
-        # Get the loads
-        loads = list(map(lambda name: self.load_manager(name), names))
 
         cdef int idx
         cdef vector[Job] jobs_set
-        for i, load in enumerate(loads):
+        for i, load_name in enumerate(names):
             idx = <int>i
-            jobs_set.push_back( <Job>self.generate_job(idx, load) )
+            jobs_set.push_back( <Job>self.generate_job(idx, <string>load_name) )
 
         return jobs_set

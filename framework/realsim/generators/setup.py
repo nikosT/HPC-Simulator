@@ -16,6 +16,9 @@ ext_modules = [
         Extension("listgen", 
                   sources=["listgen.pyx"],
                   language="c++"),
+        # Extension("test", 
+        #           sources=["test.pyx"],
+        #           language="c++"),
         ]
 
 setup(ext_modules=cythonize(ext_modules, include_path=["../jobs"]))
