@@ -21,6 +21,7 @@ class RanksCoscheduler(Coscheduler, ABC):
     to default scheduling"""
 
     def __init__(self, 
+                 backfill_enabled: bool = True,
                  threshold: float = 1, 
                  system_utilization: float = 1,
                  engine: Optional[ScikitModel] = None,
@@ -38,6 +39,7 @@ class RanksCoscheduler(Coscheduler, ABC):
         self.ranks : dict[int, int] = dict() # jobId --> good pairings
         self.ranks_threshold = ranks_threshold
         Coscheduler.__init__(self, 
+                             backfill_enabled=backfill_enabled,
                              threshold=threshold, 
                              system_utilization=system_utilization,
                              engine=engine)

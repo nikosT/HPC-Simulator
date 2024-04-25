@@ -105,6 +105,19 @@ Object.assign(window.dash_clientside.clientside, {
 							}
 						};
 					}
+					else if (value.includes('bool')) {
+						val_inp = {
+							'type': 'Select',
+							'namespace': 'dash_bootstrap_components',
+							'props': {
+								'options': [{'label': 'True'}, {'label': 'False'}],
+								'value': 'True',
+								'style': {
+									'width': '50%'
+								}
+							}
+						};
+					}
 					else {
 						val_inp = {
 							'type': 'Button',

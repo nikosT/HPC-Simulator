@@ -39,6 +39,14 @@ class AbstractCluster(abc.ABC):
         # Finished jobs' ids list
         self.finished_jobs: list[int] = list()
 
+        # Jobs' management
+
+        # All the jobs will be moldable
+        self.moldability = True
+
+        # Malleability only for shrinking at the moment
+        self.malleability = False
+
         # Important counters #
 
         # Job id counter
@@ -165,30 +173,29 @@ class AbstractCluster(abc.ABC):
         # Check if there are any jobs left waiting
         if self.waiting_queue != []:
 
-            # If scheduler deployed jobs to execution list
-            # then go to the next simulation loop
-            if self.scheduler.deploy():
-                return
+            # Deploy/Submit jobs to the execution list
+            deploy_res = self.scheduler.deploy()
 
-            self.logger.evt_jobs_executing()
+            # If scheduler deployed jobs to execution list successfully and the
+            # backfilling policy is enabled
+            if deploy_res and self.scheduler.backfill_enabled:
 
-            # If the scheduler didn't deploy jobs then
-            # the execution list is full and we have to
-            # execute some
-            self.next_state()
+                # Execute the backfilling algorithm
+                backfill_res = self.scheduler.backfill()
+
+                if backfill_res:
+                    # The backfilling policy wants to re-iterate the process of
+                    # scheduling
+                    return
+
+
+        self.logger.evt_jobs_executing()
+
+        # If the scheduler didn't deploy jobs then
+        # the execution list is full and we have to
+        # execute some
+        self.next_state()
+
+        if self.execution_list != []:
             # Free the resources
             self.free_resources()
-
-        # If there aren't any jobs left on the waiting queue
-        else:
-            self.logger.evt_jobs_executing()
-            # Check if there is any job left in the execution queue
-            if self.execution_list != []:
-
-                self.next_state()
-                self.free_resources()
-
-            # If there aren't any jobs left in the waiting queue and execution
-            # list then check if there is any in the preloaded queue
-            elif self.preloaded_queue != []:
-                self.next_state()

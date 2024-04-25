@@ -34,6 +34,9 @@ class Scheduler(ABC, Generic[Cluster]):
     description = "The abstract base class for all scheduling algorithms"
 
     def __init__(self):
+        # Variable to test whether a backfill policy is enabled
+        self.backfill_enabled = False
+
         # Variable to check whether the new constructed execution list
         # from the scheduler is any different from the previous execution list
         # of the cluster
@@ -63,6 +66,15 @@ class Scheduler(ABC, Generic[Cluster]):
         simulation
         """
         pass
+
+    def backfill(self) -> bool:
+        """A backfill algorithm should always return a boolean result that
+        re-iterates [True] or not [False] the scheduling process
+        """
+        # By default the backfill policy will re-iterate the scheduling
+        # algorithm
+        return True
+        
 
     @abstractmethod
     def deploy(self) -> bool:

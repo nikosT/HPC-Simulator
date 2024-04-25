@@ -7,7 +7,8 @@ class CompactScheduler(Scheduler):
     name = "Default Scheduler"
     description = "No co-location policy; or default policy"
 
-    def __init__(self):
+    def __init__(self, backfill_enabled: bool = True):
+        self.backfill_enabled = backfill_enabled
         Scheduler.__init__(self)
 
     def setup(self):

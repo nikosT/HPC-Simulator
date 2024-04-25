@@ -35,9 +35,11 @@ class Coscheduler(Scheduler, ABC):
     description = "Exhaustive coupling co-scheduling base class for ExhaustiveCluster"
 
     def __init__(self, 
+                 backfill_enabled: bool = True,
                  threshold: float = 1, 
                  system_utilization: float = 1,
                  engine: Optional[ScikitModel] = None):
+        self.backfill_enabled = backfill_enabled
         self.threshold = threshold
         self.system_utilization = system_utilization
         self.engine = engine

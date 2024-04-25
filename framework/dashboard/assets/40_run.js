@@ -103,6 +103,13 @@ Object.assign(window.dash_clientside.clientside, {
 
 					if (type === 'Input')
 						value = inp_group_children[1].props.value;
+					else if (type === 'Select') {
+						value = inp_group_children[1].props.value;
+						if (value === 'True')
+							value = true;
+						else
+							value = false;
+					}
 					else
 						value = undefined;
 
@@ -128,6 +135,8 @@ Object.assign(window.dash_clientside.clientside, {
 			}
 
 		}
+
+		console.log(sched_obj);
 
 		data['schedulers'] = sched_obj;
 
