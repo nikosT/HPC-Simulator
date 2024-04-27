@@ -32,7 +32,7 @@ class ClusterExhaustive(AbstractCluster):
 
         # Find smallest remaining time for a job to show up in the waiting queue
         for job in self.preloaded_queue:
-            showup_time = job.queued_time - self.makespan
+            showup_time = job.submit_time - self.makespan
             if showup_time > 0 and showup_time < min_rem_time:
                 min_rem_time = showup_time
 

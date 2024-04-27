@@ -39,9 +39,9 @@ class AbstractGenerator(abc.ABC, Generic[T]):
                    half_node_cores=-1,
                    full_node_cores=-1,
                    remaining_time=load.get_avg(),
-                   queued_time=0,
+                   submit_time=0,
                    waiting_time=0,
-                   wall_time=(10 * 60))
+                   wall_time=(2 * load.get_avg()))
 
     @abc.abstractmethod
     def generate_jobs_set(self, arg: T) -> list[Job]:

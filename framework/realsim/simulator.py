@@ -1,7 +1,5 @@
-import plotly.graph_objects as go
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 from multiprocessing import Manager
-from cProfile import Profile
 import os
 import sys
 
@@ -34,19 +32,11 @@ def run_sim(core):
     default_cluster_makespan = default_list[0]
     default_logger = default_list[1]
 
-    # if "Random" in scheduler.name:
-    #     pr = Profile()
-    #     pr.enable()
-
     data = {
             "Resource usage": logger.get_resource_usage(),
             "Jobs utilization": logger.get_jobs_utilization(default_logger),
             "Makespan speedup": default_cluster_makespan / cluster.makespan
     }
-
-    # if "Random" in scheduler.name:
-    #     pr.disable()
-    #     pr.print_stats()
 
 
     # Return:
@@ -74,7 +64,7 @@ class Simulation:
                  schedulers_bundle):
 
         self.num_of_jobs = len(jobs_set)
-        self.default = "Default Scheduler"
+        self.default = "FIFO Scheduler"
         self.executor = ProcessPoolExecutor()
 
         self.manager = Manager()

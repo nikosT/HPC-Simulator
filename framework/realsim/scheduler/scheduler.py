@@ -77,8 +77,7 @@ class Scheduler(ABC, Generic[Cluster]):
         
 
     @abstractmethod
-    def deploy(self) -> bool:
+    def deploy(self) -> None:
         """Abstract method to deploy the new execution list to the cluster
         """
-        return False
-
+        pass

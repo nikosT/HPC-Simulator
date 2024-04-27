@@ -286,6 +286,7 @@ class Coscheduler(Scheduler, ABC):
                     self.cluster.waiting_queue.remove(co_job)
                     co_job.binded_cores = co_job.half_node_cores
                     co_job.ratioed_remaining_time(substitute_unit[0])
+                    co_job.start_time = self.cluster.makespan
 
                     substitute_unit.append(co_job)
                     rem_cores -= co_job.binded_cores
@@ -404,6 +405,8 @@ class Coscheduler(Scheduler, ABC):
                     co_job.ratioed_remaining_time(job)
                     co_job.binded_cores = co_job.half_node_cores
 
+                    co_job.start_time = self.cluster.makespan
+
                     xunit.append(co_job)
 
                     max_binded_cores -= co_job.binded_cores
@@ -425,6 +428,7 @@ class Coscheduler(Scheduler, ABC):
 
             job.ratioed_remaining_time(worst_neighbor)
             job.binded_cores = job.half_node_cores
+            job.start_time = self.cluster.makespan
 
             # If max_binded_cores is not 0 then fill the empty cores
             # with an empty job
@@ -481,6 +485,9 @@ class Coscheduler(Scheduler, ABC):
                 # Setup job
                 job.binded_cores = job.full_node_cores
 
+                # Start time of job
+                job.start_time = self.cluster.makespan
+
                 # Deploy job
                 deploying_list.append([job])
 
@@ -521,6 +528,7 @@ class Coscheduler(Scheduler, ABC):
                 self.cluster.waiting_queue.remove(job)
                 job.binded_cores = job.half_node_cores
                 job.speedup = job.get_max_speedup()
+                job.start_time = self.cluster.makespan
 
                 # Deploying job
                 empty_space = EmptyJob(Job(None, 
@@ -548,5 +556,5 @@ class Coscheduler(Scheduler, ABC):
         return
 
     @abstractmethod
-    def deploy(self) -> bool:
+    def deploy(self):
         pass

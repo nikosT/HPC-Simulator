@@ -75,7 +75,7 @@ class AbstractCluster(abc.ABC):
         copy = deepcopy_list(jobs_set)
 
         # Sort jobs by their time they appear on the waiting queue
-        copy.sort(key=lambda job: job.queued_time)
+        copy.sort(key=lambda job: job.submit_time)
 
         if self.makespan == 0:
             self.id_counter = 0
@@ -94,7 +94,7 @@ class AbstractCluster(abc.ABC):
         copy = deepcopy_list(self.preloaded_queue)
 
         for job in copy:
-            if job.queued_time <= self.makespan:
+            if job.submit_time <= self.makespan:
                 self.waiting_queue.append(job)
                 self.preloaded_queue.remove(job)
 
@@ -174,11 +174,11 @@ class AbstractCluster(abc.ABC):
         if self.waiting_queue != []:
 
             # Deploy/Submit jobs to the execution list
-            deploy_res = self.scheduler.deploy()
+            self.scheduler.deploy()
 
             # If scheduler deployed jobs to execution list successfully and the
             # backfilling policy is enabled
-            if deploy_res and self.scheduler.backfill_enabled:
+            if self.scheduler.backfill_enabled:
 
                 # Execute the backfilling algorithm
                 backfill_res = self.scheduler.backfill()

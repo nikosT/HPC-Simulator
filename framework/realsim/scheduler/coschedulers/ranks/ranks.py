@@ -89,6 +89,8 @@ class RanksCoscheduler(Coscheduler, ABC):
                         # Deployment!
                         deploying_list.append([job])
 
+                        job.start_time = self.cluster.makespan
+
                         self.cluster.free_cores -= job.binded_cores
                         # Remove from the waiting queue
                         self.cluster.waiting_queue.remove(job)
@@ -100,9 +102,6 @@ class RanksCoscheduler(Coscheduler, ABC):
         return
 
     def deploy(self):
-
-        # Reset deploying flag
-        self.deploying = False
 
         # Update ranks
         self.update_ranks()
@@ -135,9 +134,9 @@ class RanksCoscheduler(Coscheduler, ABC):
         if self.deploying:
             # Logger cluster events update
             self.logger.cluster_events["deploying:success"] += 1
-            return True
+            return
 
         # If no new waiting job is to be deployed then update Logger and return
         # False
         self.logger.cluster_events["deploying:failed"] += 1
-        return False
+        return

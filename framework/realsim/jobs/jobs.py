@@ -25,7 +25,7 @@ class Job:
                  half_node_cores: int,
                  full_node_cores: int,
                  remaining_time, 
-                 queued_time, 
+                 submit_time, 
                  waiting_time, 
                  wall_time):
 
@@ -34,11 +34,11 @@ class Job:
         self.job_name = job_name
         self.num_of_processes = num_of_processes
         self.remaining_time = remaining_time
-        self.queued_time = queued_time
+        self.submit_time = submit_time
         self.waiting_time = waiting_time
+        self.start_time: float = 0.0
         self.wall_time = wall_time
         self.binded_cores = binded_cores
-        self.gave_position = 0
         self.speedup = 1
 
         # Configs for faster simulation
@@ -49,7 +49,7 @@ class Job:
         if not isinstance(job, Job):
             return False
         return self.load == job.load and self.job_id == job.job_id and self.job_name == job.job_name and self.num_of_processes == job.num_of_processes\
-                and self.remaining_time == job.remaining_time and self.queued_time == job.queued_time\
+                and self.remaining_time == job.remaining_time and self.submit_time == job.submit_time\
                 and self.wall_time == job.wall_time and self.speedup == job.speedup
 
     def __repr__(self) -> str:
@@ -58,7 +58,6 @@ class Job:
 
     def get_speedup(self, cojob):
         return self.load.get_median_speedup(cojob.job_name)
-        # return avg(self.load.get_speedups(cojob.job_name))
 
     def get_overall_speedup(self):
         speedups = list()
@@ -95,11 +94,10 @@ class Job:
                    half_node_cores=self.half_node_cores,
                    full_node_cores=self.full_node_cores,
                    remaining_time=self.remaining_time,
-                   queued_time=self.queued_time,
+                   submit_time=self.submit_time,
                    waiting_time=self.waiting_time,
                    wall_time=self.wall_time)
 
-        copy.gave_position = self.gave_position
         copy.speedup = self.speedup
 
         return copy
@@ -126,7 +124,7 @@ class EmptyJob(Job):
                             half_node_cores=self.half_node_cores,
                             full_node_cores=self.full_node_cores,
                             remaining_time=self.remaining_time,
-                            queued_time=self.queued_time,
+                            submit_time=self.submit_time,
                             waiting_time=self.waiting_time,
                             wall_time=self.wall_time)
                         )

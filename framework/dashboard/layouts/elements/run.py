@@ -167,18 +167,18 @@ def parallel_simulations(par_inp):
         # Based on distribution
         if simulation_distribution == "Constant":
             for i, job in enumerate(jobs_set):
-                    job.queued_time = i * generator_time
+                    job.submit_time = i * generator_time
         elif simulation_distribution == "Random":
             seed(time_ns() % (2 ** 32))
             current_time = randint(low=0, high=generator_time, size=(1,))[0]
             for job in jobs_set:
-                job.queued_time = current_time
+                job.submit_time = current_time
                 seed(time_ns() % (2 ** 32))
                 current_time += randint(low=0, high=generator_time, size=(1,))[0]
         elif simulation_distribution == "Poisson":
             current_time = exponential(generator_time)
             for job in jobs_set:
-                job.queued_time = current_time
+                job.submit_time = current_time
                 current_time += exponential(generator_time)
         else:
             pass

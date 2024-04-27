@@ -179,7 +179,7 @@ class Logger(object):
         )
 
         # Record the arrival and waiting time
-        self.job_events[job_key]["arrival time"] = job.queued_time
+        self.job_events[job_key]["arrival time"] = job.submit_time
         self.job_events[job_key]["waiting time"] = job.waiting_time
 
         # Record the number of used cores at this checkpoint

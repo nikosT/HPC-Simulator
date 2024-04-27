@@ -2,22 +2,19 @@ from .scheduler import Scheduler
 from realsim.jobs.utils import deepcopy_list
 
 
-class CompactScheduler(Scheduler):
+class FIFOScheduler(Scheduler):
 
-    name = "Compact Scheduler"
-    description = "No co-location policy; or default policy"
+    name = "FIFO Scheduler"
+    description = "First In First Out/ First Come First Served scheduling policy"
 
-    def __init__(self, backfill_enabled: bool = True):
-        self.backfill_enabled = backfill_enabled
+    def __init__(self):
         Scheduler.__init__(self)
+        self.backfill_enabled = False
 
     def setup(self):
         pass
 
-    def deploy(self) -> bool:
-
-        # Did we deploy any job?
-        deployed = False
+    def deploy(self) -> None:
 
         waiting_queue = deepcopy_list(self.cluster.waiting_queue)
 
@@ -31,7 +28,6 @@ class CompactScheduler(Scheduler):
                 self.cluster.execution_list.append([job])
                 job.start_time = self.cluster.makespan
                 self.cluster.free_cores -= job.binded_cores
-                deployed = True
-
-        return deployed
+            else:
+                break
 
