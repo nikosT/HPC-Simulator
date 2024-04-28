@@ -71,9 +71,9 @@ class Scheduler(ABC, Generic[Cluster]):
         """A backfill algorithm should always return a boolean result that
         re-iterates [True] or not [False] the scheduling process
         """
-        # By default the backfill policy will re-iterate the scheduling
+        # By default the backfill policy will not re-iterate the scheduling
         # algorithm
-        return True
+        return False
         
 
     @abstractmethod

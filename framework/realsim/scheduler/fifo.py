@@ -9,7 +9,6 @@ class FIFOScheduler(Scheduler):
 
     def __init__(self):
         Scheduler.__init__(self)
-        self.backfill_enabled = False
 
     def setup(self):
         pass

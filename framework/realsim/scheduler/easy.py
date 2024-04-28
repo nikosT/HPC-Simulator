@@ -13,50 +13,55 @@ class EASYScheduler(FIFOScheduler):
         self.backfill_enabled = True
 
 
-    def backfill(self):
+    def backfill(self) -> bool:
 
-        waiting_queue = deepcopy_list(self.cluster.waiting_queue)
-        total_reserved_cores = 0
+        aggr_cores = 0
+        execution_list = deepcopy_list(self.cluster.execution_list)
+        execution_list.sort(key=lambda jblock: jblock[0].wall_time - jblock[0].start_time)
 
-        while waiting_queue != [] and self.cluster.free_cores > 0:
+        if len(self.cluster.waiting_queue) <= 1:
+            return False
 
-            job = self.pop(waiting_queue)
+        job = self.cluster.waiting_queue[0]
 
-            # Find the minimum estimated start time of the job
-            min_estimated_time = inf
+        # Find the minimum estimated start time of the job
+        min_estimated_time = inf
 
-            for jobs_block in self.cluster.execution_list:
+        for jobs_block in execution_list:
 
-                running_job = jobs_block[0]
+            running_job = jobs_block[0]
+            aggr_cores += running_job.binded_cores
 
-                if job.full_node_cores <= running_job.binded_cores and (running_job.wall_time - running_job.start_time) < min_estimated_time:
-                    min_estimated_time = running_job.wall_time - running_job.start_time
-
-            # If a job couldn't reserve cores then cancel backfill at this point
-            if min_estimated_time < inf:
+            if job.full_node_cores <= aggr_cores:
+                min_estimated_time = running_job.wall_time - running_job.start_time
                 break
 
-            # Find a job that can backfill the execution list
+        # If a job couldn't reserve cores then cancel backfill at this point
+        if not min_estimated_time < inf:
+            return False
 
-            # Get the backfilling candidates
-            backfilling_jobs = deepcopy_list(waiting_queue)
+        # Find job(s) that can backfill the execution list
 
-            # Ascending sorting by their wall time
-            backfilling_jobs.sort(key=lambda b_job: b_job.wall_time)
+        # Get the backfilling candidates
+        backfilling_jobs = deepcopy_list(self.cluster.waiting_queue[1:])
 
-            for b_job in backfilling_jobs:
+        # Ascending sorting by their wall time
+        backfilling_jobs.sort(key=lambda b_job: b_job.wall_time)
 
-                if b_job.wall_time <= min_estimated_time:
+        for b_job in backfilling_jobs:
 
-                    if b_job.full_node_cores <= self.cluster.free_cores:
+            if b_job.wall_time <= min_estimated_time:
 
-                        waiting_queue.remove(b_job)
-                        self.cluster.waiting_queue.remove(b_job)
-                        b_job.start_time = self.cluster.makespan
-                        b_job.binded_cores = b_job.full_node_cores
-                        self.cluster.execution_list.append([b_job])
-                        self.cluster.free_cores -= b_job.binded_cores
-                else:
-                    # No other job is capable to backfill based on time
-                    break
+                if b_job.full_node_cores <= self.cluster.free_cores:
+
+                    self.cluster.waiting_queue.remove(b_job)
+                    b_job.start_time = self.cluster.makespan
+                    b_job.binded_cores = b_job.full_node_cores
+                    self.cluster.execution_list.append([b_job])
+                    self.cluster.free_cores -= b_job.binded_cores
+            else:
+                # No other job is capable to backfill based on time
+                break
+        
+        return False
 

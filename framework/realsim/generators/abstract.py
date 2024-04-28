@@ -41,7 +41,7 @@ class AbstractGenerator(abc.ABC, Generic[T]):
                    remaining_time=load.get_avg(),
                    submit_time=0,
                    waiting_time=0,
-                   wall_time=(2 * load.get_avg()))
+                   wall_time=(1.15 * load.get_avg()))
 
     @abc.abstractmethod
     def generate_jobs_set(self, arg: T) -> list[Job]:
