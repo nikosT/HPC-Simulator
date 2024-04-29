@@ -12,6 +12,7 @@ from api.loader import Load
 from typing import Optional
 from numpy import average as avg
 from numpy import isnan
+from procset import ProcSet
 
 
 class Job:
@@ -42,8 +43,12 @@ class Job:
         self.speedup = 1
 
         # Configs for faster simulation
-        self.half_node_cores = half_node_cores
+        self.full_nodes = 0
+        self.half_nodes = 0
         self.full_node_cores = full_node_cores
+        self.half_node_cores = half_node_cores
+
+        self.reserved_nodes: ProcSet = ProcSet()
 
     def __eq__(self, job):
         if not isinstance(job, Job):

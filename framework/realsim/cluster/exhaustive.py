@@ -70,6 +70,9 @@ class ClusterExhaustive(AbstractCluster):
                     if job.remaining_time == 0:
                         # Record in logger
                         self.logger.evt_job_finishes(job)
+                        # Return binded cores as free cores to cluster
+                        for node in job.reserved_nodes:
+                            self.free_cores |= node
                         # Convert to an empty job
                         job = EmptyJob(job)
 
@@ -108,11 +111,11 @@ class ClusterExhaustive(AbstractCluster):
                 # From empty jobs check if there is a job with amount of cores
                 # higher than our first job in substitute_unit and swap their
                 # number of binded cores
-                for empty_job in empty_jobs:
-                    if empty_job.binded_cores > substitute_unit[0].binded_cores:
-                        swap = empty_job.binded_cores
-                        empty_job.binded_cores = substitute_unit[0].binded_cores
-                        substitute_unit[0].binded_cores = swap
+                # for empty_job in empty_jobs:
+                #     if empty_job.binded_cores > substitute_unit[0].binded_cores:
+                #         swap = empty_job.binded_cores
+                #         empty_job.binded_cores = substitute_unit[0].binded_cores
+                #         substitute_unit[0].binded_cores = swap
 
             # Extend substitute_unit with empty_jobs
             substitute_unit.extend(empty_jobs)

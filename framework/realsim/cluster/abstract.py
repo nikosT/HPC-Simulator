@@ -3,6 +3,7 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
+from procset import ProcSet
 from realsim.jobs import Job, EmptyJob
 from realsim.jobs.utils import deepcopy_list
 from realsim.scheduler.scheduler import Scheduler
@@ -16,13 +17,23 @@ class AbstractCluster(abc.ABC):
     def __init__(self, nodes, cores_per_node):
 
         # Number of nodes
+        # self.nodes = nodes
+        # # Number of cores per node
+        # self.cores_per_node = cores_per_node
+        # # Number of total cores
+        # self.total_cores = self.nodes * self.cores_per_node
+        # # Number of current free cores
+        # self.free_cores = self.total_cores
+
         self.nodes = nodes
-        # Number of cores per node
         self.cores_per_node = cores_per_node
-        # Number of total cores
-        self.total_cores = self.nodes * self.cores_per_node
-        # Number of current free cores
-        self.free_cores = self.total_cores
+
+        self.compute_nodes = [
+                ProcSet((i * cores_per_node + 1, (i+1) * cores_per_node))
+                for i in range(nodes)
+        ]
+
+        self.free_cores = ProcSet((1, nodes * cores_per_node))
 
         # Scheduler instance for the cluster
         self.scheduler: Scheduler
@@ -83,11 +94,16 @@ class AbstractCluster(abc.ABC):
         # Preload jobs and calculate their respective half and full node cores
         # usage
         for job in copy:
+
             job.job_id = self.id_counter
-            job.half_node_cores = int(math.ceil(job.num_of_processes / (self.cores_per_node / 2)) * (self.cores_per_node / 2))
-            job.full_node_cores = int(math.ceil(job.num_of_processes / self.cores_per_node) * self.cores_per_node)
-            self.id_counter += 1
+            job.full_nodes = math.ceil(job.num_of_processes / self.cores_per_node)
+            job.half_nodes = math.ceil(job.num_of_processes / (self.cores_per_node / 2))
+            job.full_node_cores = int(job.full_nodes * self.cores_per_node)
+            job.half_node_cores = int(job.half_nodes * (self.cores_per_node / 2))
+
             self.preloaded_queue.append(job)
+
+            self.id_counter += 1
 
     def load_in_waiting_queue(self) -> None:
 
@@ -156,7 +172,7 @@ class AbstractCluster(abc.ABC):
         pass
 
     def setup(self):
-        self.free_cores = self.total_cores
+        self.free_cores = ProcSet((1, self.nodes * self.cores_per_node))
         self.makespan = 0
         self.execution_list = list()
 
@@ -164,7 +180,7 @@ class AbstractCluster(abc.ABC):
 
         # This is definite
         # If broken then the simulation loop has problems
-        if self.free_cores < 0 or self.free_cores > self.total_cores:
+        if len(self.free_cores < 0) or len(self.free_cores) > (self.nodes * self.cores_per_node):
             raise RuntimeError(f"Free cores: {self.free_cores}")
 
         # Deploy to waiting queue any preloaded jobs that remain
