@@ -1,4 +1,11 @@
-from .scheduler import Scheduler
+import os
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(
+    os.path.dirname(__file__), "../../../"
+)))
+
+from realsim.scheduler.scheduler import Scheduler
 from realsim.jobs.utils import deepcopy_list
 
 

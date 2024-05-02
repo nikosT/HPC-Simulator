@@ -35,7 +35,7 @@ class Coscheduler(Scheduler, ABC):
     description = "Exhaustive coupling co-scheduling base class for ExhaustiveCluster"
 
     def __init__(self, 
-                 backfill_enabled: bool = True,
+                 backfill_enabled: bool = False,
                  threshold: float = 1, 
                  system_utilization: float = 1,
                  engine: Optional[ScikitModel] = None):
@@ -212,56 +212,7 @@ class Coscheduler(Scheduler, ABC):
             # If no candidate was found then check if there is only one non
             # empty job inside the unit
             if candidates == []:
-
-                # If no job is co-executing with the largest job inside the
-                # xunit then change the execution policy to spread
-                if min_binded_cores == 0: 
-
-                    # Check if spread and if not change it to spread
-                    if largest_job.speedup != largest_job.get_max_speedup():
-                        largest_job.remaining_time *= largest_job.speedup / largest_job.get_max_speedup()
-                        largest_job.speedup = largest_job.get_max_speedup()
-
-                    empty_job = EmptyJob(Job(None, 
-                                             -1, 
-                                             "empty", 
-                                             empty_space, 
-                                             empty_space,
-                                             -1,
-                                             -1,
-                                             None, 
-                                             None, 
-                                             None, 
-                                             None))
-
-                    new_xunit = [largest_job, empty_job]
-
-                    # Deployment!
-                    deploying_list.append(new_xunit)
-                    self.after_deployment(new_xunit)
-
-                else:
-
-                    # If there are other jobs except the largest that are still
-                    # executing then find the job that minimizes the largest's
-                    # job speedup
-                    neighbors = list(filter(
-                        lambda job: type(job) != EmptyJob,
-                        xunit[1:]
-                    ))
-
-                    worst_neighbor = min(neighbors, 
-                                         key=lambda job: largest_job.get_speedup(job)
-                                         )
-
-                    # If the worst neighbor hasn't finished executing
-                    if largest_job.speedup != largest_job.get_speedup(worst_neighbor):
-                        largest_job.ratioed_remaining_time(worst_neighbor)
-
-                    # Deployment!
-                    deploying_list.append(xunit)
-                    self.after_deployment(xunit)
-
+                deploying_list.append(xunit)
                 continue
 
             # If there are candidates then substitute the xunit with a new one

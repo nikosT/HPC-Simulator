@@ -37,11 +37,6 @@ class Scheduler(ABC, Generic[Cluster]):
         # Variable to test whether a backfill policy is enabled
         self.backfill_enabled = False
 
-        # Variable to check whether the new constructed execution list
-        # from the scheduler is any different from the previous execution list
-        # of the cluster
-        self.deploying = False
-
     def assign_cluster(self, cluster: Cluster) -> None:
         """This method is called from a cluster instance
         when it is created. It can also be used to reassign
@@ -67,14 +62,15 @@ class Scheduler(ABC, Generic[Cluster]):
         """
         pass
 
-    def backfill(self) -> bool:
-        """A backfill algorithm should always return a boolean result that
-        re-iterates [True] or not [False] the scheduling process
+    def backfill(self) -> None:
+        """A backfill algorithm for the scheduler
         """
-        # By default the backfill policy will not re-iterate the scheduling
-        # algorithm
-        return False
+        return
         
+    def waiting_queue_reorder(self, job: Job) -> float:
+        """Waiting queue reordering logic
+        """
+        return 1.0
 
     @abstractmethod
     def deploy(self) -> None:

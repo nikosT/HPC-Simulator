@@ -8,41 +8,33 @@ sys.path.append(os.path.abspath(os.path.join(
 
 from realsim.jobs.jobs import Job
 from realsim.jobs.utils import deepcopy_list
-from realsim.scheduler.coscheduler import Coscheduler, ScikitModel
+from realsim.scheduler.coschedulerV2 import Coscheduler, ScikitModel
 
-from numpy import average as avg
 from abc import ABC
 
 
 class RanksCoscheduler(Coscheduler, ABC):
 
-    name = "Abstract Ranks Co-Scheduler"
-    description = """Deploying architecture with ranks as a fallback mechanism
-    to default scheduling"""
+    name = "Ranks Co-Scheduler"
+    description = """Rank is the measure of how many good pairs a job can 
+    construct. If a job reaches rank 0, then it is not capable for co-scheduling
+    and is allocated for exclusive compact execution."""
 
-    def __init__(self, 
-                 backfill_enabled: bool = True,
-                 threshold: float = 1, 
-                 system_utilization: float = 1,
-                 engine: Optional[ScikitModel] = None,
-                 ranks_threshold: float = 1):
+    def __init__(self,
+                 backfill_enabled: bool = False,
+                 speedup_threshold: float = 1.0,
+                 ranks_threshold: float = 1.0,
+                 system_utilization: float = 1.0,
+                 engine: Optional[ScikitModel] = None):
 
-        # If the ranks_threshold is lower than threshold then the co-scheduler
-        # would hint that there are more neighbors than the actual number of
-        # candidates provided leading to waiting jobs that might stall for
-        # co-scheduling but never being deployed for execution
-        if ranks_threshold < threshold:
-            raise RuntimeError("""Ranks threshold should always be greater than
-                               co-scheduling threshold in order to not fall to
-                               an infinite loop in the simulation loop""")
-
-        self.ranks : dict[int, int] = dict() # jobId --> good pairings
-        self.ranks_threshold = ranks_threshold
         Coscheduler.__init__(self, 
-                             backfill_enabled=backfill_enabled,
-                             threshold=threshold, 
-                             system_utilization=system_utilization,
-                             engine=engine)
+                             backfill_enabled, 
+                             speedup_threshold, 
+                             system_utilization, 
+                             engine)
+
+        self.ranks : dict[int, int] = dict() # jobId --> number of good pairings
+        self.ranks_threshold = ranks_threshold
 
     def update_ranks(self):
 
@@ -73,70 +65,67 @@ class RanksCoscheduler(Coscheduler, ABC):
         # Create ranks
         self.update_ranks()
 
-    def after_deployment(self, xunit: list[Job]):
+    def after_deployment(self, *args):
         self.update_ranks()
 
-    def deploying_wait_compact(self, deploying_list):
+    def allocation_as_compact(self, job: Job) -> bool:
 
-        waiting_queue: list[Job] = deepcopy_list(self.cluster.waiting_queue)
+        # The job is not eligible for compact execution
+        if self.ranks[job.job_id] != 0:
+            return False
 
-        # Deploy any job that has 0 ranking in compact allocation policy
-        for job in waiting_queue:
-            if self.ranks[job.job_id] == 0 and job.full_node_cores <= self.cluster.free_cores:
+        # Check if the job can be allocated for compact execution
+        if job.full_node_cores <= self.cluster.free_cores:
+            self.cluster.waiting_queue.remove(job)
+            job.start_time = self.cluster.makespan
+            job.binded_cores = job.full_node_cores
+            self.cluster.execution_list.append([job])
+            self.cluster.free_cores -= job.binded_cores
 
-                        job.binded_cores = job.full_node_cores
+            return True
 
-                        # Deployment!
-                        deploying_list.append([job])
+        else:
+            return False
 
-                        job.start_time = self.cluster.makespan
+    def deploy(self) -> None:
 
-                        self.cluster.free_cores -= job.binded_cores
-                        # Remove from the waiting queue
-                        self.cluster.waiting_queue.remove(job)
-
-                        self.deploying = True
-                        self.after_deployment([job])
-
-
-        return
-
-    def deploy(self):
-
-        # Update ranks
         self.update_ranks()
 
-        # List of jobs to deploy
-        deploying_list: list[list[Job]] = list()
+        waiting_queue = deepcopy_list(self.cluster.waiting_queue)
+        waiting_queue.sort(key=lambda job: self.waiting_queue_reorder(job),
+                           reverse=True)
 
-        # First of all deploy the filled xunits
-        deploying_list.extend(self.cluster.filled_xunits())
+        while waiting_queue != []:
 
-        # Call after-processing method for deployment for each xunit
-        map(lambda xunit: self.after_deployment(xunit), deploying_list)
+            # Remove from the waiting queue
+            job = self.pop(waiting_queue)
 
-        # Spread scheduling of waiting jobs
-        self.deploying_as_spread(deploying_list)
+            # Try to fit the job in an xunit
+            res = self.colocation_to_xunit(job)
 
-        # Co-scheduling waiting jobs with nonfilled executing units
-        self.deploying_to_xunits(deploying_list)
+            if res:
+                self.after_deployment()
+                continue
 
-        # Default (compact) scheduling of waiting jobs with rank equal to zero
-        self.deploying_wait_compact(deploying_list)
-        
-        # Co-scheduling between waiting jobs
-        self.deploying_wait_pairs(deploying_list)
+            # Check if it is eligible for compact allocation
+            res = self.allocation_as_compact(job)
 
-        # Re-assign the execution list of the cluster
-        self.cluster.execution_list = deploying_list
+            if res:
+                self.after_deployment()
+                continue
 
-        # If there are new deployed jobs from the waiting queue then return True
-        if self.deploying:
-            # Logger cluster events update
-            self.logger.cluster_events["deploying:success"] += 1
-            return
+            # Check if there is a waiting job that can pair up with the job
+            # and that they are allowed to allocate in the cluster
+            res = self.colocation_with_wjobs(job, waiting_queue)
 
-        # If no new waiting job is to be deployed then update Logger and return
-        # False
-        self.logger.cluster_events["deploying:failed"] += 1
+            if res:
+                self.after_deployment()
+                continue
+
+            # All the allocation tries have failed. Return the job at the first
+            # out position and reassign the waiting queue of the cluster
+            waiting_queue.insert(0, job)
+            self.cluster.waiting_queue = waiting_queue
+            break
+
         return

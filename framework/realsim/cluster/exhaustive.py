@@ -39,7 +39,7 @@ class ClusterExhaustive(AbstractCluster):
         assert min_rem_time >= 0
 
         if min_rem_time == math.inf and self.waiting_queue != []:
-            print(f"Infinity : {self.waiting_queue} {self.execution_list}")
+            print(f"Infinity : {self.free_cores}\n {self.waiting_queue} {self.execution_list}")
             raise RuntimeError("Execution list is empty but the waiting queue still has jobs.")
 
         # Increase the overall cluster runtime
@@ -57,12 +57,13 @@ class ClusterExhaustive(AbstractCluster):
         for execution_unit in self.execution_list:
 
             substitute_unit = list()
-            empty_jobs = list()
 
             # Set as first job in substitute unit the non empty job
             # with the highest amount of binded cores
             max_binded_cores = -1
+            idle_cores = 0
 
+            # Calculate for all jobs
             for job in execution_unit:
 
                 if type(job) != EmptyJob:
@@ -73,23 +74,31 @@ class ClusterExhaustive(AbstractCluster):
                         # Convert to an empty job
                         job = EmptyJob(job)
 
-                # We may have to downsize the unit
-                # before adding it to the execution list we are building
-
-                # Set the largest non empty job as first in substitute_unit
                 if type(job) != EmptyJob:
+                    # Set the largest non empty job as first in substitute_unit
                     if job.binded_cores > max_binded_cores:
                         substitute_unit.insert(0, job)
                         max_binded_cores = job.binded_cores
                     else:
+                    # Else put it as a tail job
                         substitute_unit.append(job)
                 else:
-                    empty_jobs.append(job)
+                    # If it is an EmptyJob record the amount of idle cores
+                    idle_cores += job.binded_cores
 
             # If there is any job still executing
-            if substitute_unit != []:
-            
-                if len(substitute_unit) > 1:
+            if len(substitute_unit) > 1:
+
+                # If the number of idle cores is larger than the number of utilized
+                # cores then all the remaining jobs in the xunit will be executing as spread
+                if idle_cores >= substitute_unit[0].binded_cores:
+                    for job in substitute_unit:
+                        if job.speedup != job.get_max_speedup():
+                            job.remaining_time *= (job.speedup / job.get_max_speedup())
+                            job.speedup = job.get_max_speedup()
+                else:
+                # In contrast, the tail jobs share their resources with the head
+                # job and vica versa
 
                     # Recalculate speedup of tail jobs
                     for job in substitute_unit[1:]:
@@ -104,18 +113,19 @@ class ClusterExhaustive(AbstractCluster):
                     if substitute_unit[0].speedup != substitute_unit[0].get_speedup(worst_job):
                         substitute_unit[0].ratioed_remaining_time(worst_job)
 
-                # TODO: MAYBE DOWNSIZE THE EXECUTION UNIT
-                # From empty jobs check if there is a job with amount of cores
-                # higher than our first job in substitute_unit and swap their
-                # number of binded cores
-                for empty_job in empty_jobs:
-                    if empty_job.binded_cores > substitute_unit[0].binded_cores:
-                        swap = empty_job.binded_cores
-                        empty_job.binded_cores = substitute_unit[0].binded_cores
-                        substitute_unit[0].binded_cores = swap
-
-            # Extend substitute_unit with empty_jobs
-            substitute_unit.extend(empty_jobs)
+            if idle_cores > 0:
+                # Create an empty job to occupy the idle cores of the xunit
+                empty_job = EmptyJob(Job(None,
+                                         -1,
+                                         "idle",
+                                         idle_cores,
+                                         idle_cores,
+                                         -1,
+                                         -1,
+                                         None, None, None, None
+                                         ))
+                # Extend substitute_unit with empty_jobs
+                substitute_unit.append(empty_job)
 
             # Add the substitute_unit in the new execution list
             execution_list.append(substitute_unit)

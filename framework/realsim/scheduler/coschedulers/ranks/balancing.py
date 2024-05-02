@@ -25,113 +25,140 @@ class BalancingRanksCoscheduler(RanksCoscheduler):
     methodology uses the `ranks` deploying architecture.
     """
 
-    def __init__(self, 
-                 threshold: float = 1, 
-                 system_utilization: float = 1,
-                 engine: Optional[ScikitModel] = None, 
-                 ranks_threshold: float = 1):
-        self.ll_avg_speedup = 0
-        self.ll_xunits_num = 0
-        self.fragmentation = 0
-        RanksCoscheduler.__init__(self, 
-                                  threshold=threshold, 
+    def __init__(self,
+                 backfill_enabled: bool = False,
+                 speedup_threshold: float = 1.0,
+                 ranks_threshold: float = 1.0,
+                 system_utilization: float = 1.0,
+                 engine: Optional[ScikitModel] = None):
+
+        RanksCoscheduler.__init__(self,
+                                  backfill_enabled=backfill_enabled,
+                                  speedup_threshold=speedup_threshold,
+                                  ranks_threshold=ranks_threshold,
                                   system_utilization=system_utilization,
-                                  engine=engine,
-                                  ranks_threshold=ranks_threshold)
+                                  engine=engine)
 
-    def xunits_order(self, xunit: list[Job]):
-        return float(xunit[0].binded_cores)
+        # Average execution units speedup of current execution list
+        self.avg_xunits_speedup = 1
 
-    def xunits_candidates_order(self, largest_job: Job, job: Job):
+        self.system_load = 0
 
-        # Rank of job
+        # Inner fragmentation is the fragmentation of cores inside nodes (xunits
+        # specifically)
+        # Can be used to promote jobs with high rank that can glue to fragmented
+        # xunits
+        self.inner_frag = 0
+
+    def waiting_queue_reorder(self, job: Job) -> float:
+
+        # Jobs that have waited long to higher priority
+        waiting_time = job.waiting_time if job.waiting_time != 0 else 1.0
+
+        # What about estimated finish time interval (wall time)? We need jobs
+        # that finish quick when the system load is high
+        wall_time = job.wall_time
+
+        # Response to how long it will take for a job to execute
+        # We generally want low values for this metric
+        response = waiting_time / wall_time
+
+        # Are cores required important? If the system load is low we do not care
+        # If it is high then we need jobs with low core requirements
+        cores_r = job.num_of_processes / self.cluster.total_cores
+        cores_r = (1 - cores_r) * self.system_load + cores_r * (1 - self.system_load)
+
+        # Is job's overall speedup important? Maybe to increase the average
+        # speedup of the execution list
+        speedup = job.get_overall_speedup()
+        # How important is speedup in the current state? If the value of average
+        # speedup of all xunits is low then promote jobs that can increase the
+        # value. Else do the opossite
+        speedup_r = speedup ** (2 / self.avg_xunits_speedup)
+
+        # What about ranks? We need high ranking jobs to spend more time in the
+        # execution list for more potential pairs
         rank = self.ranks[job.job_id]
-        if rank == 0:
-            rank = -1
-        # rank ratio
-        rank_r = rank / len(self.cluster.waiting_queue)
+        rank_r = rank if rank != 0 else -1
 
-        # Needed cores by the job
-        needed_cores = job.half_node_cores
-        # cores ratio
-        cores_r = needed_cores / largest_job.binded_cores
-        # fragmentation ratio
-        frag_r = cores_r * (1 - self.fragmentation) +\
-                (1 - cores_r) * self.fragmentation
+        #return response * cores_r * speedup_r * rank_r
+        return response
 
-        # Average speedup between xunit's largest job and the job candidate
-        avg_speedup = avg([
-            self.heatmap[job.job_name][largest_job.job_name],
-            self.heatmap[largest_job.job_name][job.job_name]
-        ])
-        # speedup ratio
-        if self.ll_avg_speedup > 0:
-            speedup_r = avg_speedup ** (2 / self.ll_avg_speedup)
+    def waiting_job_candidates_reorder(self, job: Job, co_job: Job) -> float:
+
+        # Co-jobs that have waited long to higher priority
+        waiting_time = co_job.waiting_time if co_job.waiting_time != 0 else 1.0
+
+        # If the inner fragmentation high then we need co-jobs close to the same requirements as job
+        # As inner frag reaches 1 then cores_r must promote co_jobs that return 1 as value
+        cores_r = co_job.half_node_cores / job.half_node_cores
+        cores_r = self.inner_frag / cores_r
+
+        if co_job.job_name in self.heatmap[job.job_name]:
+            speedup = (self.heatmap[job.job_name][co_job.job_name] + self.heatmap[co_job.job_name][job.job_name]) / 2.0
+            speedup_r = speedup ** (2 / self.avg_xunits_speedup)
         else:
-            speedup_r = avg_speedup
+            speedup_r = 1.0
 
-        return float(rank_r * speedup_r * frag_r)
-
-    def waiting_queue_order(self, job: Job) -> float:
-
-        rank_r = self.ranks[job.job_id] / len(self.cluster.waiting_queue)
-        cores_r = self.cluster.free_cores / job.num_of_processes
-
-        return rank_r * cores_r
-
-    def wjob_candidates_order(self, job: Job, co_job: Job):
-
-        # Rank of job
+        # We want co-jobs with high rank because they will be good neighbors
+        # to the next jobs in the waiting queue
         rank = self.ranks[co_job.job_id]
-        if rank == 0:
-            rank = -1
-        # rank ratio
-        rank_r = rank / len(self.cluster.waiting_queue)
+        rank_r = rank if rank != 0 else -1
 
-        # Needed cores by the job
-        needed_cores = co_job.half_node_cores
-        # cores ratio
-        cores_r = needed_cores / job.binded_cores
-        # fragmentation ratio
-        frag_r = cores_r * (1 - self.fragmentation) +\
-                (1 - cores_r) * self.fragmentation
+        return waiting_time * cores_r * speedup_r * rank_r
 
-        # Average speedup between xunit's largest job and the job candidate
-        avg_speedup = avg([
-            self.heatmap[job.job_name][co_job.job_name],
-            self.heatmap[co_job.job_name][job.job_name]
-        ])
-        # speedup ratio
-        if self.ll_avg_speedup > 0:
-            speedup_r = avg_speedup ** (2 / self.ll_avg_speedup)
+    def xunit_candidates_reorder(self, job: Job, xunit: list[Job]) -> float:
+
+        head_job = xunit[0]
+        idle_job = xunit[-1]
+
+        # Maximum will always be the number of idle binded cores
+        cores_r = job.half_node_cores / idle_job.binded_cores 
+
+        if job.half_node_cores > head_job.binded_cores:
+            worst_neighbor = min(xunit, key=lambda neighbor: job.get_speedup(neighbor))
+            speedup = (self.heatmap[job.job_name][worst_neighbor.job_name] + self.heatmap[worst_neighbor.job_name][job.job_name]) / 2.0
         else:
-            speedup_r = avg_speedup
+            speedup = (self.heatmap[job.job_name][head_job.job_name] + self.heatmap[head_job.job_name][job.job_name]) / 2.0
+        
+        speedup_r = speedup ** (2 / self.avg_xunits_speedup)
 
-        return float(rank_r * speedup_r * frag_r)
+        return cores_r * speedup_r
 
-    def xunit_avg_speedup(self, xunit: list[Job]) -> float:
-        return float(avg([job.speedup for job in xunit]))
+    def after_deployment(self, *args):
 
-    def after_deployment(self, xunit: list[Job]):
-        RanksCoscheduler.after_deployment(self, xunit)
+        RanksCoscheduler.after_deployment(self)
 
-        # Left-side list overall speedup metrics
-        self.ll_avg_speedup = ((self.ll_avg_speedup * self.ll_xunits_num) +\
-                self.xunit_avg_speedup(xunit)) / (self.ll_xunits_num + 1)
-        self.ll_xunits_num += 1
+        # Calculate average xunit speedup and inner fragmentation
+        xunit_speedup: list[float] = list()
+        inner_frags: list[float] = list()
+        for xunit in self.cluster.execution_list:
 
-        # Fragmentation metric
-        binded_cores = self.cluster.total_cores - self.cluster.free_cores
+            if len(xunit) == 1:
+                xunit_speedup.append(1.0)
+                inner_frags.append(0.0)
+                continue
 
-        if binded_cores == 0:
-            return
+            xunit_jobs_speedups: list[float] = list()
 
-        prev_binded_cores = binded_cores - 2 * xunit[0].binded_cores
+            for job in xunit:
+                if type(job) != EmptyJob:
+                    # In reality we only know the heatmap, overall and max
+                    # speedups so knowledge of runtime speedup is unknown
+                    xunit_jobs_speedups.append(job.get_overall_speedup())
 
-        added_empty_space = sum(map(
-            lambda job: job.binded_cores,
-            filter(lambda job: type(job) == EmptyJob, xunit)
-        ))
+            # Calculate co-scheduled xunit's average overall speedup
+            xunit_speedup.append(float(avg(xunit_jobs_speedups)))
 
-        self.fragmentation = ((self.fragmentation * prev_binded_cores) +\
-                added_empty_space) / binded_cores
+            # Calculate co-scheduled xunit's inner fragmentation
+            head_job = xunit[0]
+            idle_job = xunit[-1]
+            if idle_job.binded_cores > head_job.binded_cores:
+                inner_frags.append(0.5)
+            else:
+                inner_frags.append(idle_job.binded_cores / head_job.binded_cores)
+
+        self.avg_xunits_speedup = float(avg(xunit_speedup))
+        self.system_load = 1.0 - self.cluster.free_cores / self.cluster.total_cores
+        self.inner_frag = float(avg(inner_frags))
+

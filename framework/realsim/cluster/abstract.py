@@ -39,14 +39,6 @@ class AbstractCluster(abc.ABC):
         # Finished jobs' ids list
         self.finished_jobs: list[int] = list()
 
-        # Jobs' management
-
-        # All the jobs will be moldable
-        self.moldability = True
-
-        # Malleability only for shrinking at the moment
-        self.malleability = False
-
         # Important counters #
 
         # Job id counter
@@ -181,13 +173,7 @@ class AbstractCluster(abc.ABC):
             if self.scheduler.backfill_enabled:
 
                 # Execute the backfilling algorithm
-                backfill_res = self.scheduler.backfill()
-
-                if backfill_res:
-                    # The backfilling policy wants to re-iterate the process of
-                    # scheduling
-                    return
-
+                self.scheduler.backfill()
 
         self.logger.evt_jobs_executing()
 

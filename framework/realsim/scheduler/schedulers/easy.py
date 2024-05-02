@@ -1,3 +1,10 @@
+import os
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(
+    os.path.dirname(__file__), "../../../"
+)))
+
 from realsim.jobs.utils import deepcopy_list
 from .fifo import FIFOScheduler
 from math import inf
@@ -13,14 +20,14 @@ class EASYScheduler(FIFOScheduler):
         self.backfill_enabled = True
 
 
-    def backfill(self) -> bool:
+    def backfill(self) -> None:
 
         aggr_cores = 0
         execution_list = deepcopy_list(self.cluster.execution_list)
         execution_list.sort(key=lambda jblock: jblock[0].wall_time - jblock[0].start_time)
 
         if len(self.cluster.waiting_queue) <= 1:
-            return False
+            return
 
         job = self.cluster.waiting_queue[0]
 
@@ -33,12 +40,12 @@ class EASYScheduler(FIFOScheduler):
             aggr_cores += running_job.binded_cores
 
             if job.full_node_cores <= aggr_cores:
-                min_estimated_time = running_job.wall_time - running_job.start_time
+                min_estimated_time = running_job.wall_time - (self.cluster.makespan - running_job.start_time)
                 break
 
         # If a job couldn't reserve cores then cancel backfill at this point
         if not min_estimated_time < inf:
-            return False
+            return
 
         # Find job(s) that can backfill the execution list
 
@@ -63,5 +70,5 @@ class EASYScheduler(FIFOScheduler):
                 # No other job is capable to backfill based on time
                 break
         
-        return False
+        return
 
