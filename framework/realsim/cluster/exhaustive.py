@@ -1,6 +1,8 @@
 # Set path for local lib
 import os
 import sys
+
+from procset import ProcSet
 sys.path.append(
         os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
 )
@@ -25,8 +27,8 @@ class ClusterExhaustive(AbstractCluster):
 
         # Find smallest remaining time of executing jobs
         min_rem_time = math.inf
-        for unit in self.execution_list:
-            for job in unit:
+        for xunit in self.execution_list:
+            for job in xunit:
                 if type(job) != EmptyJob and job.remaining_time < min_rem_time:
                     min_rem_time = job.remaining_time
 
@@ -62,6 +64,7 @@ class ClusterExhaustive(AbstractCluster):
             # with the highest amount of binded cores
             max_binded_cores = -1
             idle_cores = 0
+            idle_procs = ProcSet()
 
             # Calculate for all jobs
             for job in execution_unit:
@@ -85,13 +88,20 @@ class ClusterExhaustive(AbstractCluster):
                 else:
                     # If it is an EmptyJob record the amount of idle cores
                     idle_cores += job.binded_cores
+                    idle_procs |= job.assigned_procs
+
 
             # If there is any job still executing
             if len(substitute_unit) > 1:
 
+                sub_unit_cores = sum([job.binded_cores for job in substitute_unit])
+
                 # If the number of idle cores is larger than the number of utilized
                 # cores then all the remaining jobs in the xunit will be executing as spread
-                if idle_cores >= substitute_unit[0].binded_cores:
+                if idle_cores >= sub_unit_cores:
+                    # surplass = idle_cores - sub_unit_cores
+                    # self.free_cores += surplass
+                    # idle_cores = sub_unit_cores
                     for job in substitute_unit:
                         if job.speedup != job.get_max_speedup():
                             job.remaining_time *= (job.speedup / job.get_max_speedup())
@@ -120,6 +130,7 @@ class ClusterExhaustive(AbstractCluster):
                                          "idle",
                                          idle_cores,
                                          idle_cores,
+                                         idle_procs,
                                          -1,
                                          -1,
                                          None, None, None, None
@@ -141,31 +152,12 @@ class ClusterExhaustive(AbstractCluster):
 
         execution_list = deepcopy_list(self.execution_list)
 
-        for execution_unit in self.execution_list:
+        for xunit in self.execution_list:
 
-            finished = True
-
-            for job in execution_unit:
-
-                if type(job) != EmptyJob:
-                    finished = False
-                    break
-                else:
-                    self.finished_jobs.append(job.job_id)
-
-            if finished:
-                if len(execution_unit) == 1:
-                    self.free_cores += execution_unit[0].binded_cores
-                else:
-                    # Sort the jobs in execution unit by their number of binded
-                    # cores descendingly
-                    sorted_exec_unit = sorted(execution_unit, 
-                                              key=lambda job: job.binded_cores,
-                                              reverse=True)
-                    self.free_cores += 2 * sorted_exec_unit[0].binded_cores
-
-                # Remove finished units
-                execution_list.remove(execution_unit)
+            if len(xunit) == 1 and type(xunit[0]) == EmptyJob:
+                self.free_cores += xunit[0].binded_cores
+                self.total_procs |= xunit[0].assigned_procs
+                execution_list.remove(xunit)
 
         # Execution list re-assignment
         self.execution_list = execution_list

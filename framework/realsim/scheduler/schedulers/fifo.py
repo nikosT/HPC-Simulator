@@ -34,6 +34,11 @@ class FIFOScheduler(Scheduler):
                 self.cluster.execution_list.append([job])
                 job.start_time = self.cluster.makespan
                 self.cluster.free_cores -= job.binded_cores
+
+                procset = self.assign_procs(job.binded_cores)
+                job.assigned_procs = procset
+                self.cluster.total_procs -= procset
+
             else:
                 break
 

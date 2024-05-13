@@ -12,6 +12,7 @@ from api.loader import Load
 from typing import Optional
 from numpy import average as avg
 from numpy import isnan
+from procset import ProcSet
 
 
 class Job:
@@ -22,35 +23,41 @@ class Job:
                  job_name: str, 
                  num_of_processes: int,
                  binded_cores: int,
-                 half_node_cores: int,
+                 assigned_procs: ProcSet,
                  full_node_cores: int,
+                 half_node_cores: int,
                  remaining_time, 
                  submit_time, 
                  waiting_time, 
                  wall_time):
 
         self.load = load
+
         self.job_id = job_id
         self.job_name = job_name
+
         self.num_of_processes = num_of_processes
+        self.binded_cores = binded_cores
+        self.full_node_cores = full_node_cores
+        self.half_node_cores = half_node_cores
+        self.assigned_procs = assigned_procs
+
         self.remaining_time = remaining_time
         self.submit_time = submit_time
         self.waiting_time = waiting_time
-        self.start_time: float = 0.0
         self.wall_time = wall_time
-        self.binded_cores = binded_cores
+
+        self.start_time: float = 0.0
         self.speedup = 1
 
-        # Configs for faster simulation
-        self.half_node_cores = half_node_cores
-        self.full_node_cores = full_node_cores
 
     def __eq__(self, job):
         if not isinstance(job, Job):
             return False
         return self.load == job.load and self.job_id == job.job_id and self.job_name == job.job_name and self.num_of_processes == job.num_of_processes\
+                and self.binded_cores == job.binded_cores\
                 and self.remaining_time == job.remaining_time and self.submit_time == job.submit_time\
-                and self.wall_time == job.wall_time and self.speedup == job.speedup
+                and self.wall_time == job.wall_time and self.start_time == job.start_time and self.speedup == job.speedup
 
     def __repr__(self) -> str:
         return "{" + f"{self.job_id}, {self.job_name} : {self.remaining_time}, {self.speedup}, {self.binded_cores}" + "}"
@@ -59,7 +66,7 @@ class Job:
     def get_speedup(self, cojob):
         return self.load.get_median_speedup(cojob.job_name)
 
-    def get_overall_speedup(self):
+    def get_overall_speedup(self) -> float:
         speedups = list()
         for coload in self.load.coloads:
             speedups.append(self.load.get_median_speedup(coload))
@@ -73,6 +80,15 @@ class Job:
             )
 
         return max(speedups)
+
+    def get_min_speedup(self):
+        speedups = list()
+        for coload in self.load.coloads:
+            speedups.append(
+                    self.load.get_median_speedup(coload)
+            )
+
+        return min(speedups)
 
     def ratioed_remaining_time(self, cojob):
         old_speedup = self.speedup
@@ -91,13 +107,15 @@ class Job:
                    job_name=self.job_name,
                    num_of_processes=self.num_of_processes,
                    binded_cores=self.binded_cores,
-                   half_node_cores=self.half_node_cores,
+                   assigned_procs=self.assigned_procs,
                    full_node_cores=self.full_node_cores,
+                   half_node_cores=self.half_node_cores,
                    remaining_time=self.remaining_time,
                    submit_time=self.submit_time,
                    waiting_time=self.waiting_time,
                    wall_time=self.wall_time)
 
+        copy.start_time = self.start_time
         copy.speedup = self.speedup
 
         return copy
@@ -106,11 +124,22 @@ class Job:
 class EmptyJob(Job):
 
     def __init__(self, job: Job):
-        Job.__init__(self, None, job.job_id, job.job_name, job.num_of_processes, 
-                     job.binded_cores, -1, -1, None, None, None, None,)
+        Job.__init__(self, 
+                     None, 
+                     job.job_id, 
+                     job.job_name, 
+                     job.num_of_processes, 
+                     job.binded_cores, 
+                     job.assigned_procs,
+                     -1, 
+                     -1, 
+                     None, 
+                     None, 
+                     None, 
+                     None)
 
     def __repr__(self) -> str:
-        return "{" + f"{self.job_id}, empty : {self.remaining_time}, {self.binded_cores}" + "}"
+        return "{" + f"{self.job_id}, idle : {self.remaining_time}, {self.binded_cores}" + "}"
 
     def deepcopy(self):
         """Return a new instance of Job that is a true copy
@@ -121,8 +150,9 @@ class EmptyJob(Job):
                             job_name=self.job_name,
                             num_of_processes=self.num_of_processes,
                             binded_cores=self.binded_cores,
-                            half_node_cores=self.half_node_cores,
+                            assigned_procs=self.assigned_procs,
                             full_node_cores=self.full_node_cores,
+                            half_node_cores=self.half_node_cores,
                             remaining_time=self.remaining_time,
                             submit_time=self.submit_time,
                             waiting_time=self.waiting_time,

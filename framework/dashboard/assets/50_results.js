@@ -68,6 +68,18 @@ Object.assign(window.dash_clientside.clientside, {
 					}
 				}
 
+				let gantt_btn = {
+					'type': 'Button',
+					'namespace': 'dash_bootstrap_components',
+					'props': {
+						'children': 'Gantt diagram',
+						'style': {'width': '100%'},
+						'color': 'primary',
+						'outline': true,
+						'href': '#' + unique_id + '~gantt_diagram'
+					}
+				}
+
 				let jobs_utilization_btn = {
 					'type': 'Button',
 					'namespace': 'dash_bootstrap_components',
@@ -87,7 +99,8 @@ Object.assign(window.dash_clientside.clientside, {
 						'props': {
 							'children': [
 								label,
-								resource_usage_btn
+								resource_usage_btn,
+								gantt_btn
 							]
 						}
 					})
@@ -100,6 +113,7 @@ Object.assign(window.dash_clientside.clientside, {
 							'children': [
 								label,
 								resource_usage_btn,
+								gantt_btn,
 								jobs_utilization_btn
 							]
 						}
@@ -186,6 +200,9 @@ Object.assign(window.dash_clientside.clientside, {
 
 			// Return figure
 			if (graph == "Resource usage") {
+				Plotly.newPlot("results-graph", JSON.parse(data[experiment][scheduler][graph]), {'displayModeBar': false})
+			}
+			if (graph == "Gantt diagram") {
 				Plotly.newPlot("results-graph", JSON.parse(data[experiment][scheduler][graph]), {'displayModeBar': false})
 			}
 			else if (graph == "Jobs utilization") {

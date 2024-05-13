@@ -13,6 +13,7 @@ sys.path.append(os.path.abspath(
 from realsim.jobs.jobs import EmptyJob, Job
 import plotly.graph_objects as go
 import plotly.express.colors as colors
+from procset import ProcSet
 
 class Logger(object):
     """
@@ -23,6 +24,7 @@ class Logger(object):
     def __init__(self, recording=True):
         # Controls if the events will be logged
         self.recording = recording
+        #self.scale = colors.sequential.Turbo
         self.scale = colors.sequential.Turbo
 
     def assign_cluster(self, cluster):
@@ -53,7 +55,10 @@ class Logger(object):
                     "trace": [], # [co-job, start time, end time]
                     "speedups": [], # [sp1, sp2, ..]
                     "cores": dict(), # {cojob1: cores1, cojob2: cores2, ..}
+                    "assigned procs": ProcSet(),
                     "remaining time": [],
+                    "start time": 0,
+                    "finish time": 0,
                     "arrival time": 0,
                     "waiting time": 0
             }
@@ -173,12 +178,17 @@ class Logger(object):
         # Set ending time in last trace
         self.job_events[job_key]["trace"][-1][-1] = self.cluster.makespan
 
+        # Set the assigned processors for the job
+        self.job_events[job_key]["assigned procs"] = job.assigned_procs
+
         # Record a checkpoint
         self.cluster_events["checkpoints"].add(
                 self.cluster.makespan
         )
 
         # Record the arrival and waiting time
+        self.job_events[job_key]["start time"] = job.start_time
+        self.job_events[job_key]["finish time"] = self.cluster.makespan
         self.job_events[job_key]["arrival time"] = job.submit_time
         self.job_events[job_key]["waiting time"] = job.waiting_time
 
@@ -186,6 +196,60 @@ class Logger(object):
         # self.cluster_events["used cores"].append(
         #         self.cluster.total_cores - self.cluster.free_cores
         # )
+
+    def get_gantt_representation(self):
+
+        # Create the color palette for each job
+        num_of_jobs = len(self.job_events.keys())
+        jcolors = colors.sample_colorscale(self.scale, [n/(num_of_jobs - 1) for n in range(num_of_jobs)])
+
+        # Create data for figure
+        fig_data = list()
+
+        for idx, [key, jevt] in enumerate(self.job_events.items()):
+
+            for interval in jevt["assigned procs"].intervals():
+                x_min = jevt["start time"]
+                x_max = jevt["finish time"]
+                y_min = interval.inf
+                y_max = interval.sup
+
+                xs = [x_min, x_max, x_max, x_min, x_min]
+                ys = [y_min, y_min, y_max, y_max, y_min]
+
+                fig_data.append(go.Scatter(
+                    x=xs,
+                    y=ys,
+                    mode="lines",
+                    legendgroup=key,
+                    line=dict(width=0.1, color="black"),
+                    fill="toself",
+                    fillcolor=jcolors[idx],
+                    showlegend=False,
+                    name=f"<b>{key}</b><br>"+
+                    f"arrival time = {jevt['arrival time']:.2f} s<br>"+
+                    f"start time = {jevt['start time']:.2f} s<br>"+
+                    f"finish time = {jevt['finish time']:.2f} s<br>"+
+                    f"waiting time = {jevt['waiting time']:.2f} s<br>"+
+                    f"processors = {len(jevt['assigned procs'])}"
+                ))
+
+        fig = go.Figure(data=fig_data)
+        fig.update_layout(
+                title=f"<b>{self.cluster.scheduler.name}</b><br>Gantt Plot",
+                title_x=0.5,
+                yaxis=dict(
+                    title="<b>Cores</b>",
+                    range=[0, self.cluster.total_cores],
+                    tickmode="array",
+                    tickvals=[self.cluster.total_cores],
+                ),
+                xaxis=dict(
+                    title="<b>Time</b>"
+                ),
+                template="seaborn"
+        )
+        return fig.to_json()
 
     def get_history_trace(self):
         """Get the execution history for each job that was deployed to the

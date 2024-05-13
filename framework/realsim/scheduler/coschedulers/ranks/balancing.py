@@ -10,6 +10,7 @@ from realsim.jobs import Job, EmptyJob
 from .ranks import RanksCoscheduler, ScikitModel
 
 from numpy import average as avg
+import math
 
 
 class BalancingRanksCoscheduler(RanksCoscheduler):
@@ -65,7 +66,8 @@ class BalancingRanksCoscheduler(RanksCoscheduler):
 
         # Are cores required important? If the system load is low we do not care
         # If it is high then we need jobs with low core requirements
-        cores_r = job.num_of_processes / self.cluster.total_cores
+        # cores_r = job.num_of_processes / self.cluster.total_cores
+        cores_r = self.cluster.free_cores / job.num_of_processes
         cores_r = (1 - cores_r) * self.system_load + cores_r * (1 - self.system_load)
 
         # Is job's overall speedup important? Maybe to increase the average
@@ -79,10 +81,9 @@ class BalancingRanksCoscheduler(RanksCoscheduler):
         # What about ranks? We need high ranking jobs to spend more time in the
         # execution list for more potential pairs
         rank = self.ranks[job.job_id]
-        rank_r = rank if rank != 0 else -1
+        rank_r = rank / len(self.cluster.waiting_queue)
 
-        #return response * cores_r * speedup_r * rank_r
-        return response
+        return response * cores_r * speedup_r * rank_r
 
     def waiting_job_candidates_reorder(self, job: Job, co_job: Job) -> float:
 
@@ -92,9 +93,9 @@ class BalancingRanksCoscheduler(RanksCoscheduler):
         # If the inner fragmentation high then we need co-jobs close to the same requirements as job
         # As inner frag reaches 1 then cores_r must promote co_jobs that return 1 as value
         cores_r = co_job.half_node_cores / job.half_node_cores
-        cores_r = self.inner_frag / cores_r
+        #cores_r = self.inner_frag / cores_r
 
-        if co_job.job_name in self.heatmap[job.job_name]:
+        if self.heatmap[job.job_name][co_job.job_name] is not None:
             speedup = (self.heatmap[job.job_name][co_job.job_name] + self.heatmap[co_job.job_name][job.job_name]) / 2.0
             speedup_r = speedup ** (2 / self.avg_xunits_speedup)
         else:
@@ -103,7 +104,7 @@ class BalancingRanksCoscheduler(RanksCoscheduler):
         # We want co-jobs with high rank because they will be good neighbors
         # to the next jobs in the waiting queue
         rank = self.ranks[co_job.job_id]
-        rank_r = rank if rank != 0 else -1
+        rank_r = rank / len(self.cluster.waiting_queue)
 
         return waiting_time * cores_r * speedup_r * rank_r
 
@@ -114,16 +115,22 @@ class BalancingRanksCoscheduler(RanksCoscheduler):
 
         # Maximum will always be the number of idle binded cores
         cores_r = job.half_node_cores / idle_job.binded_cores 
+        cores_r = cores_r if cores_r != 0 else 1
 
         if job.half_node_cores > head_job.binded_cores:
-            worst_neighbor = min(xunit, key=lambda neighbor: job.get_speedup(neighbor))
+            # worst_neighbor = min(xunit, key=lambda neighbor: job.get_speedup(neighbor) if type(neighbor) != EmptyJob else math.inf)
+            worst_neighbor = min(xunit, 
+                                 key=lambda neighbor: 
+                                 self.heatmap[job.job_name][neighbor.job_name] 
+                                 if type(neighbor) != EmptyJob and self.heatmap[job.job_name][neighbor.job_name] is not None 
+                                 else math.inf)
             speedup = (self.heatmap[job.job_name][worst_neighbor.job_name] + self.heatmap[worst_neighbor.job_name][job.job_name]) / 2.0
         else:
             speedup = (self.heatmap[job.job_name][head_job.job_name] + self.heatmap[head_job.job_name][job.job_name]) / 2.0
         
         speedup_r = speedup ** (2 / self.avg_xunits_speedup)
 
-        return cores_r * speedup_r
+        return speedup_r / cores_r
 
     def after_deployment(self, *args):
 

@@ -4,6 +4,8 @@ from numpy.random import seed, randint, random_sample
 from time import time_ns
 from typing import Any, TypeVar, Generic
 from collections.abc import Callable
+
+from procset import ProcSet
 from .__init__ import *
 from math import inf
 
@@ -36,6 +38,7 @@ class AbstractGenerator(abc.ABC, Generic[T]):
                    job_name=load.full_load_name,
                    num_of_processes=load.num_of_processes,
                    binded_cores=load.num_of_processes,
+                   assigned_procs=ProcSet(),
                    half_node_cores=-1,
                    full_node_cores=-1,
                    remaining_time=load.get_avg(),

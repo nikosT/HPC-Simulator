@@ -4,6 +4,8 @@ from typing import TypeVar, Generic, TYPE_CHECKING
 import os
 import sys
 
+from procset import ProcSet
+
 sys.path.append(os.path.abspath(
     os.path.join(
         os.path.dirname(__file__),
@@ -47,6 +49,28 @@ class Scheduler(ABC, Generic[Cluster]):
 
     def assign_logger(self, logger: Logger) -> None:
         self.logger = logger
+
+    def assign_procs(self, asked_cores: int) -> ProcSet:
+        """Return a ProcSet from the total procs left in the cluster
+        """
+        # Remove intervals that have length lower than the number of cores per
+        # node because it cannot constitue a node
+        assignable_procs = list(filter(
+            lambda procint:
+            len(procint) >= self.cluster.cores_per_node,
+            self.cluster.total_procs.intervals()
+        ))
+
+        assignable_procs = ProcSet.from_str(" ".join([
+            str(procint) for procint in assignable_procs
+        ]))
+
+        binded_procs = assignable_procs[:asked_cores]
+        constr_procset = ProcSet.from_str(" ".join([
+            str(processor) for processor in binded_procs
+        ]))
+
+        return constr_procset
 
     def pop(self, queue: list[Job]) -> Job:
         """Get and remove an object from a queue

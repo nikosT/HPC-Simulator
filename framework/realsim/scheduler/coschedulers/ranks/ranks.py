@@ -6,11 +6,12 @@ sys.path.append(os.path.abspath(os.path.join(
     os.path.dirname(__file__), "../../../../"
 )))
 
-from realsim.jobs.jobs import Job
+from realsim.jobs.jobs import Job, EmptyJob
 from realsim.jobs.utils import deepcopy_list
 from realsim.scheduler.coschedulerV2 import Coscheduler, ScikitModel
 
 from abc import ABC
+import math
 
 
 class RanksCoscheduler(Coscheduler, ABC):
@@ -89,6 +90,7 @@ class RanksCoscheduler(Coscheduler, ABC):
 
     def deploy(self) -> None:
 
+        #print(f"BEFORE: Free cores = {self.cluster.free_cores}")
         self.update_ranks()
 
         waiting_queue = deepcopy_list(self.cluster.waiting_queue)
@@ -128,4 +130,158 @@ class RanksCoscheduler(Coscheduler, ABC):
             self.cluster.waiting_queue = waiting_queue
             break
 
+        #print(f"AFTER: Free cores = {self.cluster.free_cores}")
         return
+
+    def xunit_estimated_finish_time(self, xunit: list[Job]) -> float:
+
+        estimations: list[float] = list()
+
+        for job in xunit:
+            if type(job) != EmptyJob:
+                estimate = job.wall_time / job.get_min_speedup() + job.start_time - self.cluster.makespan
+                if estimate < 0:
+                    print(estimate, job.start_time, job.wall_time / job.get_min_speedup(), self.cluster.makespan, job)
+                estimations.append(estimate)
+
+        return max(estimations)
+
+    def backfill(self) -> None:
+
+        if len(self.cluster.waiting_queue) <= 1:
+            # If there are not alternatives bail out
+            return
+
+        blocked_job = self.cluster.waiting_queue[0]
+        estimated_start_time = math.inf
+
+        # If the blocked job is to be allocated as compact then we estimate 
+        # based on whole xunits
+        if self.ranks[blocked_job.job_id] == 0:
+
+            execution_list = deepcopy_list(self.cluster.execution_list)
+            execution_list.sort(key=lambda xunit: self.xunit_estimated_finish_time(xunit))
+            aggr_cores = 0
+            
+            # Find estimated start time for blocked job
+            for xunit in execution_list:
+                if len(xunit) == 1:
+                    if xunit[0].binded_cores + aggr_cores + self.cluster.free_cores >= blocked_job.full_node_cores:
+                        estimated_start_time = self.xunit_estimated_finish_time(xunit)
+                        break
+                    else:
+                        aggr_cores += xunit[0].binded_cores
+                else:
+                    head_job = xunit[0]
+                    idle_job = xunit[-1]
+                    xunit_binded_cores = 2 * max(head_job.binded_cores, idle_job.binded_cores)
+
+                    if xunit_binded_cores + aggr_cores + self.cluster.free_cores >= blocked_job.full_node_cores:
+                        estimated_start_time = self.xunit_estimated_finish_time(xunit)
+                        break
+                    else:
+                        aggr_cores += xunit_binded_cores
+        else:
+            execution_list = deepcopy_list(self.cluster.execution_list)
+            # The blocked job can be co-scheduled
+            # This means it can either fit inside an existing execution unit
+            # or it waits until whole xunits finish execution
+
+            # Xunits that the blocked job can fit in
+            xunits_for_colocation = list()
+            estimated_start_time_coloc = math.inf
+
+            # Xunits that the job cannot fit in and they will be merged in order
+            # for the job to have enough free space to execute properly
+            xunits_for_merge = list()
+            estimated_start_time_merge = math.inf
+
+            for xunit in execution_list:
+                if len(xunit) == 1:
+                    xunits_for_merge.append(xunit)
+                else:
+                    head_job = xunit[0]
+                    last_job = xunit[-1] # possible idle job
+                    if blocked_job.half_node_cores <= max(head_job.binded_cores, last_job.binded_cores):
+                        xunits_for_colocation.append(xunit)
+                    else:
+                        xunits_for_merge.append(xunit)
+
+            # Starting with xunits to merge we sort them by estimated finish time
+            xunits_for_merge.sort(key=lambda xunit: self.xunit_estimated_finish_time(xunit))
+            aggr_cores = 0
+
+            for xunit in xunits_for_merge:
+                if len(xunit) == 1:
+                    if xunit[0].binded_cores + aggr_cores + self.cluster.free_cores >= 2 * blocked_job.half_node_cores:
+                        estimated_start_time_merge = self.xunit_estimated_finish_time(xunit)
+                        break
+                    else:
+                        aggr_cores += xunit[0].binded_cores
+                else:
+                    head_job = xunit[0]
+                    idle_job = xunit[-1]
+                    xunit_binded_cores = 2 * max(head_job.binded_cores, idle_job.binded_cores)
+
+                    if xunit_binded_cores + aggr_cores + self.cluster.free_cores >= 2 * blocked_job.half_node_cores:
+                        estimated_start_time_merge = self.xunit_estimated_finish_time(xunit)
+                        break
+                    else:
+                        aggr_cores += xunit_binded_cores
+
+            # Estimate time with xunits for colocation
+            estimations = list()
+            for xunit in xunits_for_colocation:
+                aggr_cores = 0
+                xunit_copy = deepcopy_list(xunit)
+                last_job = xunit_copy[-1]
+                if type(last_job) == EmptyJob:
+                    xunit_copy.remove(last_job)
+                    aggr_cores = last_job.binded_cores
+
+                xunit_copy.sort(key=lambda job: job.wall_time / job.get_min_speedup() + job.start_time - self.cluster.makespan)
+                for job in xunit_copy:
+                    if job.binded_cores + aggr_cores >= blocked_job.half_node_cores:
+                        estimations.append(job.wall_time / job.get_min_speedup() + job.start_time - self.cluster.makespan)
+                        break
+                    else:
+                        aggr_cores += job.binded_cores
+
+            # The estimated start time is the minimum of the two options
+            # to be coscheduled in an xunit or to create an xunit
+            if estimations != []:
+                estimated_start_time_coloc = min(estimations)
+                estimated_start_time = min(estimated_start_time_coloc, estimated_start_time_merge)
+            else:
+                estimated_start_time = estimated_start_time_merge
+
+        # In finding the possible backfillers
+        waiting_queue = deepcopy_list(self.cluster.waiting_queue[1:])
+
+        while waiting_queue != []:
+
+            backfill_job = self.pop(waiting_queue)
+
+            if backfill_job.wall_time <= estimated_start_time:
+
+                # Try to fit the job in an xunit
+                res = self.colocation_to_xunit(backfill_job)
+
+                if res:
+                    self.after_deployment()
+                    continue
+
+                # Check if it is eligible for compact allocation
+                res = self.allocation_as_compact(backfill_job)
+
+                if res:
+                    self.after_deployment()
+                    continue
+
+                # Check if there is a waiting job that can pair up with the job
+                # and that they are allowed to allocate in the cluster
+                res = self.colocation_with_wjobs(backfill_job, waiting_queue)
+
+                if res:
+                    self.after_deployment()
+                    continue

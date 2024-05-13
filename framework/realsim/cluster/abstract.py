@@ -9,6 +9,7 @@ from realsim.scheduler.scheduler import Scheduler
 from realsim.logger.logger import Logger
 
 import math
+from procset import ProcSet
 
 
 class AbstractCluster(abc.ABC):
@@ -23,6 +24,8 @@ class AbstractCluster(abc.ABC):
         self.total_cores = self.nodes * self.cores_per_node
         # Number of current free cores
         self.free_cores = self.total_cores
+
+        self.total_procs: ProcSet = ProcSet((1, self.total_cores))
 
         # Scheduler instance for the cluster
         self.scheduler: Scheduler
@@ -185,3 +188,5 @@ class AbstractCluster(abc.ABC):
         if self.execution_list != []:
             # Free the resources
             self.free_resources()
+
+        #print(self.execution_list)

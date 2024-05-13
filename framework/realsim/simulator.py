@@ -34,10 +34,10 @@ def run_sim(core):
 
     data = {
             "Resource usage": logger.get_resource_usage(),
+            "Gantt diagram": logger.get_gantt_representation(),
             "Jobs utilization": logger.get_jobs_utilization(default_logger),
             "Makespan speedup": default_cluster_makespan / cluster.makespan
     }
-
 
     # Return:
     # 1. Plot data for the resource usage in json format
@@ -138,6 +138,7 @@ class Simulation:
         # Set results for default scheduler
         data = {
                 "Resource usage": self.default_logger.get_resource_usage(),
+                "Gantt diagram": self.default_logger.get_gantt_representation(),
                 "Jobs utilization": {},
                 "Makespan speedup": 1.0
         }

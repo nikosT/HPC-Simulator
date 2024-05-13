@@ -39,7 +39,7 @@ class EASYScheduler(FIFOScheduler):
             running_job = jobs_block[0]
             aggr_cores += running_job.binded_cores
 
-            if job.full_node_cores <= aggr_cores:
+            if aggr_cores + self.cluster.free_cores >= job.full_node_cores:
                 min_estimated_time = running_job.wall_time - (self.cluster.makespan - running_job.start_time)
                 break
 
@@ -66,6 +66,11 @@ class EASYScheduler(FIFOScheduler):
                     b_job.binded_cores = b_job.full_node_cores
                     self.cluster.execution_list.append([b_job])
                     self.cluster.free_cores -= b_job.binded_cores
+
+                    procset = self.assign_procs(b_job.binded_cores)
+                    b_job.assigned_procs = procset
+                    self.cluster.total_procs -= procset
+
             else:
                 # No other job is capable to backfill based on time
                 break

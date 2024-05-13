@@ -17,7 +17,7 @@ from api.loader import Load
 from realsim.scheduler.scheduler import Scheduler
 from realsim.jobs import Job, EmptyJob
 from realsim.jobs.utils import deepcopy_list
-from numpy import average as avg
+from procset import ProcSet
 from typing import Protocol
 
 
@@ -140,10 +140,6 @@ class Coscheduler(Scheduler, ABC):
         # requirements
         for xunit in self.cluster.nonfilled_xunits():
 
-            # If it is executing at compact policy pass
-            if len(xunit) > 1:
-                continue
-
             # Get head job and test it with empty space to see if it is at
             # spread or co-allocation executing state
             head_job = xunit[0]
@@ -162,7 +158,10 @@ class Coscheduler(Scheduler, ABC):
                 # The job will be co-allocated as a tail job
                 # We need to check whether the average speedup of the pairing
                 # will be above the speedup_threshold
-                avg_speedup = (self.heatmap[job.job_name][head_job.job_name] + self.heatmap[head_job.job_name][job.job_name]) / 2.0
+                if self.heatmap[head_job.job_name][job.job_name] is not None:
+                    avg_speedup = (self.heatmap[job.job_name][head_job.job_name] + self.heatmap[head_job.job_name][job.job_name]) / 2.0
+                else:
+                    continue
 
                 if avg_speedup > self.speedup_threshold:
                     candidates.append(xunit)
@@ -170,9 +169,16 @@ class Coscheduler(Scheduler, ABC):
                 # The job will be co-allocated as a head job
                 # We need to check the average speedup with the worst possible
                 # pairing with one of the worst jobs in the xunit
-                worst_neighbor = min(xunit, key=lambda neighbor: job.get_speedup(neighbor) if type(neighbor) != EmptyJob else math.inf)
+                worst_neighbor = min(xunit, 
+                                     key=lambda neighbor: 
+                                     self.heatmap[job.job_name][neighbor.job_name] 
+                                     if type(neighbor) != EmptyJob and self.heatmap[job.job_name][neighbor.job_name] is not None 
+                                     else math.inf)
                 
-                avg_speedup = (self.heatmap[job.job_name][worst_neighbor.job_name] + self.heatmap[worst_neighbor.job_name][job.job_name]) / 2.0
+                if self.heatmap[worst_neighbor.job_name][job.job_name] is not None:
+                    avg_speedup = (self.heatmap[job.job_name][worst_neighbor.job_name] + self.heatmap[worst_neighbor.job_name][job.job_name]) / 2.0
+                else:
+                    continue
 
                 if avg_speedup > self.speedup_threshold:
                     candidates.append(xunit)
@@ -225,16 +231,81 @@ class Coscheduler(Scheduler, ABC):
                 xjob.ratioed_remaining_time(job)
 
             # Find the worst neighbor for the job
-            worst_neighbor = min(best_candidate, key=lambda neighbor: self.heatmap[job.job_name][neighbor.job_name])
+            #worst_neighbor = min(best_candidate, key=lambda neighbor: self.heatmap[job.job_name][neighbor.job_name])
+            worst_neighbor = min(best_candidate, 
+                                 key=lambda neighbor: 
+                                 self.heatmap[job.job_name][neighbor.job_name] 
+                                 if type(neighbor) != EmptyJob and self.heatmap[job.job_name][neighbor.job_name] is not None 
+                                 else math.inf)
             job.ratioed_remaining_time(worst_neighbor)
 
             best_candidate.insert(0, job)
 
-        best_candidate.append(EmptyJob(Job(
-            None, -1, "idle", idle_job.binded_cores - job.binded_cores,
-            idle_job.binded_cores - job.binded_cores, -1, -1,
-            None, None, None, None
-        )))
+        half_node_cores = int(self.cluster.cores_per_node / 2)
+        job_req_cores = job.half_node_cores
+        job_to_bind_procs = list()
+        for procint in idle_job.assigned_procs.intervals():
+
+            # If the interval is equal to a half socket
+            if len(procint) == half_node_cores:
+                job_to_bind_procs.append(f"{procint.inf}-{procint.sup}")
+                job_req_cores -= half_node_cores
+
+            # If the interval has at least more than half socket then step at
+            # each half socket
+            elif len(procint) > half_node_cores:
+
+                interval = list(range(procint.inf, procint.sup + 1))
+                req_nodes = int(job_req_cores / half_node_cores)
+                avail_nodes = int(len(procint) / (2 * half_node_cores))
+
+                # If we need more nodes than the ones provided we consume them
+                # and move on to the next interval of idle processors
+                if req_nodes > avail_nodes:
+                    i = 0
+                    for _ in range(avail_nodes):
+                        job_to_bind_procs.extend([
+                            str(processor)
+                            for processor in interval[i:i+half_node_cores]
+                        ])
+                        i += 2 * half_node_cores
+                        job_req_cores -= half_node_cores
+                # If the requirements are met then we consume only the number of
+                # nodes needed for the job
+                else:
+                    i = 0
+                    for _ in range(req_nodes):
+                        job_to_bind_procs.extend([
+                            str(processor)
+                            for processor in interval[i:i+half_node_cores]
+                        ])
+                        i += 2 * half_node_cores
+                        job_req_cores -= half_node_cores
+
+            else:
+                # Should not appear as a choice
+                continue
+
+            if job_req_cores == 0:
+                break
+
+        job.assigned_procs = ProcSet.from_str(" ".join(job_to_bind_procs))
+
+        if idle_job.binded_cores > job.binded_cores:
+            best_candidate.append(EmptyJob(Job(
+                None, 
+                -1, 
+                "idle", 
+                idle_job.binded_cores - job.binded_cores,
+                idle_job.binded_cores - job.binded_cores,
+                idle_job.assigned_procs - job.assigned_procs,
+                -1, 
+                -1,
+                None, 
+                None, 
+                None, 
+                None
+            )))
         
         # It was deployed to an xunit
         return True
@@ -287,22 +358,62 @@ class Coscheduler(Scheduler, ABC):
         best_candidate.binded_cores = best_candidate.half_node_cores
         job.binded_cores = job.half_node_cores
 
+        job.start_time = self.cluster.makespan
+        best_candidate.start_time = self.cluster.makespan
+
         best_candidate.ratioed_remaining_time(job)
         job.ratioed_remaining_time(best_candidate)
 
-        self.cluster.free_cores -= 2 * max(job.binded_cores, best_candidate.binded_cores)
+        total_required_cores = 2 * max(job.binded_cores, best_candidate.binded_cores)
+        self.cluster.free_cores -= total_required_cores
 
-        if best_candidate.half_node_cores > job.half_node_cores:
+        procset = self.assign_procs(total_required_cores)
+        self.cluster.total_procs -= procset
+        half_node_cores = int(self.cluster.cores_per_node / 2)
+
+        if best_candidate.binded_cores > job.binded_cores:
 
             # Best candidate will be the head job
             new_xunit.append(best_candidate)
             new_xunit.append(job)
 
+            # Assigning processors to best candidate
+            best_candidate_req_cores = best_candidate.binded_cores
+            best_candidate_to_bind_procs = []
+            i = 0
+            while best_candidate_req_cores > half_node_cores:
+                best_candidate_to_bind_procs.extend(procset[i:i+half_node_cores])
+                best_candidate_req_cores -= half_node_cores
+                i += 2 * half_node_cores
+
+            if best_candidate_req_cores != 0:
+                best_candidate_to_bind_procs.extend(procset[i:i+best_candidate_req_cores])
+
+            best_candidate.assigned_procs = ProcSet.from_str(" ".join(
+                [str(processor) for processor in best_candidate_to_bind_procs]
+            ))
+            procset -= best_candidate.assigned_procs
+
+            # Assigning processors to job
+            job.assigned_procs = ProcSet.from_str(" ".join([
+                str(processor) for processor in procset[:job.binded_cores]
+            ]))
+            procset -= job.assigned_procs
+
             idle_cores = best_candidate.binded_cores - job.binded_cores
             new_xunit.append(EmptyJob(Job(
-                None, -1, "idle", idle_cores, idle_cores,
-                -1, -1,
-                None, None, None, None
+                None, 
+                -1, 
+                "idle", 
+                idle_cores, 
+                idle_cores,
+                procset,
+                -1, 
+                -1,
+                None, 
+                None, 
+                None, 
+                None
             )))
 
         else:
@@ -311,13 +422,48 @@ class Coscheduler(Scheduler, ABC):
             new_xunit.append(job)
             new_xunit.append(best_candidate)
 
-            idle_cores = best_candidate.binded_cores - job.binded_cores
+            # Assigning processors to job
+            job_req_cores = job.binded_cores
+            job_to_bind_procs = []
+            i = 0
+            while job_req_cores > half_node_cores:
+                job_to_bind_procs.extend(procset[i:i+half_node_cores])
+                job_req_cores -= half_node_cores
+                i += 2 * half_node_cores
+
+            if job_req_cores != 0:
+                job_to_bind_procs.extend(procset[i:i+job_req_cores])
+
+            job.assigned_procs = ProcSet.from_str(" ".join(
+                [str(processor) for processor in job_to_bind_procs]
+            ))
+            procset -= job.assigned_procs
+                
+            # Assigning processors to best candidate
+            best_candidate.assigned_procs = ProcSet.from_str(" ".join(
+                [
+                    str(processor) 
+                    for processor in procset[:best_candidate.binded_cores]
+                ]
+            ))
+            procset -= best_candidate.assigned_procs
+
+            idle_cores = job.binded_cores - best_candidate.binded_cores
 
             if idle_cores > 0:
                 new_xunit.append(EmptyJob(Job(
-                    None, -1, "idle", idle_cores, idle_cores,
-                    -1, -1,
-                    None, None, None, None
+                    None, 
+                    -1, 
+                    "idle", 
+                    idle_cores, 
+                    idle_cores,
+                    procset,
+                    -1, 
+                    -1,
+                    None, 
+                    None, 
+                    None, 
+                    None
                 )))
 
         self.cluster.execution_list.append(new_xunit)
