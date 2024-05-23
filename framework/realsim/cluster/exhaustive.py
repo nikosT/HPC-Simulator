@@ -63,7 +63,6 @@ class ClusterExhaustive(AbstractCluster):
             # Set as first job in substitute unit the non empty job
             # with the highest amount of binded cores
             max_binded_cores = -1
-            idle_cores = 0
             idle_procs = ProcSet()
 
             # Calculate for all jobs
@@ -79,26 +78,26 @@ class ClusterExhaustive(AbstractCluster):
 
                 if type(job) != EmptyJob:
                     # Set the largest non empty job as first in substitute_unit
-                    if job.binded_cores > max_binded_cores:
+                    if len(job.assigned_procs) > max_binded_cores:
                         substitute_unit.insert(0, job)
-                        max_binded_cores = job.binded_cores
+                        max_binded_cores = len(job.assigned_procs)
                     else:
                     # Else put it as a tail job
                         substitute_unit.append(job)
                 else:
                     # If it is an EmptyJob record the amount of idle cores
-                    idle_cores += job.binded_cores
+                    # idle_cores += len(job.assigned_procs)
                     idle_procs |= job.assigned_procs
 
 
             # If there is any job still executing
             if len(substitute_unit) > 1:
 
-                sub_unit_cores = sum([job.binded_cores for job in substitute_unit])
+                sub_unit_cores = sum([len(job.assigned_procs) for job in substitute_unit])
 
                 # If the number of idle cores is larger than the number of utilized
                 # cores then all the remaining jobs in the xunit will be executing as spread
-                if idle_cores >= sub_unit_cores:
+                if len(idle_procs) >= sub_unit_cores:
                     # surplass = idle_cores - sub_unit_cores
                     # self.free_cores += surplass
                     # idle_cores = sub_unit_cores
@@ -123,13 +122,13 @@ class ClusterExhaustive(AbstractCluster):
                     if substitute_unit[0].speedup != substitute_unit[0].get_speedup(worst_job):
                         substitute_unit[0].ratioed_remaining_time(worst_job)
 
-            if idle_cores > 0:
+            if len(idle_procs) > 0:
                 # Create an empty job to occupy the idle cores of the xunit
                 empty_job = EmptyJob(Job(None,
                                          -1,
                                          "idle",
-                                         idle_cores,
-                                         idle_cores,
+                                         len(idle_procs),
+                                         len(idle_procs),
                                          idle_procs,
                                          -1,
                                          -1,
@@ -155,7 +154,7 @@ class ClusterExhaustive(AbstractCluster):
         for xunit in self.execution_list:
 
             if len(xunit) == 1 and type(xunit[0]) == EmptyJob:
-                self.free_cores += xunit[0].binded_cores
+                # self.free_cores += xunit[0].binded_cores
                 self.total_procs |= xunit[0].assigned_procs
                 execution_list.remove(xunit)
 

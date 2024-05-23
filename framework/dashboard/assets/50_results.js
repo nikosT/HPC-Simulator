@@ -647,7 +647,7 @@ Object.assign(window.dash_clientside.clientside, {
 		graph_elem.layout.updatemenus = [];
 
 		Plotly.downloadImage('results-graph', {
-			'format': 'svg',
+			'format': 'png',
 			'height': 1080,
 			'width': 1920,
 			'filename': 'newplot'

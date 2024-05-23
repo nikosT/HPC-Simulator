@@ -67,7 +67,7 @@ class BalancingRanksCoscheduler(RanksCoscheduler):
         # Are cores required important? If the system load is low we do not care
         # If it is high then we need jobs with low core requirements
         # cores_r = job.num_of_processes / self.cluster.total_cores
-        cores_r = self.cluster.free_cores / job.num_of_processes
+        cores_r = len(self.cluster.total_procs) / job.num_of_processes
         cores_r = (1 - cores_r) * self.system_load + cores_r * (1 - self.system_load)
 
         # Is job's overall speedup important? Maybe to increase the average
@@ -83,7 +83,8 @@ class BalancingRanksCoscheduler(RanksCoscheduler):
         rank = self.ranks[job.job_id]
         rank_r = rank / len(self.cluster.waiting_queue)
 
-        return response * cores_r * speedup_r * rank_r
+        #return response * cores_r * speedup_r * rank_r
+        return waiting_time
 
     def waiting_job_candidates_reorder(self, job: Job, co_job: Job) -> float:
 
@@ -97,7 +98,7 @@ class BalancingRanksCoscheduler(RanksCoscheduler):
 
         if self.heatmap[job.job_name][co_job.job_name] is not None:
             speedup = (self.heatmap[job.job_name][co_job.job_name] + self.heatmap[co_job.job_name][job.job_name]) / 2.0
-            speedup_r = speedup ** (2 / self.avg_xunits_speedup)
+            speedup_r = speedup# ** (2 / self.avg_xunits_speedup)
         else:
             speedup_r = 1.0
 
@@ -106,7 +107,8 @@ class BalancingRanksCoscheduler(RanksCoscheduler):
         rank = self.ranks[co_job.job_id]
         rank_r = rank / len(self.cluster.waiting_queue)
 
-        return waiting_time * cores_r * speedup_r * rank_r
+        #return waiting_time * speedup_r
+        return waiting_time
 
     def xunit_candidates_reorder(self, job: Job, xunit: list[Job]) -> float:
 
@@ -114,10 +116,10 @@ class BalancingRanksCoscheduler(RanksCoscheduler):
         idle_job = xunit[-1]
 
         # Maximum will always be the number of idle binded cores
-        cores_r = job.half_node_cores / idle_job.binded_cores 
+        cores_r = job.half_node_cores / len(idle_job.assigned_procs)
         cores_r = cores_r if cores_r != 0 else 1
 
-        if job.half_node_cores > head_job.binded_cores:
+        if job.half_node_cores > len(head_job.assigned_procs):
             # worst_neighbor = min(xunit, key=lambda neighbor: job.get_speedup(neighbor) if type(neighbor) != EmptyJob else math.inf)
             worst_neighbor = min(xunit, 
                                  key=lambda neighbor: 
@@ -158,14 +160,11 @@ class BalancingRanksCoscheduler(RanksCoscheduler):
             xunit_speedup.append(float(avg(xunit_jobs_speedups)))
 
             # Calculate co-scheduled xunit's inner fragmentation
-            head_job = xunit[0]
-            idle_job = xunit[-1]
-            if idle_job.binded_cores > head_job.binded_cores:
-                inner_frags.append(0.5)
-            else:
-                inner_frags.append(idle_job.binded_cores / head_job.binded_cores)
+            idle_job: Job = xunit[-1]
+            total_binded_cores = sum([len(job.assigned_procs) for job in xunit])
+            inner_frags.append(len(idle_job.assigned_procs) / total_binded_cores)
 
         self.avg_xunits_speedup = float(avg(xunit_speedup))
-        self.system_load = 1.0 - self.cluster.free_cores / self.cluster.total_cores
+        self.system_load = 1.0 - len(self.cluster.total_procs) / self.cluster.total_cores
         self.inner_frag = float(avg(inner_frags))
 

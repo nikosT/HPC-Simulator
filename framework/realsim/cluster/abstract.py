@@ -9,6 +9,7 @@ from realsim.scheduler.scheduler import Scheduler
 from realsim.logger.logger import Logger
 
 import math
+from typing import Optional
 from procset import ProcSet
 
 
@@ -58,12 +59,6 @@ class AbstractCluster(abc.ABC):
     def assign_logger(self, logger: Logger):
         self.logger = logger
         self.logger.assign_cluster(self)
-
-    def half_node_cores(self, job: Job) -> int:
-        return job.half_node_cores
-
-    def full_node_cores(self, job: Job) -> int:
-        return job.full_node_cores
 
     def preload_jobs(self, jobs_set: list[Job]) -> None:
         # Get a clean deep copy of the set of jobs
@@ -189,4 +184,4 @@ class AbstractCluster(abc.ABC):
             # Free the resources
             self.free_resources()
 
-        #print(self.execution_list)
+        print(self.total_procs)

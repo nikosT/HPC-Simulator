@@ -219,7 +219,7 @@ def run_simulation(data):
     
     # ONLY FOR REGALE
     try:
-        for load in ["bt.D.484", "sp.D.484", "bt.E.2025", "cg.E.2048", "ft.E.2048", "lu.E.2048", "sp.E.2025"]:
+        for load in ["bt.D.484", "bt.E.1024", "sp.D.484", "bt.E.2025", "cg.E.2048", "ft.E.2048", "lu.E.2048", "sp.E.2025"]:
             lm.loads.pop(load)
     except:
         pass

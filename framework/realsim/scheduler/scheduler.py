@@ -1,8 +1,9 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing import TypeVar, Generic, TYPE_CHECKING
+from typing import TypeVar, Generic, TYPE_CHECKING, Optional
 import os
 import sys
+import math
 
 from procset import ProcSet
 
@@ -50,27 +51,40 @@ class Scheduler(ABC, Generic[Cluster]):
     def assign_logger(self, logger: Logger) -> None:
         self.logger = logger
 
-    def assign_procs(self, asked_cores: int) -> ProcSet:
-        """Return a ProcSet from the total procs left in the cluster
+    def assign_nodes(self, req_cores: int, cores_set: ProcSet) -> Optional[ProcSet]:
+        """Assign nodes based on the number of required physical cores and the 
+        set of cores provided.
+
+        + req_cores: required number of (physical) cores for job(s)
+        + cores_set: a ProcSet from which the set of required cores will stem from
         """
-        # Remove intervals that have length lower than the number of cores per
-        # node because it cannot constitue a node
-        assignable_procs = list(filter(
-            lambda procint:
-            len(procint) >= self.cluster.cores_per_node,
-            self.cluster.total_procs.intervals()
-        ))
+        cores_to_assign: list[str] = list()
+        for procint in cores_set.intervals():
+            # Although there are idle cores the node is being used
+            if len(procint) < self.cluster.cores_per_node:
+                continue
+            else:
+                # Available cores for assignment in the interval
+                assignable_cores = [str(cr) for cr in range(procint.inf, procint.sup + 1)]
+                # Current required nodes for the job(s)
+                req_nodes = math.ceil(req_cores / self.cluster.cores_per_node)
+                # Available nodes in the interval
+                avail_nodes = int(len(procint) / self.cluster.cores_per_node)
 
-        assignable_procs = ProcSet.from_str(" ".join([
-            str(procint) for procint in assignable_procs
-        ]))
+                if req_nodes <= avail_nodes:
+                    cores_to_assign.extend(assignable_cores[:req_nodes * self.cluster.cores_per_node])
+                    req_cores -= req_nodes * self.cluster.cores_per_node
+                else:
+                    cores_to_assign.extend(assignable_cores[:avail_nodes * self.cluster.cores_per_node])
+                    req_cores -= avail_nodes * self.cluster.cores_per_node
 
-        binded_procs = assignable_procs[:asked_cores]
-        constr_procset = ProcSet.from_str(" ".join([
-            str(processor) for processor in binded_procs
-        ]))
+            if req_cores == 0:
+                break
 
-        return constr_procset
+        if req_cores == 0:
+            return ProcSet.from_str(" ".join(cores_to_assign))
+        else:
+            return None
 
     def pop(self, queue: list[Job]) -> Job:
         """Get and remove an object from a queue

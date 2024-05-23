@@ -22,24 +22,25 @@ class EASYScheduler(FIFOScheduler):
 
     def backfill(self) -> None:
 
-        aggr_cores = 0
-        execution_list = deepcopy_list(self.cluster.execution_list)
-        execution_list.sort(key=lambda jblock: jblock[0].wall_time - jblock[0].start_time)
-
         if len(self.cluster.waiting_queue) <= 1:
             return
 
-        job = self.cluster.waiting_queue[0]
+        execution_list = deepcopy_list(self.cluster.execution_list)
+        execution_list.sort(key=lambda jblock: jblock[0].wall_time +
+                            jblock[0].start_time - self.cluster.makespan)
+
+        blocked_job = self.cluster.waiting_queue[0]
 
         # Find the minimum estimated start time of the job
+        aggr_cores = len(self.cluster.total_procs)
         min_estimated_time = inf
 
-        for jobs_block in execution_list:
+        for xunit in execution_list:
 
-            running_job = jobs_block[0]
-            aggr_cores += running_job.binded_cores
+            running_job = xunit[0]
+            aggr_cores += len(running_job.assigned_procs)
 
-            if aggr_cores + self.cluster.free_cores >= job.full_node_cores:
+            if aggr_cores >= blocked_job.full_node_cores:
                 min_estimated_time = running_job.wall_time - (self.cluster.makespan - running_job.start_time)
                 break
 
@@ -59,16 +60,14 @@ class EASYScheduler(FIFOScheduler):
 
             if b_job.wall_time <= min_estimated_time:
 
-                if b_job.full_node_cores <= self.cluster.free_cores:
+                procset = self.assign_nodes(b_job.full_node_cores, self.cluster.total_procs)
+
+                if procset is not None:
 
                     self.cluster.waiting_queue.remove(b_job)
                     b_job.start_time = self.cluster.makespan
-                    b_job.binded_cores = b_job.full_node_cores
-                    self.cluster.execution_list.append([b_job])
-                    self.cluster.free_cores -= b_job.binded_cores
-
-                    procset = self.assign_procs(b_job.binded_cores)
                     b_job.assigned_procs = procset
+                    self.cluster.execution_list.append([b_job])
                     self.cluster.total_procs -= procset
 
             else:

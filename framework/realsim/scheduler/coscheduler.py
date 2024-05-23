@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import math
 
 import os
 import sys
@@ -16,7 +17,7 @@ from api.loader import Load
 from realsim.scheduler.scheduler import Scheduler
 from realsim.jobs import Job, EmptyJob
 from realsim.jobs.utils import deepcopy_list
-from numpy import average as avg
+from procset import ProcSet
 from typing import Protocol
 
 
@@ -26,25 +27,26 @@ class ScikitModel(Protocol):
 
 
 class Coscheduler(Scheduler, ABC):
-    """We try to provide at every checkpoint an execution list whose average
-    speedup is higher than 1. We try to distribute the higher speedup candidates
-    among the checkpoints.
+    """Base class for all co-scheduling algorithms
     """
 
     name = "Abstract Co-Scheduler"
-    description = "Exhaustive coupling co-scheduling base class for ExhaustiveCluster"
+    description = "Abstract base class for all co-scheduling algorithms"
 
-    def __init__(self, 
+    def __init__(self,
                  backfill_enabled: bool = False,
-                 threshold: float = 1, 
-                 system_utilization: float = 1,
+                 speedup_threshold: float = 1.0,
+                 system_utilization: float = 1.0,
                  engine: Optional[ScikitModel] = None):
+
+        Scheduler.__init__(self)
+
         self.backfill_enabled = backfill_enabled
-        self.threshold = threshold
+        self.speedup_threshold = speedup_threshold
         self.system_utilization = system_utilization
+
         self.engine = engine
         self.heatmap: dict[str, dict] = dict()
-        Scheduler.__init__(self)
 
     def setup(self):
         """Create the heatmap for the jobs in the waiting queue
@@ -120,392 +122,408 @@ class Coscheduler(Scheduler, ABC):
                     })
 
     @abstractmethod
-    def xunits_order(self, xunit: list[Job]) -> float:
+    def waiting_job_candidates_reorder(self, job: Job, co_job: Job) -> float:
         pass
 
     @abstractmethod
-    def xunits_candidates_order(self, largest_job: Job, job: Job) -> float:
+    def xunit_candidates_reorder(self, job: Job, xunit: list[Job]) -> float:
         pass
 
-    @abstractmethod
-    def waiting_queue_order(self, job: Job) -> float:
-        pass
-
-    @abstractmethod
-    def wjob_candidates_order(self, job: Job, co_job: Job) -> float:
-        pass
-
-    def after_deployment(self, xunit: list[Job]):
-        """After deployment work to be done
+    def after_deployment(self, *args):
+        """After deploying a job in a pair or compact then some after processing
+        events may need to take place. For example to calculate values necesary
+        for the heuristics functions (e.g. the fragmentation of the cluster)
         """
         pass
 
-    def xunit_candidates(self, 
-                         largest_job: Job, 
-                         empty_space: int) -> list[Job]:
+    def best_xunit_candidate(self, job: Job) -> Optional[list[Job]]:
+        """Return an executing unit (block of jobs) that is the best candidate
+        for co-execution for a job. If no suitable xunit is found return None.
 
-        # Get candidates that have a speedup and they fit inside the xunit
-        candidates = list(
-                filter(
-                    lambda job:
-
-                    self.heatmap[largest_job.job_name][job.job_name] is not None 
-                    and
-                    job.half_node_cores <= empty_space,
-
-                    self.cluster.waiting_queue
-                )
-        )
-
-        # Filter candidates whose average speedup is greater than the threshold
-        candidates = list(filter(
-            lambda co_job: 
-            avg([
-                self.heatmap[largest_job.job_name][co_job.job_name],
-                self.heatmap[co_job.job_name][largest_job.job_name]
-                ]) > self.threshold,
-            candidates
-        ))
-
-        # Sort candidate jobs by an ordering function
-        candidates.sort(
-                key=(
-                    lambda co_job: 
-                    self.xunits_candidates_order(largest_job, co_job)
-                    ),
-                reverse=True
-        )
-
-        return candidates
-
-    def deploying_to_xunits(self, deploying_list):
-        """Deploying waiting jobs to executing units that have available free
-        space
+        + job: the job to find the best xunit candidate on its requirements
         """
 
-        nonfilled_xunits = self.cluster.nonfilled_xunits()
+        # We need to create a list of suitors for the job at the beginning
+        candidates: list[list[Job]] = list()
 
-        nonfilled_xunits.sort(
-                key=lambda unit: self.xunits_order(unit),
-                reverse=True
-        )
+        # Get xunit candidates that satisfy the resources and speedup 
+        # requirements
+        for xunit in self.cluster.nonfilled_xunits():
 
-        for xunit in nonfilled_xunits:
+            # Get the head job (largest job) and test its number of binded cores
+            # (processors) with the idle job (job doing nothing) to see if the
+            # jobs inside the xunit execute as spread or co-scheduled
+            #
+            # Spread means that the jobs are executing at top speedup while
+            # co-scheduled means that their speedup is regulated by each other's
+            # resource consumption
+            #
+            head_job: Job = xunit[0]
+            idle_job: Job = xunit[-1]
 
-            largest_job = xunit[0]
+            # Number of idle processors
+            # idle_cores = idle_job.binded_cores
+            idle_cores = len(idle_job.assigned_procs)
 
-            # Get the largest job's binded cores
-            max_binded_cores = largest_job.binded_cores
-
-            # Get the sum of binded cores of the smallest jobs
-            min_binded_cores = 0
-            for job in xunit[1:]:
-                if type(job) != EmptyJob:
-                    min_binded_cores += job.binded_cores
-
-            # Empty space inside the xunit
-            empty_space = max_binded_cores - min_binded_cores
-
-            # Get the possible candidates for the xunit
-            candidates = self.xunit_candidates(largest_job, empty_space)
-
-            # If no candidate was found then check if there is only one non
-            # empty job inside the unit
-            if candidates == []:
-                deploying_list.append(xunit)
+            # If idle cores are less than the resources the job wants to consume
+            # then the xunit is not a candidate
+            if job.half_node_cores > idle_cores:
                 continue
 
-            # If there are candidates then substitute the xunit with a new one
-            # that includes as much possible candidates
+            # If the job can fit then check if it will be co-allocated as the 
+            # head job or as a tail job
+            #if head_job.binded_cores >= idle_cores:
+            if len(head_job.assigned_procs) >= idle_cores:
+                # The job will be co-allocated as a tail job
+                # We need to check whether the average speedup of the pairing
+                # will be above the speedup_threshold
+                if self.heatmap[head_job.job_name][job.job_name] is not None:
+                    avg_speedup = (self.heatmap[job.job_name][head_job.job_name] + self.heatmap[head_job.job_name][job.job_name]) / 2.0
+                else:
+                    continue
 
-            # Create a substitute execution unit
-            substitute_unit: list[Job] = list()
-
-            # Load the non empty jobs
-            for job in xunit:
-                if type(job) != EmptyJob:
-                    substitute_unit.append(job)
-
-            # Run through fit_jobs list to fit lesser jobs 
-            # in the substitute_unit
-            rem_cores = empty_space
-
-            for co_job in candidates:
-
-                if co_job.half_node_cores <= rem_cores:
-
-                    self.cluster.waiting_queue.remove(co_job)
-                    co_job.binded_cores = co_job.half_node_cores
-                    co_job.ratioed_remaining_time(substitute_unit[0])
-                    co_job.start_time = self.cluster.makespan
-
-                    substitute_unit.append(co_job)
-                    rem_cores -= co_job.binded_cores
-
-            # Redefine largest job speedup
-            worst_neighbor = min(substitute_unit[1:], key=(
-                lambda co_job: substitute_unit[0].get_speedup(co_job)
-            ))
-
-            if substitute_unit[0].speedup != substitute_unit[0].get_speedup(worst_neighbor):
-                substitute_unit[0].ratioed_remaining_time(worst_neighbor)
-            
-            # If rem_cores > 0 then there is an empty space left in the unit
-            if rem_cores > 0:
-                empty_job = EmptyJob(Job(None, 
-                                         -1,
-                                         "empty",
-                                         rem_cores,
-                                         rem_cores, 
-                                         -1,
-                                         -1,
-                                         None, 
-                                         None, 
-                                         None, 
-                                         None))
-                substitute_unit.append(empty_job)
-
-            # Remove the former unit from the execution list
-            self.cluster.execution_list.remove(xunit)
-            
-            # Deployment!
-            deploying_list.append(substitute_unit)
-
-            self.deploying = True
-            self.after_deployment(substitute_unit)
-
-            # Write down event to logger
-            self.logger.cluster_events["deploying:exec-colocation"] += 1
-
-        return
-
-    def wjob_candidates(self, 
-                        job: Job, 
-                        candidates: list[Job]) -> list[Job]:
-
-        # Filter out cojobs that can't fit into the execution list as pairs
-        candidates = list(filter(
-            lambda co_job: 
-
-            self.heatmap[co_job.job_name][job.job_name] is not None 
-            and
-            2 * max(
-                job.half_node_cores,
-                co_job.half_node_cores
-            ) <= self.cluster.free_cores, 
-
-            candidates
-        ))
-
-        candidates = list(filter(
-            lambda co_job:
-
-            avg([
-                self.heatmap[job.job_name][co_job.job_name],
-                self.heatmap[co_job.job_name][job.job_name]
-                ]) > self.threshold,
-
-            candidates
-        ))
-
-        # Sort `wq` by the wait_ordering function
-        candidates.sort(key=lambda co_job: 
-                        self.wjob_candidates_order(job, co_job),
-                        reverse=True)
-
-        return candidates
-
-    def deploying_wait_pairs(self, deploying_list):
-
-        ################################
-        # Colocation with waiting jobs #
-        ################################
-        waiting_queue: list[Job] = deepcopy_list(self.cluster.waiting_queue)
-
-        # Order waiting queue by needed cores starting with the lowest
-        waiting_queue.sort(key=lambda job: self.waiting_queue_order(job),
-                           reverse=True)
-
-        # Loop until waiting queue is empty
-        while waiting_queue != []:
-
-            # Get the job at the head
-            job = self.pop(waiting_queue)
-            
-            # Create a dummy waiting queue without `job`
-            candidates = deepcopy_list(self.cluster.waiting_queue)
-            candidates.remove(job)
-
-            candidates = self.wjob_candidates(job, candidates)
-
-            # If empty, no pair can be made continue to the next job
-            if candidates == []:
-                continue
-
-            # If there are candidates then create a new xunit
-            xunit: list[Job] = [job]
-            max_binded_cores = job.half_node_cores
-            
-            # Build execution unit
-            for co_job in candidates:
-                if co_job.half_node_cores <= max_binded_cores:
-
-                    waiting_queue.remove(co_job)
-                    self.cluster.waiting_queue.remove(co_job)
-
-                    co_job.ratioed_remaining_time(job)
-                    co_job.binded_cores = co_job.half_node_cores
-
-                    co_job.start_time = self.cluster.makespan
-
-                    xunit.append(co_job)
-
-                    max_binded_cores -= co_job.binded_cores
-
-            # If the other cojobs where larger
-            # TODO: WARNING TEST OUT THE RATIOED REMAINING TIME
-            if len(xunit) == 1:
-
-                waiting_queue.append(job)
+                if avg_speedup > self.speedup_threshold:
+                    candidates.append(xunit)
+            else:
+                # The job will be co-allocated as a head job
+                # We need to check the average speedup with the worst possible
+                # pairing with one of the worst jobs in the xunit
+                worst_neighbor = min(xunit, 
+                                     key=lambda neighbor: 
+                                     self.heatmap[job.job_name][neighbor.job_name] 
+                                     if type(neighbor) != EmptyJob and self.heatmap[job.job_name][neighbor.job_name] is not None 
+                                     else math.inf)
                 
-                continue
-            
-            self.cluster.waiting_queue.remove(job)
-            
-            # Set the speedup of the largest job
-            worst_neighbor = min(xunit[1:], key=(
-                lambda co_job: job.get_speedup(co_job)
-            ))
+                if self.heatmap[worst_neighbor.job_name][job.job_name] is not None:
+                    avg_speedup = (self.heatmap[job.job_name][worst_neighbor.job_name] + self.heatmap[worst_neighbor.job_name][job.job_name]) / 2.0
+                else:
+                    continue
 
+                if avg_speedup > self.speedup_threshold:
+                    candidates.append(xunit)
+
+        candidates.sort(key=lambda xunit: self.xunit_candidates_reorder(job, xunit), reverse=True)
+
+        # If no candidates are found in the xunits return None
+        if candidates == []:
+            return None
+
+        # Return best candidate for the job
+        return candidates[0]
+
+    def colocation_to_xunit(self, job: Job) -> bool:
+        """Co-allocate job for execution in an already existing executing unit
+        """
+
+        # Get the best candidate for the job
+        best_candidate = self.best_xunit_candidate(job)
+
+        # If no candidate is found then return
+        if best_candidate is None:
+            return False
+
+        # Else a candidate was found
+
+        # Setup the job and the queues
+        self.cluster.waiting_queue.remove(job)
+        job.start_time = self.cluster.makespan
+        job.binded_cores = job.half_node_cores
+
+        # Check if it will be as a head or tail job
+        head_job = best_candidate[0]
+        idle_job = best_candidate[-1]
+        # Remove idle job because it will be replaced
+        best_candidate.remove(idle_job)
+
+        # It will be a tail job
+        # if head_job.binded_cores >= idle_job.binded_cores:
+        if len(head_job.assigned_procs) >= len(idle_job.assigned_procs):
+
+            # Calculate the remaining time of the job and the new speedup
+            job.ratioed_remaining_time(head_job)
+
+            # If the job produces worse speedup for the current head job of the
+            # xunit then re-calculate the head job's remaining time and speedup
+            if self.heatmap[head_job.job_name][job.job_name] < head_job.speedup:
+                head_job.ratioed_remaining_time(job)
+
+            # Add the job to the best xunit candidate
+            best_candidate.append(job)
+
+        # It will be a head job
+        else:
+
+            # Recalculate remaining time and speedup for each job inside the 
+            # executing unit
+            for xjob in best_candidate:
+                xjob.ratioed_remaining_time(job)
+
+            # Find the worst neighbor for the job
+            worst_neighbor = min(best_candidate, 
+                                 key=lambda neighbor: 
+                                 self.heatmap[job.job_name][neighbor.job_name] 
+                                 if type(neighbor) != EmptyJob and self.heatmap[job.job_name][neighbor.job_name] is not None 
+                                 else math.inf)
             job.ratioed_remaining_time(worst_neighbor)
-            job.binded_cores = job.half_node_cores
-            job.start_time = self.cluster.makespan
 
-            # If max_binded_cores is not 0 then fill the empty cores
-            # with an empty job
-            if max_binded_cores > 0:
-                empty_job = EmptyJob(
-                        Job(None, 
-                            -1, 
-                            "empty", 
-                            max_binded_cores, 
-                            max_binded_cores,
-                            -1,
-                            -1,
-                            None, 
-                            None, 
-                            None, 
-                            None))
+            best_candidate.insert(0, job)
 
-                xunit.append(empty_job)
+        # Assign processors to the job
+        half_node_cores = int(self.cluster.cores_per_node / 2)
+        # Job's required number of cores/processors
+        job_req_cores = job.half_node_cores
 
-            # Deployment!
-            deploying_list.append(xunit)
+        # Create a list of processors for assignment
+        job_to_bind_procs = list()
 
-            # Scheduler setup
-            self.deploying = True
-            self.after_deployment(xunit)
+        # Find the processors to be assigned sequentially inside the remaining
+        # available processors of the xunit
+        # idle_job is responsible to keep track of the idle processors in a
+        # xunit
+        for procint in idle_job.assigned_procs.intervals():
 
-            # Cluster setup
-            self.cluster.free_cores -= 2 * job.binded_cores
+            # If the interval is equal to a half socket then get the whole half
+            # socket
+            if len(procint) == half_node_cores:
+                job_to_bind_procs.append(f"{procint.inf}-{procint.sup}")
+                job_req_cores -= half_node_cores
 
-            # Logger cluster events update
-            self.logger.cluster_events["deploying:wait-colocation"] += 1
+            # If the interval has at least more than half socket then jump at
+            # each half socket
+            elif len(procint) > half_node_cores:
 
-        return
+                # A list of the available processors inside the interval
+                interval = list(range(procint.inf, procint.sup + 1))
 
-    def deploying_wait_compact(self, deploying_list):
+                # Required number of nodes (jumps) for the remaining requested
+                # cores of the job
+                req_nodes = int(job_req_cores / half_node_cores)
 
-        #############################
-        # Compact with waiting jobs #
-        #############################
-        waiting_queue = deepcopy_list(self.cluster.waiting_queue)
+                # Number of available nodes inside the xunit
+                avail_nodes = int(len(procint) / (2 * half_node_cores))
+
+                # If we need more nodes than the ones provided we consume them
+                # and move on to the next interval of idle processors
+                if req_nodes > avail_nodes:
+                    i = 0
+                    for _ in range(avail_nodes):
+                        job_to_bind_procs.extend([
+                            str(processor)
+                            for processor in interval[i:i+half_node_cores]
+                        ])
+                        i += 2 * half_node_cores
+                        job_req_cores -= half_node_cores
+                # If the requirements are met then we consume only the number of
+                # nodes needed for the job
+                else:
+                    i = 0
+                    for _ in range(req_nodes):
+                        job_to_bind_procs.extend([
+                            str(processor)
+                            for processor in interval[i:i+half_node_cores]
+                        ])
+                        i += 2 * half_node_cores
+                        job_req_cores -= half_node_cores
+
+            else:
+                # Should not appear as a choice
+                continue
+
+            if job_req_cores == 0:
+                break
+
+        job.assigned_procs = ProcSet.from_str(" ".join(job_to_bind_procs))
+
+        #if idle_job.binded_cores > job.binded_cores:
+        if len(idle_job.assigned_procs) > len(job.assigned_procs):
+            best_candidate.append(EmptyJob(Job(
+                None, 
+                -1, 
+                "idle", 
+                idle_job.binded_cores - job.binded_cores,
+                idle_job.binded_cores - job.binded_cores,
+                idle_job.assigned_procs - job.assigned_procs,
+                -1, 
+                -1,
+                None, 
+                None, 
+                None, 
+                None
+            )))
         
-        # Order by the least amount of needed cores
-        # waiting_queue.sort(key=(lambda job: job.num_of_processes))
+        # It was deployed to an xunit
+        return True
 
-        while waiting_queue != []:
+    def best_wjob_candidates(self, job: Job, waiting_queue_slice: list[Job]) -> Optional[Job]:
 
-            job = self.pop(waiting_queue)
+        candidates: list[Job] = list()
 
-            if job.full_node_cores <= int(self.cluster.free_cores):
+        for wjob in waiting_queue_slice:
 
-                # Remove from cluster's waiting queue
-                self.cluster.waiting_queue.remove(job)
+            # The speedup values must exist
+            conditions  = self.heatmap[job.job_name][wjob.job_name] is not None
+            if not conditions:
+                continue
+            # The pair must fit in the remaining free processors of the cluster
+            # conditions &= 2 * max(job.half_node_cores, wjob.half_node_cores) <= len(self.cluster.total_procs)
+            conditions &= self.assign_nodes(
+                    2 * max(job.half_node_cores, wjob.half_node_cores), 
+                    self.cluster.total_procs) is not None
+            # The pair's average speedup must be higher than the user defined
+            # speedup threshold
+            conditions &= (self.heatmap[job.job_name][wjob.job_name] + self.heatmap[wjob.job_name][job.job_name]) / 2.0 > self.speedup_threshold
 
-                # Setup job
-                job.binded_cores = job.full_node_cores
+            # If it satisfies all the conditions then it is a candidate pairing job
+            if conditions:
+                candidates.append(wjob)
 
-                # Start time of job
-                job.start_time = self.cluster.makespan
+        candidates.sort(key=lambda wjob: self.waiting_job_candidates_reorder(job, wjob), reverse=True)
 
-                # Deploy job
-                deploying_list.append([job])
+        # If no candidates were found return None
+        if candidates == []:
+            return None
 
-                # Cluster setup
-                self.cluster.free_cores -= job.binded_cores
+        # Return best candidate for job
+        return candidates[0]
 
-                # Scheduler setup
-                self.deploying = True
-                self.after_deployment([job])
+    def colocation_with_wjobs(self, job: Job, waiting_queue_slice: list[Job]) -> bool:
+        """Co-allocate two waiting jobs to create a new executing unit
+        """
+        
+        # Check if there is any hope for the job to reduce some CPU cycles
+        if 2 * job.half_node_cores > len(self.cluster.total_procs):
+            return False
 
-                # Logger cluster events update
-                self.logger.cluster_events["deploying:compact"] += 1
+        best_candidate = self.best_wjob_candidates(job, waiting_queue_slice)
 
-        return
+        if best_candidate is None:
+            # IDEA: spread execution here?
+            # If there isn't any candidate (yet) for the job 
+            return False
 
-    def deploying_as_spread(self, deploying_list):
+        new_xunit: list[Job] = list()
 
-        # Get a copy of the current waiting queue of the cluster
-        waiting_queue: list[Job] = deepcopy_list(self.cluster.waiting_queue)
+        # Remove the jobs from the original waiting queue
+        self.cluster.waiting_queue.remove(job)
+        self.cluster.waiting_queue.remove(best_candidate)
 
-        # Order waiting queue by needed cores starting with the lowest
-        waiting_queue.sort(key=lambda job: self.waiting_queue_order(job),
-                           reverse=True)
+        # Remove job from the copy of the waiting queue to avoid
+        # double allocations
+        waiting_queue_slice.remove(best_candidate)
 
-        while waiting_queue != []:
+        job.start_time = self.cluster.makespan
+        best_candidate.start_time = self.cluster.makespan
 
-            # Get first job
-            job = self.pop(waiting_queue)
+        best_candidate.ratioed_remaining_time(job)
+        job.ratioed_remaining_time(best_candidate)
 
-            condition = (2 * job.half_node_cores) <= self.cluster.free_cores
-            condition &= job.get_max_speedup() > self.threshold
-            condition &= (self.cluster.free_cores / self.cluster.total_cores) > self.system_utilization
+        total_required_cores = 2 * max(job.half_node_cores, best_candidate.half_node_cores)
 
-            # If the job fits and the cores utilization of the system meets the
-            # requirements specified then submit as spread
-            if condition:
+        procset = self.assign_nodes(total_required_cores, self.cluster.total_procs)
+        if procset is None:
+            raise RuntimeError("The procset must not be empty for a chosen candidate")
 
-                self.cluster.waiting_queue.remove(job)
-                job.binded_cores = job.half_node_cores
-                job.speedup = job.get_max_speedup()
-                job.start_time = self.cluster.makespan
+        self.cluster.total_procs -= procset
+        half_node_cores = int(self.cluster.cores_per_node / 2)
 
-                # Deploying job
-                empty_space = EmptyJob(Job(None, 
-                                           -1, 
-                                           "empty",
-                                           job.binded_cores,
-                                           job.binded_cores,
-                                           -1,
-                                           -1,
-                                           None,
-                                           None,
-                                           None,
-                                           None))
-                xunit = [job, empty_space]
-                deploying_list.append(xunit)
+        if best_candidate.half_node_cores > job.half_node_cores:
 
-                self.cluster.free_cores -= 2 * job.binded_cores
+            # Best candidate will be the head job
+            new_xunit.append(best_candidate)
+            new_xunit.append(job)
 
-                self.deploying = True
-                self.after_deployment(xunit)
+            # Assigning processors to best candidate
+            best_candidate_req_cores = best_candidate.half_node_cores
+            best_candidate_to_bind_procs = []
+            i = 0
+            while best_candidate_req_cores > half_node_cores:
+                best_candidate_to_bind_procs.extend(procset[i:i+half_node_cores])
+                best_candidate_req_cores -= half_node_cores
+                i += 2 * half_node_cores
 
-                # Logger cluster events update
-                self.logger.cluster_events["deploying:spread"] += 1
+            if best_candidate_req_cores != 0:
+                best_candidate_to_bind_procs.extend(procset[i:i+best_candidate_req_cores])
 
-        return
+            best_candidate.assigned_procs = ProcSet.from_str(" ".join(
+                [str(processor) for processor in best_candidate_to_bind_procs]
+            ))
+            procset -= best_candidate.assigned_procs
+
+            # Assigning processors to job
+            job.assigned_procs = ProcSet.from_str(" ".join([
+                str(processor) for processor in procset[:job.half_node_cores]
+            ]))
+            procset -= job.assigned_procs
+
+            idle_cores = best_candidate.half_node_cores - job.half_node_cores
+            new_xunit.append(EmptyJob(Job(
+                None, 
+                -1, 
+                "idle", 
+                idle_cores, 
+                idle_cores,
+                procset,
+                -1, 
+                -1,
+                None, 
+                None, 
+                None, 
+                None
+            )))
+
+        else:
+
+            # Job will be the head job
+            new_xunit.append(job)
+            new_xunit.append(best_candidate)
+
+            # Assigning processors to job
+            job_req_cores = job.half_node_cores
+            job_to_bind_procs = []
+            i = 0
+            while job_req_cores > half_node_cores:
+                job_to_bind_procs.extend(procset[i:i+half_node_cores])
+                job_req_cores -= half_node_cores
+                i += 2 * half_node_cores
+
+            if job_req_cores != 0:
+                job_to_bind_procs.extend(procset[i:i+job_req_cores])
+
+            job.assigned_procs = ProcSet.from_str(" ".join(
+                [str(processor) for processor in job_to_bind_procs]
+            ))
+            procset -= job.assigned_procs
+                
+            # Assigning processors to best candidate
+            best_candidate.assigned_procs = ProcSet.from_str(" ".join(
+                [
+                    str(processor) 
+                    for processor in procset[:best_candidate.half_node_cores]
+                ]
+            ))
+            procset -= best_candidate.assigned_procs
+
+            idle_cores = job.half_node_cores - best_candidate.half_node_cores
+
+            if idle_cores > 0:
+                new_xunit.append(EmptyJob(Job(
+                    None, 
+                    -1, 
+                    "idle", 
+                    idle_cores, 
+                    idle_cores,
+                    procset,
+                    -1, 
+                    -1,
+                    None, 
+                    None, 
+                    None, 
+                    None
+                )))
+
+        self.cluster.execution_list.append(new_xunit)
+        return True
 
     @abstractmethod
-    def deploy(self):
+    def deploy(self) -> None:
         pass
