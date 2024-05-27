@@ -80,15 +80,15 @@ class Coscheduler(Scheduler, ABC):
                     # speedup for both load and co-load when co-scheduled
 
                     # Get speedup for load when co-scheduled with co-load
-                    self.heatmap[load.full_load_name].update({
-                            co_load.full_load_name: self.engine.predict(
+                    self.heatmap[load.load_name].update({
+                            co_load.load_name: self.engine.predict(
                                 load.get_tag(), co_load.get_tag()
                             )
                     })
 
                     # Get speedup for co-load when co-scheduled with load
-                    self.heatmap[co_load.full_load_name].update({
-                            load.full_load_name: self.engine.predict(
+                    self.heatmap[co_load.load_name].update({
+                            load.load_name: self.engine.predict(
                                 co_load.get_tag(), load.get_tag()
                             )
                     })
@@ -100,23 +100,23 @@ class Coscheduler(Scheduler, ABC):
                     # submit a None value inside the heatmap
 
                     # Get speedup for load when co-scheduled with co-load
-                    self.heatmap[load.full_load_name].update({
+                    self.heatmap[load.load_name].update({
 
-                            co_load.full_load_name:
+                            co_load.load_name:
 
-                            load.get_median_speedup(co_load.full_load_name) 
-                            if co_load.full_load_name in load.coloads
+                            load.get_med_speedup(co_load.load_name) 
+                            if co_load.load_name in load.coscheduled_timelogs
                             else None
 
                     })
 
                     # Get speedup for co-load when co-scheduled with load
-                    self.heatmap[co_load.full_load_name].update({
+                    self.heatmap[co_load.load_name].update({
 
-                            load.full_load_name:
+                            load.load_name:
 
-                            co_load.get_median_speedup(load.full_load_name) 
-                            if load.full_load_name in co_load.coloads
+                            co_load.get_med_speedup(load.load_name) 
+                            if load.load_name in co_load.coscheduled_timelogs
                             else None
 
                     })
@@ -163,7 +163,7 @@ class Coscheduler(Scheduler, ABC):
 
             # Number of idle processors
             # idle_cores = idle_job.binded_cores
-            idle_cores = len(idle_job.assigned_procs)
+            idle_cores = len(idle_job.assigned_cores)
 
             # If idle cores are less than the resources the job wants to consume
             # then the xunit is not a candidate
@@ -173,7 +173,7 @@ class Coscheduler(Scheduler, ABC):
             # If the job can fit then check if it will be co-allocated as the 
             # head job or as a tail job
             #if head_job.binded_cores >= idle_cores:
-            if len(head_job.assigned_procs) >= idle_cores:
+            if len(head_job.assigned_cores) >= idle_cores:
                 # The job will be co-allocated as a tail job
                 # We need to check whether the average speedup of the pairing
                 # will be above the speedup_threshold
@@ -237,7 +237,7 @@ class Coscheduler(Scheduler, ABC):
 
         # It will be a tail job
         # if head_job.binded_cores >= idle_job.binded_cores:
-        if len(head_job.assigned_procs) >= len(idle_job.assigned_procs):
+        if len(head_job.assigned_cores) >= len(idle_job.assigned_cores):
 
             # Calculate the remaining time of the job and the new speedup
             job.ratioed_remaining_time(head_job)
@@ -280,7 +280,7 @@ class Coscheduler(Scheduler, ABC):
         # available processors of the xunit
         # idle_job is responsible to keep track of the idle processors in a
         # xunit
-        for procint in idle_job.assigned_procs.intervals():
+        for procint in idle_job.assigned_cores.intervals():
 
             # If the interval is equal to a half socket then get the whole half
             # socket
@@ -332,17 +332,17 @@ class Coscheduler(Scheduler, ABC):
             if job_req_cores == 0:
                 break
 
-        job.assigned_procs = ProcSet.from_str(" ".join(job_to_bind_procs))
+        job.assigned_cores = ProcSet.from_str(" ".join(job_to_bind_procs))
 
         #if idle_job.binded_cores > job.binded_cores:
-        if len(idle_job.assigned_procs) > len(job.assigned_procs):
+        if len(idle_job.assigned_cores) > len(job.assigned_cores):
             best_candidate.append(EmptyJob(Job(
                 None, 
                 -1, 
                 "idle", 
                 idle_job.binded_cores - job.binded_cores,
                 idle_job.binded_cores - job.binded_cores,
-                idle_job.assigned_procs - job.assigned_procs,
+                idle_job.assigned_cores - job.assigned_cores,
                 -1, 
                 -1,
                 None, 
@@ -425,10 +425,10 @@ class Coscheduler(Scheduler, ABC):
                     if job_req_cores != 0:
                         job_to_bind_procs.extend(procset[i:i+job_req_cores])
 
-                    job.assigned_procs = ProcSet.from_str(" ".join(
+                    job.assigned_cores = ProcSet.from_str(" ".join(
                         [str(processor) for processor in job_to_bind_procs]
                     ))
-                    procset -= job.assigned_procs
+                    procset -= job.assigned_cores
 
                     idle_job = EmptyJob(Job(
                         None, 
@@ -494,16 +494,16 @@ class Coscheduler(Scheduler, ABC):
             if best_candidate_req_cores != 0:
                 best_candidate_to_bind_procs.extend(procset[i:i+best_candidate_req_cores])
 
-            best_candidate.assigned_procs = ProcSet.from_str(" ".join(
+            best_candidate.assigned_cores = ProcSet.from_str(" ".join(
                 [str(processor) for processor in best_candidate_to_bind_procs]
             ))
-            procset -= best_candidate.assigned_procs
+            procset -= best_candidate.assigned_cores
 
             # Assigning processors to job
-            job.assigned_procs = ProcSet.from_str(" ".join([
+            job.assigned_cores = ProcSet.from_str(" ".join([
                 str(processor) for processor in procset[:job.half_node_cores]
             ]))
-            procset -= job.assigned_procs
+            procset -= job.assigned_cores
 
             idle_cores = best_candidate.half_node_cores - job.half_node_cores
             new_xunit.append(EmptyJob(Job(
@@ -539,19 +539,19 @@ class Coscheduler(Scheduler, ABC):
             if job_req_cores != 0:
                 job_to_bind_procs.extend(procset[i:i+job_req_cores])
 
-            job.assigned_procs = ProcSet.from_str(" ".join(
+            job.assigned_cores = ProcSet.from_str(" ".join(
                 [str(processor) for processor in job_to_bind_procs]
             ))
-            procset -= job.assigned_procs
+            procset -= job.assigned_cores
                 
             # Assigning processors to best candidate
-            best_candidate.assigned_procs = ProcSet.from_str(" ".join(
+            best_candidate.assigned_cores = ProcSet.from_str(" ".join(
                 [
                     str(processor) 
                     for processor in procset[:best_candidate.half_node_cores]
                 ]
             ))
-            procset -= best_candidate.assigned_procs
+            procset -= best_candidate.assigned_cores
 
             idle_cores = job.half_node_cores - best_candidate.half_node_cores
 

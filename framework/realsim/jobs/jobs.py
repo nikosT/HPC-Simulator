@@ -23,7 +23,7 @@ class Job:
                  job_name: str, 
                  num_of_processes: int,
                  binded_cores: int,
-                 assigned_procs: ProcSet,
+                 assigned_cores: ProcSet,
                  full_node_cores: int,
                  half_node_cores: int,
                  remaining_time, 
@@ -40,7 +40,7 @@ class Job:
         self.binded_cores = binded_cores
         self.full_node_cores = full_node_cores
         self.half_node_cores = half_node_cores
-        self.assigned_procs = assigned_procs
+        self.assigned_cores = assigned_cores
 
         self.remaining_time = remaining_time
         self.submit_time = submit_time
@@ -64,28 +64,28 @@ class Job:
 
 
     def get_speedup(self, cojob):
-        return self.load.get_median_speedup(cojob.job_name)
+        return self.load.get_med_speedup(cojob.job_name)
 
     def get_overall_speedup(self) -> float:
-        speedups = list()
-        for coload in self.load.coloads:
-            speedups.append(self.load.get_median_speedup(coload))
-        return avg(speedups)
+        speedups: list[float] = list()
+        for coload in self.load.coscheduled_timelogs:
+            speedups.append(self.load.get_med_speedup(coload))
+        return float(avg(speedups))
 
-    def get_max_speedup(self):
-        speedups = list()
-        for coload in self.load.coloads:
+    def get_max_speedup(self) -> float:
+        speedups: list[float] = list()
+        for coload in self.load.coscheduled_timelogs:
             speedups.append(
-                    self.load.get_median_speedup(coload)
+                    self.load.get_med_speedup(coload)
             )
 
         return max(speedups)
 
     def get_min_speedup(self):
-        speedups = list()
-        for coload in self.load.coloads:
+        speedups: list[float] = list()
+        for coload in self.load.coscheduled_timelogs:
             speedups.append(
-                    self.load.get_median_speedup(coload)
+                    self.load.get_med_speedup(coload)
             )
 
         return min(speedups)
@@ -107,7 +107,7 @@ class Job:
                    job_name=self.job_name,
                    num_of_processes=self.num_of_processes,
                    binded_cores=self.binded_cores,
-                   assigned_procs=self.assigned_procs,
+                   assigned_cores=self.assigned_cores,
                    full_node_cores=self.full_node_cores,
                    half_node_cores=self.half_node_cores,
                    remaining_time=self.remaining_time,
@@ -130,7 +130,7 @@ class EmptyJob(Job):
                      job.job_name, 
                      job.num_of_processes, 
                      job.binded_cores, 
-                     job.assigned_procs,
+                     job.assigned_cores,
                      -1, 
                      -1, 
                      None, 
@@ -150,7 +150,7 @@ class EmptyJob(Job):
                             job_name=self.job_name,
                             num_of_processes=self.num_of_processes,
                             binded_cores=self.binded_cores,
-                            assigned_procs=self.assigned_procs,
+                            assigned_cores=self.assigned_cores,
                             full_node_cores=self.full_node_cores,
                             half_node_cores=self.half_node_cores,
                             remaining_time=self.remaining_time,

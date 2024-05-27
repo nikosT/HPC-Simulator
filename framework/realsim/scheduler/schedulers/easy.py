@@ -38,7 +38,7 @@ class EASYScheduler(FIFOScheduler):
         for xunit in execution_list:
 
             running_job = xunit[0]
-            aggr_cores += len(running_job.assigned_procs)
+            aggr_cores += len(running_job.assigned_cores)
 
             if aggr_cores >= blocked_job.full_node_cores:
                 min_estimated_time = running_job.wall_time - (self.cluster.makespan - running_job.start_time)
@@ -66,7 +66,7 @@ class EASYScheduler(FIFOScheduler):
 
                     self.cluster.waiting_queue.remove(b_job)
                     b_job.start_time = self.cluster.makespan
-                    b_job.assigned_procs = procset
+                    b_job.assigned_cores = procset
                     self.cluster.execution_list.append([b_job])
                     self.cluster.total_procs -= procset
 

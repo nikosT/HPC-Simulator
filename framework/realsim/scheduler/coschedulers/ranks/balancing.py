@@ -116,10 +116,10 @@ class BalancingRanksCoscheduler(RanksCoscheduler):
         idle_job = xunit[-1]
 
         # Maximum will always be the number of idle binded cores
-        cores_r = job.half_node_cores / len(idle_job.assigned_procs)
+        cores_r = job.half_node_cores / len(idle_job.assigned_cores)
         cores_r = cores_r if cores_r != 0 else 1
 
-        if job.half_node_cores > len(head_job.assigned_procs):
+        if job.half_node_cores > len(head_job.assigned_cores):
             # worst_neighbor = min(xunit, key=lambda neighbor: job.get_speedup(neighbor) if type(neighbor) != EmptyJob else math.inf)
             worst_neighbor = min(xunit, 
                                  key=lambda neighbor: 
@@ -161,8 +161,8 @@ class BalancingRanksCoscheduler(RanksCoscheduler):
 
             # Calculate co-scheduled xunit's inner fragmentation
             idle_job: Job = xunit[-1]
-            total_binded_cores = sum([len(job.assigned_procs) for job in xunit])
-            inner_frags.append(len(idle_job.assigned_procs) / total_binded_cores)
+            total_binded_cores = sum([len(job.assigned_cores) for job in xunit])
+            inner_frags.append(len(idle_job.assigned_cores) / total_binded_cores)
 
         self.avg_xunits_speedup = float(avg(xunit_speedup))
         self.system_load = 1.0 - len(self.cluster.total_procs) / self.cluster.total_cores

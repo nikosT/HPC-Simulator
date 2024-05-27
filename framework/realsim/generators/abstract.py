@@ -35,16 +35,16 @@ class AbstractGenerator(abc.ABC, Generic[T]):
         seed(time_ns() % (2**32))
         return Job(load=load,
                    job_id=idx,
-                   job_name=load.full_load_name,
+                   job_name=load.load_name,
                    num_of_processes=load.num_of_processes,
                    binded_cores=load.num_of_processes,
-                   assigned_procs=ProcSet(),
+                   assigned_cores=ProcSet(),
                    half_node_cores=-1,
                    full_node_cores=-1,
-                   remaining_time=load.get_avg(),
+                   remaining_time=load.get_avg_time(),
                    submit_time=0,
                    waiting_time=0,
-                   wall_time=(1.15 * load.get_avg()))
+                   wall_time=(1.15 * load.get_avg_time()))
 
     @abc.abstractmethod
     def generate_jobs_set(self, arg: T) -> list[Job]:

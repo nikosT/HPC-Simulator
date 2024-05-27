@@ -82,7 +82,7 @@ class RanksCoscheduler(Coscheduler, ABC):
             self.cluster.waiting_queue.remove(job)
             job.start_time = self.cluster.makespan
             job.binded_cores = job.full_node_cores
-            job.assigned_procs = procset
+            job.assigned_cores = procset
             self.cluster.execution_list.append([job])
             self.cluster.total_procs -= procset
             # self.cluster.free_cores -= job.binded_cores
@@ -185,7 +185,7 @@ class RanksCoscheduler(Coscheduler, ABC):
             else:
                 head_job = xunit[0]
                 last_job = xunit[-1] # possible idle job
-                if blocked_job.half_node_cores <= max(len(head_job.assigned_procs), len(last_job.assigned_procs)):
+                if blocked_job.half_node_cores <= max(len(head_job.assigned_cores), len(last_job.assigned_cores)):
                     xunits_for_colocation.append(xunit)
                 else:
                     xunits_for_merge.append(xunit)
@@ -196,14 +196,14 @@ class RanksCoscheduler(Coscheduler, ABC):
 
         for xunit in xunits_for_merge:
             if len(xunit) == 1:
-                if len(xunit[0].assigned_procs) + aggr_cores >= 2 * blocked_job.half_node_cores:
+                if len(xunit[0].assigned_cores) + aggr_cores >= 2 * blocked_job.half_node_cores:
                     estimated_start_time_merge = self.xunit_estimated_finish_time(xunit)
                     break
                 else:
-                    aggr_cores += len(xunit[0].assigned_procs)
+                    aggr_cores += len(xunit[0].assigned_cores)
             else:
                 xunit_binded_cores = sum([
-                    len(job.assigned_procs) for job in xunit
+                    len(job.assigned_cores) for job in xunit
                 ])
 
                 if xunit_binded_cores + aggr_cores >= 2 * blocked_job.half_node_cores:
@@ -220,15 +220,15 @@ class RanksCoscheduler(Coscheduler, ABC):
             last_job = xunit_copy[-1]
             if type(last_job) == EmptyJob:
                 xunit_copy.remove(last_job)
-                aggr_cores = len(last_job.assigned_procs)
+                aggr_cores = len(last_job.assigned_cores)
 
             xunit_copy.sort(key=lambda job: job.wall_time / job.get_min_speedup() + job.start_time - self.cluster.makespan)
             for job in xunit_copy:
-                if len(job.assigned_procs) + aggr_cores >= blocked_job.half_node_cores:
+                if len(job.assigned_cores) + aggr_cores >= blocked_job.half_node_cores:
                     estimations.append(job.wall_time / job.get_min_speedup() + job.start_time - self.cluster.makespan)
                     break
                 else:
-                    aggr_cores += len(job.assigned_procs)
+                    aggr_cores += len(job.assigned_cores)
 
         # The estimated start time is the minimum of the two options
         # to be coscheduled in an xunit or to create an xunit

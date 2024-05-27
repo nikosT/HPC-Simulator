@@ -78,22 +78,22 @@ class ClusterExhaustive(AbstractCluster):
 
                 if type(job) != EmptyJob:
                     # Set the largest non empty job as first in substitute_unit
-                    if len(job.assigned_procs) > max_binded_cores:
+                    if len(job.assigned_cores) > max_binded_cores:
                         substitute_unit.insert(0, job)
-                        max_binded_cores = len(job.assigned_procs)
+                        max_binded_cores = len(job.assigned_cores)
                     else:
                     # Else put it as a tail job
                         substitute_unit.append(job)
                 else:
                     # If it is an EmptyJob record the amount of idle cores
-                    # idle_cores += len(job.assigned_procs)
-                    idle_procs |= job.assigned_procs
+                    # idle_cores += len(job.assigned_cores)
+                    idle_procs |= job.assigned_cores
 
 
             # If there is any job still executing
             if len(substitute_unit) > 1:
 
-                sub_unit_cores = sum([len(job.assigned_procs) for job in substitute_unit])
+                sub_unit_cores = sum([len(job.assigned_cores) for job in substitute_unit])
 
                 # If the number of idle cores is larger than the number of utilized
                 # cores then all the remaining jobs in the xunit will be executing as spread
@@ -155,7 +155,7 @@ class ClusterExhaustive(AbstractCluster):
 
             if len(xunit) == 1 and type(xunit[0]) == EmptyJob:
                 # self.free_cores += xunit[0].binded_cores
-                self.total_procs |= xunit[0].assigned_procs
+                self.total_procs |= xunit[0].assigned_cores
                 execution_list.remove(xunit)
 
         # Execution list re-assignment

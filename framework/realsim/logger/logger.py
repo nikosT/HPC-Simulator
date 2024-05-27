@@ -179,7 +179,7 @@ class Logger(object):
         self.job_events[job_key]["trace"][-1][-1] = self.cluster.makespan
 
         # Set the assigned processors for the job
-        self.job_events[job_key]["assigned procs"] = job.assigned_procs
+        self.job_events[job_key]["assigned procs"] = job.assigned_cores
 
         # Record a checkpoint
         self.cluster_events["checkpoints"].add(
