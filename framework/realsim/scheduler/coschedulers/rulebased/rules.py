@@ -6,74 +6,110 @@ sys.path.append(os.path.abspath(os.path.join(
     os.path.dirname(__file__), "../../../../"
 )))
 
-from realsim.jobs.jobs import Job, EmptyJob
+from realsim.jobs.jobs import Job, EmptyJob, JobTag
 from realsim.jobs.utils import deepcopy_list
 from realsim.scheduler.coscheduler import Coscheduler, ScikitModel
-
-from abc import ABC
 import math
 
+from abc import ABC
 
-class RanksCoscheduler(Coscheduler, ABC):
 
-    name = "Ranks Co-Scheduler"
-    description = """Rank is the measure of how many good pairs a job can 
-    construct. If a job reaches rank 0, then it is not capable for co-scheduling
-    and is allocated for exclusive compact execution."""
+class RulesCoscheduler(Coscheduler):
 
-    def __init__(self,
-                 backfill_enabled: bool = False,
-                 speedup_threshold: float = 1.0,
-                 ranks_threshold: float = 1.0,
-                 system_utilization: float = 1.0,
-                 engine: Optional[ScikitModel] = None):
+    name = "Rules Co-Scheduler"
+    description = """Rules-based co-scheduling """
 
-        Coscheduler.__init__(self, 
-                             backfill_enabled, 
-                             speedup_threshold, 
-                             system_utilization, 
-                             engine)
+    def __init__(self):
+        Coscheduler.__init__(self)
+        self.backfill_enabled = True
 
-        self.ranks : dict[int, int] = dict() # jobId --> number of good pairings
-        self.ranks_threshold = ranks_threshold
+    def satisfies_coscheduling_rules(self, jobA: Job, jobB: Job) -> bool:
+        if jobA.job_tag == JobTag.SPREAD and jobB.job_tag == JobTag.ROBUST:
+            return True
+        if jobA.job_tag == JobTag.ROBUST and jobB.job_tag == JobTag.SPREAD:
+            return True
+        if jobA.job_tag == JobTag.FRAIL and jobB.job_tag == JobTag.ROBUST:
+            return True
+        if jobA.job_tag == JobTag.ROBUST and jobB.job_tag == JobTag.FRAIL:
+            return True
 
-    def update_ranks(self):
+        return False
 
-        self.ranks = {job.job_id : 0 for job in self.cluster.waiting_queue}
+    def waiting_job_candidates_reorder(self, job: Job, co_job: Job) -> float:
+        return 1.0
 
-        # Update ranks for each job
-        for i, job in enumerate(self.cluster.waiting_queue):
-
-            for co_job in self.cluster.waiting_queue[i+1:]:
-
-                job_speedup = self.heatmap[job.job_name][co_job.job_name]
-                co_job_speedup = self.heatmap[co_job.job_name][job.job_name]
-
-                if job_speedup is None or co_job_speedup is None:
-                    continue
-
-                avg_speedup = (job_speedup + co_job_speedup) / 2
-
-                if avg_speedup > self.ranks_threshold:
-                    self.ranks[job.job_id] += 1
-                    self.ranks[co_job.job_id] += 1
-
-    def setup(self):
-
-        # Create heatmap
-        Coscheduler.setup(self)
-
-        # Create ranks
-        self.update_ranks()
+    def xunit_candidates_reorder(self, job: Job, xunit: list[Job]) -> float:
+        return 1.0
 
     def after_deployment(self, *args):
-        self.update_ranks()
+        """After deploying a job in a pair or compact then some after processing
+        events may need to take place. For example to calculate values necesary
+        for the heuristics functions (e.g. the fragmentation of the cluster)
+        """
+        pass
+
+    def best_xunit_candidate(self, job: Job) -> Optional[list[Job]]:
+        """Return an executing unit (block of jobs) that is the best candidate
+        for co-execution for a job. If no suitable xunit is found return None.
+
+        + job: the job to find the best xunit candidate on its requirements
+        """
+
+        # Get xunit candidates that satisfy the resources and speedup 
+        # requirements
+        for xunit in self.cluster.nonfilled_xunits():
+
+            # Get the head job (largest job) and test its number of binded cores
+            # (processors) with the idle job (job doing nothing) to see if the
+            # jobs inside the xunit execute as spread or co-scheduled
+            #
+            # Spread means that the jobs are executing at top speedup while
+            # co-scheduled means that their speedup is regulated by each other's
+            # resource consumption
+            #
+            head_job: Job = xunit[0]
+            idle_job: Job = xunit[-1]
+
+            # Number of idle processors
+            # idle_cores = idle_job.binded_cores
+            idle_cores = len(idle_job.assigned_cores)
+
+            # If idle cores are less than the resources the job wants to consume
+            # then the xunit is not a candidate
+            if job.half_node_cores > idle_cores:
+                continue
+
+            if self.satisfies_coscheduling_rules(head_job, job):
+                return xunit
+
+        # If no candidates are found in the xunits return None
+        return None
+
+    def best_wjob_candidates(self, job: Job, waiting_queue_slice: list[Job]) -> Optional[Job]:
+
+        for wjob in waiting_queue_slice:
+
+            # The speedup values must exist
+            conditions  = self.heatmap[job.job_name][wjob.job_name] is not None
+            if not conditions:
+                continue
+            # The pair must fit in the remaining free processors of the cluster
+            # conditions &= 2 * max(job.half_node_cores, wjob.half_node_cores) <= len(self.cluster.total_procs)
+            conditions &= self.assign_nodes(
+                    2 * max(job.half_node_cores, wjob.half_node_cores), 
+                    self.cluster.total_procs) is not None
+            # The pair's average speedup must be higher than the user defined
+            # speedup threshold
+            conditions &= self.satisfies_coscheduling_rules(wjob, job)
+
+            # If it satisfies all the conditions then it is a candidate pairing job
+            if conditions:
+                return wjob
+
+        # If no waiting job satisfies the conditions then return None
+        return None
 
     def allocation_as_compact(self, job: Job) -> bool:
-
-        # The job is not eligible for compact execution
-        if self.ranks[job.job_id] != 0:
-            return False
 
         procset = self.assign_nodes(job.full_node_cores, self.cluster.total_procs)
 
@@ -85,7 +121,6 @@ class RanksCoscheduler(Coscheduler, ABC):
             job.assigned_cores = procset
             self.cluster.execution_list.append([job])
             self.cluster.total_procs -= procset
-            # self.cluster.free_cores -= job.binded_cores
 
             return True
 
@@ -94,39 +129,42 @@ class RanksCoscheduler(Coscheduler, ABC):
 
     def deploy(self) -> None:
 
-        #print(f"BEFORE: Free cores = {self.cluster.free_cores}")
-        self.update_ranks()
-
         waiting_queue = deepcopy_list(self.cluster.waiting_queue)
-        waiting_queue.sort(key=lambda job: self.waiting_queue_reorder(job),
-                           reverse=True)
 
         while waiting_queue != []:
 
             # Remove from the waiting queue
             job = self.pop(waiting_queue)
 
-            # Try to fit the job in an xunit
-            res = self.colocation_to_xunit(job)
+            if job.job_tag in [JobTag.COMPACT, JobTag.FRAIL]:
+                # Check if it is eligible for compact allocation
+                res = self.allocation_as_compact(job)
 
-            if res:
-                self.after_deployment()
-                continue
+                if res:
+                    self.after_deployment()
+                    continue
+            else:
+                # Try to fit the job in an xunit
+                res = self.colocation_to_xunit(job)
 
-            # Check if it is eligible for compact allocation
-            res = self.allocation_as_compact(job)
+                if res:
+                    self.after_deployment()
+                    continue
 
-            if res:
-                self.after_deployment()
-                continue
+                # Check if there is a waiting job that can pair up with the job
+                # and that they are allowed to allocate in the cluster
+                res = self.colocation_with_wjobs(job, waiting_queue)
 
-            # Check if there is a waiting job that can pair up with the job
-            # and that they are allowed to allocate in the cluster
-            res = self.colocation_with_wjobs(job, waiting_queue)
+                if res:
+                    self.after_deployment()
+                    continue
 
-            if res:
-                self.after_deployment()
-                continue
+                # Check if it is eligible for compact allocation
+                res = self.allocation_as_compact(job)
+
+                if res:
+                    self.after_deployment()
+                    continue
 
             # All the allocation tries have failed. Return the job at the first
             # out position and reassign the waiting queue of the cluster
@@ -134,7 +172,6 @@ class RanksCoscheduler(Coscheduler, ABC):
             self.cluster.waiting_queue = waiting_queue
             break
 
-        #print(f"AFTER: Free cores = {self.cluster.free_cores}")
         return
 
     def xunit_estimated_finish_time(self, xunit: list[Job]) -> float:
@@ -248,39 +285,17 @@ class RanksCoscheduler(Coscheduler, ABC):
             if estimated_start_time_coloc is not None and\
                     estimated_start_time_coloc < estimated_start_time_merge:
 
-                res = self.colocation_to_xunit(backfill_job)
 
-                if res:
-                    self.after_deployment()
-                    continue
-
-                # Check if it is eligible for compact allocation
-                res = self.allocation_as_compact(backfill_job)
-
-                if res:
-                    self.after_deployment()
-                    continue
-
-                # Check if there is a waiting job that can pair up with the job
-                # and that they are allowed to allocate in the cluster
-                res = self.colocation_with_wjobs(backfill_job, waiting_queue)
-
-                if res:
-                    self.after_deployment()
-                    continue
-
-            else:
-                if backfill_job.wall_time <= estimated_start_time_merge:
-
-                    # Try to fit the job in an xunit
-                    res = self.colocation_to_xunit(backfill_job)
+                if backfill_job.job_tag in [JobTag.COMPACT, JobTag.FRAIL]:
+                    # Check if it is eligible for compact allocation
+                    res = self.allocation_as_compact(backfill_job)
 
                     if res:
                         self.after_deployment()
                         continue
-
-                    # Check if it is eligible for compact allocation
-                    res = self.allocation_as_compact(backfill_job)
+                else:
+                    # Try to fit the job in an xunit
+                    res = self.colocation_to_xunit(backfill_job)
 
                     if res:
                         self.after_deployment()
@@ -293,3 +308,28 @@ class RanksCoscheduler(Coscheduler, ABC):
                     if res:
                         self.after_deployment()
                         continue
+
+            else:
+                if backfill_job.wall_time <= estimated_start_time_merge:
+                    if backfill_job.job_tag in [JobTag.COMPACT, JobTag.FRAIL]:
+                        # Check if it is eligible for compact allocation
+                        res = self.allocation_as_compact(backfill_job)
+
+                        if res:
+                            self.after_deployment()
+                            continue
+                    else:
+                        # Try to fit the job in an xunit
+                        res = self.colocation_to_xunit(backfill_job)
+
+                        if res:
+                            self.after_deployment()
+                            continue
+
+                        # Check if there is a waiting job that can pair up with the job
+                        # and that they are allowed to allocate in the cluster
+                        res = self.colocation_with_wjobs(backfill_job, waiting_queue)
+
+                        if res:
+                            self.after_deployment()
+                            continue

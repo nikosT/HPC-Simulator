@@ -15,6 +15,13 @@ from numpy import isnan
 from procset import ProcSet
 
 
+class JobTag:
+    COMPACT = 0
+    SPREAD = 1
+    ROBUST = 2
+    FRAIL = 3
+
+
 class Job:
 
     def __init__(self, 
@@ -50,6 +57,8 @@ class Job:
         self.start_time: float = 0.0
         self.speedup = 1
 
+        self.job_tag = JobTag.COMPACT
+
 
     def __eq__(self, job):
         if not isinstance(job, Job):
@@ -57,7 +66,8 @@ class Job:
         return self.load == job.load and self.job_id == job.job_id and self.job_name == job.job_name and self.num_of_processes == job.num_of_processes\
                 and self.binded_cores == job.binded_cores\
                 and self.remaining_time == job.remaining_time and self.submit_time == job.submit_time\
-                and self.wall_time == job.wall_time and self.start_time == job.start_time and self.speedup == job.speedup
+                and self.wall_time == job.wall_time and self.start_time == job.start_time and self.speedup == job.speedup\
+                and self.job_tag == job.job_tag
 
     def __repr__(self) -> str:
         return "{" + f"{self.job_id}, {self.job_name} : {self.remaining_time}, {self.speedup}, {self.binded_cores}" + "}"
@@ -117,6 +127,7 @@ class Job:
 
         copy.start_time = self.start_time
         copy.speedup = self.speedup
+        copy.job_tag = self.job_tag
 
         return copy
 

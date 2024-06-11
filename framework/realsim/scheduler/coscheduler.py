@@ -143,7 +143,7 @@ class Coscheduler(Scheduler, ABC):
         + job: the job to find the best xunit candidate on its requirements
         """
 
-        # We need to create a list of suitors for the job at the beginning
+        # We need to create a list of suitors for the job
         candidates: list[list[Job]] = list()
 
         # Get xunit candidates that satisfy the resources and speedup 
@@ -407,6 +407,7 @@ class Coscheduler(Scheduler, ABC):
                     # Create a spread xunit
                     new_xunit: list[Job] = list()
 
+                    self.cluster.total_procs -= procset
                     self.cluster.waiting_queue.remove(job)
                     job.start_time = self.cluster.makespan
                     job.remaining_time *= (1 / job.get_max_speedup())
@@ -417,7 +418,7 @@ class Coscheduler(Scheduler, ABC):
                     job_req_cores = job.half_node_cores
                     job_to_bind_procs = []
                     i = 0
-                    while job_req_cores > half_node_cores:
+                    while job_req_cores >= half_node_cores:
                         job_to_bind_procs.extend(procset[i:i+half_node_cores])
                         job_req_cores -= half_node_cores
                         i += 2 * half_node_cores

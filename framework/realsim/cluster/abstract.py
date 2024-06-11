@@ -3,12 +3,13 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
-from realsim.jobs import Job, EmptyJob
+from realsim.jobs import Job, EmptyJob, JobTag
 from realsim.jobs.utils import deepcopy_list
 from realsim.scheduler.scheduler import Scheduler
 from realsim.logger.logger import Logger
 
 import math
+import numpy as np
 from typing import Optional
 from procset import ProcSet
 
@@ -76,6 +77,22 @@ class AbstractCluster(abc.ABC):
             job.job_id = self.id_counter
             job.half_node_cores = int(math.ceil(job.num_of_processes / (self.cores_per_node / 2)) * (self.cores_per_node / 2))
             job.full_node_cores = int(math.ceil(job.num_of_processes / self.cores_per_node) * self.cores_per_node)
+
+            speedups = [job.load.get_med_speedup(co_load)
+                        for co_load in job.load.coscheduled_timelogs.keys()]
+            avg = round(float(np.average(speedups)), 2)
+            std = round(float(np.std(speedups)), 2)
+
+            if avg > 1.02:
+                job.job_tag = JobTag.SPREAD
+            elif avg < 0.98:
+                job.job_tag = JobTag.COMPACT
+            else:
+                if std > 0.07:
+                    job.job_tag = JobTag.FRAIL
+                else:
+                    job.job_tag = JobTag.ROBUST
+
             self.id_counter += 1
             self.preloaded_queue.append(job)
 
