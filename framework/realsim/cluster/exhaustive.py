@@ -24,6 +24,9 @@ class ClusterExhaustive(AbstractCluster):
     def next_state(self):
         """Execute the jobs in the execution list
         """
+        print()
+        print(len(self.waiting_queue))
+        print()
 
         # Find smallest remaining time of executing jobs
         min_rem_time = math.inf

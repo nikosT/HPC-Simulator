@@ -37,6 +37,8 @@ class AbstractCluster(abc.ABC):
 
         # Loaded jobs to pre-waiting queue based on their queued time
         self.preloaded_queue: list[Job] = list()
+        # Waiting queue size
+        self.queue_size = math.inf
         # The generated jobs are first deployed here
         self.waiting_queue: list[Job] = list()
         # The queue of jobs that are executing
@@ -102,8 +104,26 @@ class AbstractCluster(abc.ABC):
 
         for job in copy:
             if job.submit_time <= self.makespan:
-                self.waiting_queue.append(job)
-                self.preloaded_queue.remove(job)
+                if self.queue_size == 0 and\
+                        len(self.waiting_queue) == 0 and\
+                        self.scheduler.assign_nodes(job.full_node_cores, self.total_procs) is not None:
+                            self.preloaded_queue.remove(job)
+                            job.submit_time = self.makespan
+                            self.waiting_queue.append(job)
+
+                if self.queue_size == 1 and\
+                        len(self.waiting_queue) == 0:
+                            self.preloaded_queue.remove(job)
+                            job.submit_time = self.makespan
+                            self.waiting_queue.append(job)
+
+                elif self.queue_size > 0 and len(self.waiting_queue) < self.queue_size:
+                        self.preloaded_queue.remove(job)
+                        job.submit_time = self.makespan
+                        self.waiting_queue.append(job)
+
+                else:
+                    break
 
     def filled_xunits(self) -> list[list[Job]]:
         """Return all the executing units that have no empty space. All the

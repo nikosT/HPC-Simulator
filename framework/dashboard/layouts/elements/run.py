@@ -118,8 +118,8 @@ clientside_callback(
         Input("simulation-run-btn", "n_clicks"),
 
         # Generator args
-        State("workloads-machines-select", "value"),
-        State("workloads-suites-select", "value"),
+        State("datalogs-machines-select", "value"),
+        State("datalogs-suites-select", "value"),
         State("generator-type", "value"),
         State("generator-options", "children"),
 
@@ -176,19 +176,25 @@ def parallel_simulations(par_inp):
                 seed(time_ns() % (2 ** 32))
                 current_time += randint(low=0, high=generator_time, size=(1,))[0]
         elif simulation_distribution == "Poisson":
+            # For experimental reasons let's create packets of 50 jobs each
+            interpacket_diff = 50 * 5 * generator_time
             current_time = exponential(generator_time)
+            i = 0
             for job in jobs_set:
+                if i % 50 == 0:
+                    current_time += interpacket_diff
                 job.submit_time = current_time
                 current_time += exponential(generator_time)
+                i += 1
         else:
             pass
 
     # Unpack cluster bundle
-    nodes, ppn = cluster_bundle
+    nodes, ppn, queue_size = cluster_bundle
 
     # Setup simulation
     sim = Simulation(jobs_set, 
-                     nodes, ppn, 
+                     nodes, ppn, queue_size,
                      schedulers_bundle)
     sim.set_default("Default Scheduler")
 
@@ -204,16 +210,17 @@ def parallel_simulations(par_inp):
         Output("results-store", "data"),
         Output("results-modal", "is_open", True),
         Input("run-store", "data"),
+        State("queue-size", "value"),
         prevent_initial_call=True
 )
-def run_simulation(data):
+def run_simulation(data, queue_size):
 
     # Create load manager
-    if data["workloads-suite"] == "All":
-        lm = LoadManager(machine=data["workloads-machine"])
+    if data["datalogs-suite"] == "All":
+        lm = LoadManager(machine=data["datalogs-machine"])
     else:
-        lm = LoadManager(machine=data["workloads-machine"],
-                         suite=data["workloads-suite"])
+        lm = LoadManager(machine=data["datalogs-machine"],
+                         suite=data["datalogs-suite"])
     lm.import_from_db(host="mongodb+srv://cslab:bQt5TU6zQsu_LZ@storehouse.om2d9c0.mongodb.net",
                       dbname="storehouse")
     
@@ -242,7 +249,8 @@ def run_simulation(data):
     # Setup cluster bundle
     cluster_bundle = (
             data["cluster-nodes"],
-            data["cluster-ppn"]
+            data["cluster-ppn"],
+            queue_size
     )
 
     # Setup schedulers bundle

@@ -2,6 +2,7 @@ from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 from multiprocessing import Manager
 import os
 import sys
+import math
 
 sys.path.append(os.path.abspath(os.path.join(
     os.path.dirname(__file__), "../"
@@ -59,7 +60,7 @@ class Simulation:
                  # generator bundle
                  jobs_set,
                  # cluster
-                 nodes: int, ppn: int,
+                 nodes: int, ppn: int, queue_size: int,
                  # scheduler algorithms bundled with inputs
                  schedulers_bundle):
 
@@ -78,6 +79,10 @@ class Simulation:
 
             # Setup cluster
             cluster = ClusterExhaustive(nodes, ppn)
+            if queue_size == -1:
+                cluster.queue_size = math.inf
+            else:
+                cluster.queue_size = queue_size
             cluster.preload_jobs(jobs_set)
 
             # Setup scheduler
