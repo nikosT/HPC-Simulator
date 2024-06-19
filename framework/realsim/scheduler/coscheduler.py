@@ -136,6 +136,61 @@ class Coscheduler(Scheduler, ABC):
         """
         pass
 
+    def allocation_as_spread(self, job: Job) -> bool:
+
+        system_utilization = 1 - len(self.cluster.total_procs) / (self.cluster.nodes * self.cluster.cores_per_node)
+        if system_utilization <= self.system_utilization:
+            procset = self.assign_nodes(2 * job.half_node_cores, self.cluster.total_procs)
+            if procset is not None:
+
+                # Create a spread xunit
+                new_xunit: list[Job] = list()
+
+                self.cluster.total_procs -= procset
+                self.cluster.waiting_queue.remove(job)
+                job.start_time = self.cluster.makespan
+                job.remaining_time *= (1 / job.get_max_speedup())
+                job.speedup = job.get_max_speedup()
+
+                # Allocate cores to job
+                half_node_cores = int(self.cluster.cores_per_node / 2)
+                job_req_cores = job.half_node_cores
+                job_to_bind_procs = []
+                i = 0
+                while job_req_cores >= half_node_cores:
+                    job_to_bind_procs.extend(procset[i:i+half_node_cores])
+                    job_req_cores -= half_node_cores
+                    i += 2 * half_node_cores
+
+                if job_req_cores != 0:
+                    job_to_bind_procs.extend(procset[i:i+job_req_cores])
+
+                job.assigned_cores = ProcSet.from_str(" ".join(
+                    [str(processor) for processor in job_to_bind_procs]
+                ))
+                procset -= job.assigned_cores
+
+                idle_job = EmptyJob(Job(
+                    None, 
+                    -1, 
+                    "idle", 
+                    -1, 
+                    -1, 
+                    procset, 
+                    -1, 
+                    -1,
+                    None, 
+                    None, 
+                    None, 
+                    None
+                ))
+
+                new_xunit.extend([job, idle_job])
+                self.cluster.execution_list.append(new_xunit)
+                return True
+        
+        return False
+
     def best_xunit_candidate(self, job: Job) -> Optional[list[Job]]:
         """Return an executing unit (block of jobs) that is the best candidate
         for co-execution for a job. If no suitable xunit is found return None.
@@ -399,58 +454,7 @@ class Coscheduler(Scheduler, ABC):
         if best_candidate is None:
             # IDEA: spread execution here?
             # If there isn't any candidate (yet) for the job then try spread
-            system_utilization = 1 - len(self.cluster.total_procs) / (self.cluster.nodes * self.cluster.cores_per_node)
-            if system_utilization <= self.system_utilization:
-                procset = self.assign_nodes(2 * job.half_node_cores, self.cluster.total_procs)
-                if procset is not None:
-
-                    # Create a spread xunit
-                    new_xunit: list[Job] = list()
-
-                    self.cluster.total_procs -= procset
-                    self.cluster.waiting_queue.remove(job)
-                    job.start_time = self.cluster.makespan
-                    job.remaining_time *= (1 / job.get_max_speedup())
-                    job.speedup = job.get_max_speedup()
-
-                    # Allocate cores to job
-                    half_node_cores = int(self.cluster.cores_per_node / 2)
-                    job_req_cores = job.half_node_cores
-                    job_to_bind_procs = []
-                    i = 0
-                    while job_req_cores >= half_node_cores:
-                        job_to_bind_procs.extend(procset[i:i+half_node_cores])
-                        job_req_cores -= half_node_cores
-                        i += 2 * half_node_cores
-
-                    if job_req_cores != 0:
-                        job_to_bind_procs.extend(procset[i:i+job_req_cores])
-
-                    job.assigned_cores = ProcSet.from_str(" ".join(
-                        [str(processor) for processor in job_to_bind_procs]
-                    ))
-                    procset -= job.assigned_cores
-
-                    idle_job = EmptyJob(Job(
-                        None, 
-                        -1, 
-                        "idle", 
-                        -1, 
-                        -1, 
-                        procset, 
-                        -1, 
-                        -1,
-                        None, 
-                        None, 
-                        None, 
-                        None
-                    ))
-
-                    new_xunit.extend([job, idle_job])
-                    self.cluster.execution_list.append(new_xunit)
-                    return True
-
-            return False
+            return self.allocation_as_spread(job)
 
         new_xunit: list[Job] = list()
 

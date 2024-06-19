@@ -113,6 +113,13 @@ class RanksCoscheduler(Coscheduler, ABC):
                 self.after_deployment()
                 continue
 
+            # Check if it is eligible for spread allocation
+            res = self.allocation_as_spread(job)
+
+            if res:
+                self.after_deployment()
+                continue
+
             # Check if it is eligible for compact allocation
             res = self.allocation_as_compact(job)
 
@@ -254,6 +261,13 @@ class RanksCoscheduler(Coscheduler, ABC):
                     self.after_deployment()
                     continue
 
+                # Check if it is eligible for spread allocation
+                res = self.allocation_as_spread(backfill_job)
+
+                if res:
+                    self.after_deployment()
+                    continue
+
                 # Check if it is eligible for compact allocation
                 res = self.allocation_as_compact(backfill_job)
 
@@ -274,6 +288,13 @@ class RanksCoscheduler(Coscheduler, ABC):
 
                     # Try to fit the job in an xunit
                     res = self.colocation_to_xunit(backfill_job)
+
+                    if res:
+                        self.after_deployment()
+                        continue
+
+                    # Check if it is eligible for spread allocation
+                    res = self.allocation_as_spread(backfill_job)
 
                     if res:
                         self.after_deployment()
