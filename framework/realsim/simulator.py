@@ -37,6 +37,7 @@ def run_sim(core):
             "Resource usage": logger.get_resource_usage(),
             "Gantt diagram": logger.get_gantt_representation(),
             "Jobs utilization": logger.get_jobs_utilization(default_logger),
+            "Waiting queue": logger.get_waiting_queue_graph(),
             "Makespan speedup": default_cluster_makespan / cluster.makespan
     }
 

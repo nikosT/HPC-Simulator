@@ -59,7 +59,7 @@ class Logger(object):
                     "remaining time": [],
                     "start time": 0,
                     "finish time": 0,
-                    "arrival time": 0,
+                    "submit time": 0,
                     "waiting time": 0
             }
             self.job_events[f"{job.job_id}:{job.job_name}"] = jevts
@@ -189,7 +189,7 @@ class Logger(object):
         # Record the arrival and waiting time
         self.job_events[job_key]["start time"] = job.start_time
         self.job_events[job_key]["finish time"] = self.cluster.makespan
-        self.job_events[job_key]["arrival time"] = job.submit_time
+        self.job_events[job_key]["submit time"] = job.submit_time
         self.job_events[job_key]["waiting time"] = job.waiting_time
 
         # Record the number of used cores at this checkpoint
@@ -227,7 +227,7 @@ class Logger(object):
                     fillcolor=jcolors[idx],
                     showlegend=False,
                     name=f"<b>{key}</b><br>"+
-                    f"arrival time = {jevt['arrival time']:.2f} s<br>"+
+                    f"submit time = {jevt['submit time']:.2f} s<br>"+
                     f"start time = {jevt['start time']:.2f} s<br>"+
                     f"finish time = {jevt['finish time']:.2f} s<br>"+
                     f"waiting time = {jevt['waiting time']:.2f} s<br>"+
@@ -526,10 +526,34 @@ class Logger(object):
             # Utilization numbers
             job_points = {
                     "speedup": (max(their_job_times) - min(their_job_times)) / (max(our_job_times) - min(our_job_times)),
-                    "turnaround": (max(their_job_times) - logger.job_events[job_key]["arrival time"]) / (max(our_job_times) - self.job_events[job_key]["arrival time"]),
+                    "turnaround": (max(their_job_times) - logger.job_events[job_key]["submit time"]) / (max(our_job_times) - self.job_events[job_key]["submit time"]),
                     "waiting": logger.job_events[job_key]["waiting time"] - self.job_events[job_key]["waiting time"]
             }
 
             points[job_key] = job_points
 
         return points
+
+    def get_waiting_queue_graph(self):
+        num_of_jobs: list[int] = list()
+        for check in sorted(list(self.cluster_events["checkpoints"])):
+            jobs_in_check = 0
+            for _, jevt in self.job_events.items():
+                if jevt["submit time"] <= check and jevt["start time"] > check:
+                    jobs_in_check += 1
+            num_of_jobs.append(jobs_in_check)
+
+        scatter = go.Scatter(
+                x=sorted(list(self.cluster_events["checkpoints"])),
+                y=num_of_jobs,
+                mode="lines"
+        )
+
+        fig = go.Figure(data=scatter)
+        fig.update_layout(
+                title="<b>Waiting queue number of jobs per checkpoint</b>",
+                title_x=0.5,
+                xaxis=dict(title="<b>Time (s)</b>"),
+                yaxis=dict(title="<b>Number of jobs</b>")
+        )
+        return fig.to_json()

@@ -92,6 +92,18 @@ Object.assign(window.dash_clientside.clientside, {
 					}
 				}
 
+				let waiting_queue_btn = {
+					'type': 'Button',
+					'namespace': 'dash_bootstrap_components',
+					'props': {
+						'children': 'Waiting queue',
+						'style': {'width': '100%'},
+						'color': 'primary',
+						'outline': true,
+						'href': '#' + unique_id + '~waiting_queue'
+					}
+				}
+
 				if (sched_name == 'Default Scheduler') {
 					exp_collapse_children.push({
 						'type': 'Container',
@@ -100,7 +112,8 @@ Object.assign(window.dash_clientside.clientside, {
 							'children': [
 								label,
 								resource_usage_btn,
-								gantt_btn
+								gantt_btn,
+								waiting_queue_btn
 							]
 						}
 					})
@@ -114,7 +127,8 @@ Object.assign(window.dash_clientside.clientside, {
 								label,
 								resource_usage_btn,
 								gantt_btn,
-								jobs_utilization_btn
+								jobs_utilization_btn,
+								waiting_queue_btn
 							]
 						}
 					})
@@ -202,7 +216,10 @@ Object.assign(window.dash_clientside.clientside, {
 			if (graph == "Resource usage") {
 				Plotly.newPlot("results-graph", JSON.parse(data[experiment][scheduler][graph]), {'displayModeBar': false})
 			}
-			if (graph == "Gantt diagram") {
+			else if (graph == "Gantt diagram") {
+				Plotly.newPlot("results-graph", JSON.parse(data[experiment][scheduler][graph]), {'displayModeBar': false})
+			}
+			else if (graph == "Waiting queue") {
 				Plotly.newPlot("results-graph", JSON.parse(data[experiment][scheduler][graph]), {'displayModeBar': false})
 			}
 			else if (graph == "Jobs utilization") {
