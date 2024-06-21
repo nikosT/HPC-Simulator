@@ -146,7 +146,8 @@ class Simulation:
                 "Resource usage": self.default_logger.get_resource_usage(),
                 "Gantt diagram": self.default_logger.get_gantt_representation(),
                 "Jobs utilization": {},
-                "Makespan speedup": 1.0
+                "Makespan speedup": 1.0,
+                "Waiting queue": self.default_logger.get_waiting_queue_graph(),
         }
 
         self.results[self.default] = data

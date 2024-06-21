@@ -100,7 +100,7 @@ class Scheduler(ABC, Generic[Cluster]):
         """
         pass
 
-    def backfill(self) -> None:
+    def backfill(self) -> bool:
         """A backfill algorithm for the scheduler
         """
         return
@@ -111,7 +111,7 @@ class Scheduler(ABC, Generic[Cluster]):
         return 1.0
 
     @abstractmethod
-    def deploy(self) -> None:
+    def deploy(self) -> bool:
         """Abstract method to deploy the new execution list to the cluster
         """
         pass

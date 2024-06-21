@@ -20,8 +20,9 @@ class FIFOScheduler(Scheduler):
     def setup(self):
         pass
 
-    def deploy(self) -> None:
+    def deploy(self) -> bool:
 
+        deployed = False
         waiting_queue = deepcopy_list(self.cluster.waiting_queue)
 
         while waiting_queue != []:
@@ -40,6 +41,10 @@ class FIFOScheduler(Scheduler):
                 job.assigned_cores = procset
                 self.cluster.total_procs -= procset
 
+                deployed = True
+
             else:
                 break
+
+        return deployed
 

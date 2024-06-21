@@ -20,10 +20,12 @@ class EASYScheduler(FIFOScheduler):
         self.backfill_enabled = True
 
 
-    def backfill(self) -> None:
+    def backfill(self) -> bool:
+
+        deployed = False
 
         if len(self.cluster.waiting_queue) <= 1:
-            return
+            return False
 
         execution_list = deepcopy_list(self.cluster.execution_list)
         execution_list.sort(key=lambda jblock: jblock[0].wall_time +
@@ -70,9 +72,11 @@ class EASYScheduler(FIFOScheduler):
                     self.cluster.execution_list.append([b_job])
                     self.cluster.total_procs -= procset
 
+                    deployed = True
+
             else:
                 # No other job is capable to backfill based on time
                 break
         
-        return
+        return deployed
 

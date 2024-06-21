@@ -104,15 +104,13 @@ class AbstractCluster(abc.ABC):
 
         for job in copy:
             if job.submit_time <= self.makespan:
-                if self.queue_size == 0 and\
+                if self.queue_size == -1:
+                    self.preloaded_queue.remove(job)
+                    self.waiting_queue.append(job)
+
+                elif self.queue_size == 0 and\
                         len(self.waiting_queue) == 0 and\
                         self.scheduler.assign_nodes(job.full_node_cores, self.total_procs) is not None:
-                            self.preloaded_queue.remove(job)
-                            job.submit_time = self.makespan
-                            self.waiting_queue.append(job)
-
-                if self.queue_size == 1 and\
-                        len(self.waiting_queue) == 0:
                             self.preloaded_queue.remove(job)
                             job.submit_time = self.makespan
                             self.waiting_queue.append(job)
@@ -189,6 +187,8 @@ class AbstractCluster(abc.ABC):
 
     def step(self):
 
+        deployed = False
+
         # This is definite
         # If broken then the simulation loop has problems
         if self.free_cores < 0 or self.free_cores > self.total_cores:
@@ -201,14 +201,18 @@ class AbstractCluster(abc.ABC):
         if self.waiting_queue != []:
 
             # Deploy/Submit jobs to the execution list
-            self.scheduler.deploy()
+            deployed = self.scheduler.deploy()
 
             # If scheduler deployed jobs to execution list successfully and the
             # backfilling policy is enabled
             if self.scheduler.backfill_enabled:
 
                 # Execute the backfilling algorithm
-                self.scheduler.backfill()
+                deployed |= self.scheduler.backfill()
+
+        # If deployed restart scheduling procedure
+        if deployed:
+            return
 
         self.logger.evt_jobs_executing()
 

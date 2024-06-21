@@ -92,7 +92,9 @@ class RanksCoscheduler(Coscheduler, ABC):
         else:
             return False
 
-    def deploy(self) -> None:
+    def deploy(self) -> bool:
+
+        deployed = False
 
         #print(f"BEFORE: Free cores = {self.cluster.free_cores}")
         self.update_ranks()
@@ -111,6 +113,7 @@ class RanksCoscheduler(Coscheduler, ABC):
 
             if res:
                 self.after_deployment()
+                deployed = True
                 continue
 
             # Check if it is eligible for spread allocation
@@ -118,6 +121,7 @@ class RanksCoscheduler(Coscheduler, ABC):
 
             if res:
                 self.after_deployment()
+                deployed = True
                 continue
 
             # Check if it is eligible for compact allocation
@@ -125,6 +129,7 @@ class RanksCoscheduler(Coscheduler, ABC):
 
             if res:
                 self.after_deployment()
+                deployed = True
                 continue
 
             # Check if there is a waiting job that can pair up with the job
@@ -133,6 +138,7 @@ class RanksCoscheduler(Coscheduler, ABC):
 
             if res:
                 self.after_deployment()
+                deployed = True
                 continue
 
             # All the allocation tries have failed. Return the job at the first
@@ -142,7 +148,7 @@ class RanksCoscheduler(Coscheduler, ABC):
             break
 
         #print(f"AFTER: Free cores = {self.cluster.free_cores}")
-        return
+        return deployed
 
     def xunit_estimated_finish_time(self, xunit: list[Job]) -> float:
         """Estimated finish time for an xunit; meaning the maximum time it takes
@@ -163,11 +169,13 @@ class RanksCoscheduler(Coscheduler, ABC):
 
         return max(estimations)
 
-    def backfill(self) -> None:
+    def backfill(self) -> bool:
+
+        deployed = False
 
         if len(self.cluster.waiting_queue) <= 1:
             # If there are not alternatives bail out
-            return
+            return False
 
         blocked_job = self.cluster.waiting_queue[0]
 
@@ -259,6 +267,7 @@ class RanksCoscheduler(Coscheduler, ABC):
 
                 if res:
                     self.after_deployment()
+                    deployed = True
                     continue
 
                 # Check if it is eligible for spread allocation
@@ -266,6 +275,7 @@ class RanksCoscheduler(Coscheduler, ABC):
 
                 if res:
                     self.after_deployment()
+                    deployed = True
                     continue
 
                 # Check if it is eligible for compact allocation
@@ -273,6 +283,7 @@ class RanksCoscheduler(Coscheduler, ABC):
 
                 if res:
                     self.after_deployment()
+                    deployed = True
                     continue
 
                 # Check if there is a waiting job that can pair up with the job
@@ -281,6 +292,7 @@ class RanksCoscheduler(Coscheduler, ABC):
 
                 if res:
                     self.after_deployment()
+                    deployed = True
                     continue
 
             else:
@@ -291,6 +303,7 @@ class RanksCoscheduler(Coscheduler, ABC):
 
                     if res:
                         self.after_deployment()
+                        deployed = True
                         continue
 
                     # Check if it is eligible for spread allocation
@@ -298,6 +311,7 @@ class RanksCoscheduler(Coscheduler, ABC):
 
                     if res:
                         self.after_deployment()
+                        deployed = True
                         continue
 
                     # Check if it is eligible for compact allocation
@@ -305,6 +319,7 @@ class RanksCoscheduler(Coscheduler, ABC):
 
                     if res:
                         self.after_deployment()
+                        deployed = True
                         continue
 
                     # Check if there is a waiting job that can pair up with the job
@@ -313,4 +328,7 @@ class RanksCoscheduler(Coscheduler, ABC):
 
                     if res:
                         self.after_deployment()
+                        deployed = True
                         continue
+
+        return deployed

@@ -580,5 +580,5 @@ class Coscheduler(Scheduler, ABC):
         return True
 
     @abstractmethod
-    def deploy(self) -> None:
+    def deploy(self) -> bool:
         pass
