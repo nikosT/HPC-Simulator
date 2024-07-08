@@ -46,80 +46,10 @@ class Coscheduler(Scheduler, ABC):
         self.system_utilization = system_utilization
 
         self.engine = engine
-        self.heatmap: dict[str, dict] = dict()
 
-    def setup(self):
-        """Create the heatmap for the jobs in the waiting queue
-        """
-
-        # Initialize the heatmap
-        for job in self.cluster.preloaded_queue:
-            self.heatmap[job.job_name] = {}
-
-        # Get a copy of the preloaded queue
-        preloaded_queue = deepcopy_list(self.cluster.preloaded_queue)
-
-        while preloaded_queue != []:
-
-            job: Job = self.pop(preloaded_queue)
-
-            load: Optional[Load] = job.load
-
-            if load is None:
-                raise RuntimeError("A job with an empty load was found inside the waiting queue at the startup stage")
-
-            for co_job in preloaded_queue:
-
-                co_load: Optional[Load] = co_job.load
-
-                if co_load is None:
-                    raise RuntimeError("A job with an empty load was found inside the waiting queue at the startup stage")
-
-                if self.engine is not None:
-                    # If an inference engine is provided then predict the
-                    # speedup for both load and co-load when co-scheduled
-
-                    # Get speedup for load when co-scheduled with co-load
-                    self.heatmap[load.load_name].update({
-                            co_load.load_name: self.engine.predict(
-                                load.get_tag(), co_load.get_tag()
-                            )
-                    })
-
-                    # Get speedup for co-load when co-scheduled with load
-                    self.heatmap[co_load.load_name].update({
-                            load.load_name: self.engine.predict(
-                                co_load.get_tag(), load.get_tag()
-                            )
-                    })
-
-                else:
-                    # If we do not have an inference engine, then use the stored
-                    # knowledge inside each load to get their speedups
-                    # and if we do not have knowledge of their co-execution then
-                    # submit a None value inside the heatmap
-
-                    # Get speedup for load when co-scheduled with co-load
-                    self.heatmap[load.load_name].update({
-
-                            co_load.load_name:
-
-                            load.get_med_speedup(co_load.load_name) 
-                            if co_load.load_name in load.coscheduled_timelogs
-                            else None
-
-                    })
-
-                    # Get speedup for co-load when co-scheduled with load
-                    self.heatmap[co_load.load_name].update({
-
-                            load.load_name:
-
-                            co_load.get_med_speedup(load.load_name) 
-                            if load.load_name in co_load.coscheduled_timelogs
-                            else None
-
-                    })
+    @abstractmethod
+    def setup(self) -> None:
+        pass
 
     @abstractmethod
     def waiting_job_candidates_reorder(self, job: Job, co_job: Job) -> float:
@@ -150,7 +80,7 @@ class Coscheduler(Scheduler, ABC):
                 self.cluster.waiting_queue.remove(job)
                 job.start_time = self.cluster.makespan
                 job.remaining_time *= (1 / job.get_max_speedup())
-                job.speedup = job.get_max_speedup()
+                job.sim_speedup = job.get_max_speedup()
 
                 # Allocate cores to job
                 half_node_cores = int(self.cluster.cores_per_node / 2)
@@ -232,8 +162,8 @@ class Coscheduler(Scheduler, ABC):
                 # The job will be co-allocated as a tail job
                 # We need to check whether the average speedup of the pairing
                 # will be above the speedup_threshold
-                if self.heatmap[head_job.job_name][job.job_name] is not None:
-                    avg_speedup = (self.heatmap[job.job_name][head_job.job_name] + self.heatmap[head_job.job_name][job.job_name]) / 2.0
+                if self.database.heatmap[head_job.job_name][job.job_name] is not None:
+                    avg_speedup = (self.database.heatmap[job.job_name][head_job.job_name] + self.database.heatmap[head_job.job_name][job.job_name]) / 2.0
                 else:
                     continue
 
@@ -245,12 +175,12 @@ class Coscheduler(Scheduler, ABC):
                 # pairing with one of the worst jobs in the xunit
                 worst_neighbor = min(xunit, 
                                      key=lambda neighbor: 
-                                     self.heatmap[job.job_name][neighbor.job_name] 
-                                     if type(neighbor) != EmptyJob and self.heatmap[job.job_name][neighbor.job_name] is not None 
+                                     self.database.heatmap[job.job_name][neighbor.job_name] 
+                                     if type(neighbor) != EmptyJob and self.database.heatmap[job.job_name][neighbor.job_name] is not None 
                                      else math.inf)
                 
-                if self.heatmap[worst_neighbor.job_name][job.job_name] is not None:
-                    avg_speedup = (self.heatmap[job.job_name][worst_neighbor.job_name] + self.heatmap[worst_neighbor.job_name][job.job_name]) / 2.0
+                if self.database.heatmap[worst_neighbor.job_name][job.job_name] is not None:
+                    avg_speedup = (self.database.heatmap[job.job_name][worst_neighbor.job_name] + self.database.heatmap[worst_neighbor.job_name][job.job_name]) / 2.0
                 else:
                     continue
 
@@ -295,11 +225,12 @@ class Coscheduler(Scheduler, ABC):
         if len(head_job.assigned_cores) >= len(idle_job.assigned_cores):
 
             # Calculate the remaining time of the job and the new speedup
-            job.ratioed_remaining_time(head_job)
+            # job.ratioed_remaining_time(head_job)
+            self.cluster.ratio_rem_time(job, head_job)
 
             # If the job produces worse speedup for the current head job of the
             # xunit then re-calculate the head job's remaining time and speedup
-            if self.heatmap[head_job.job_name][job.job_name] < head_job.speedup:
+            if self.database.heatmap[head_job.job_name][job.job_name] < head_job.sim_speedup:
                 head_job.ratioed_remaining_time(job)
 
             # Add the job to the best xunit candidate
@@ -311,15 +242,17 @@ class Coscheduler(Scheduler, ABC):
             # Recalculate remaining time and speedup for each job inside the 
             # executing unit
             for xjob in best_candidate:
-                xjob.ratioed_remaining_time(job)
+                # xjob.ratioed_remaining_time(job)
+                self.cluster.ratio_rem_time(xjob, job)
 
             # Find the worst neighbor for the job
             worst_neighbor = min(best_candidate, 
                                  key=lambda neighbor: 
-                                 self.heatmap[job.job_name][neighbor.job_name] 
-                                 if type(neighbor) != EmptyJob and self.heatmap[job.job_name][neighbor.job_name] is not None 
+                                 self.database.heatmap[job.job_name][neighbor.job_name] 
+                                 if type(neighbor) != EmptyJob and self.database.heatmap[job.job_name][neighbor.job_name] is not None 
                                  else math.inf)
-            job.ratioed_remaining_time(worst_neighbor)
+            # job.ratioed_remaining_time(worst_neighbor)
+            self.cluster.ratio_rem_time(job, worst_neighbor)
 
             best_candidate.insert(0, job)
 
@@ -416,7 +349,7 @@ class Coscheduler(Scheduler, ABC):
         for wjob in waiting_queue_slice:
 
             # The speedup values must exist
-            conditions  = self.heatmap[job.job_name][wjob.job_name] is not None
+            conditions  = self.database.heatmap[job.job_name][wjob.job_name] is not None
             if not conditions:
                 continue
             # The pair must fit in the remaining free processors of the cluster
@@ -426,7 +359,7 @@ class Coscheduler(Scheduler, ABC):
                     self.cluster.total_procs) is not None
             # The pair's average speedup must be higher than the user defined
             # speedup threshold
-            conditions &= (self.heatmap[job.job_name][wjob.job_name] + self.heatmap[wjob.job_name][job.job_name]) / 2.0 > self.speedup_threshold
+            conditions &= (self.database.heatmap[job.job_name][wjob.job_name] + self.database.heatmap[wjob.job_name][job.job_name]) / 2.0 > self.speedup_threshold
 
             # If it satisfies all the conditions then it is a candidate pairing job
             if conditions:
@@ -469,8 +402,10 @@ class Coscheduler(Scheduler, ABC):
         job.start_time = self.cluster.makespan
         best_candidate.start_time = self.cluster.makespan
 
-        best_candidate.ratioed_remaining_time(job)
-        job.ratioed_remaining_time(best_candidate)
+        # best_candidate.ratioed_remaining_time(job)
+        # job.ratioed_remaining_time(best_candidate)
+        self.cluster.ratio_rem_time(best_candidate, job)
+        self.cluster.ratio_rem_time(job, best_candidate)
 
         total_required_cores = 2 * max(job.half_node_cores, best_candidate.half_node_cores)
 

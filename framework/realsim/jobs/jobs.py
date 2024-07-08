@@ -53,11 +53,16 @@ class Job:
         self.submit_time = submit_time
         self.waiting_time = waiting_time
         self.wall_time = wall_time
-
         self.start_time: float = 0.0
-        self.speedup = 1
+
+        self.sim_speedup = 1
+        self.avg_speedup = 1
+        self.max_speedup = 1
+        self.min_speedup = 1
 
         self.job_tag = JobTag.COMPACT
+
+        self.age = 0
 
 
     def __eq__(self, job):
@@ -66,47 +71,36 @@ class Job:
         return self.load == job.load and self.job_id == job.job_id and self.job_name == job.job_name and self.num_of_processes == job.num_of_processes\
                 and self.binded_cores == job.binded_cores\
                 and self.remaining_time == job.remaining_time and self.submit_time == job.submit_time\
-                and self.wall_time == job.wall_time and self.start_time == job.start_time and self.speedup == job.speedup\
+                and self.wall_time == job.wall_time and self.start_time == job.start_time\
+                and self.sim_speedup == job.sim_speedup\
+                and self.avg_speedup == job.avg_speedup\
+                and self.max_speedup == job.max_speedup\
+                and self.min_speedup == job.min_speedup\
                 and self.job_tag == job.job_tag
 
     def __repr__(self) -> str:
-        return "{" + f"{self.job_id}, {self.job_name} : {self.remaining_time}, {self.speedup}, {self.binded_cores}" + "}"
+        return "{" + f"{self.job_id}, {self.job_name} : {self.remaining_time}, {self.sim_speedup}, {self.binded_cores}" + "}"
 
 
     def get_speedup(self, cojob):
         return self.load.get_med_speedup(cojob.job_name)
 
-    def get_overall_speedup(self) -> float:
-        speedups: list[float] = list()
-        for coload in self.load.coscheduled_timelogs:
-            speedups.append(self.load.get_med_speedup(coload))
-        return float(avg(speedups))
+    def get_avg_speedup(self) -> float:
+        return self.avg_speedup
 
     def get_max_speedup(self) -> float:
-        speedups: list[float] = list()
-        for coload in self.load.coscheduled_timelogs:
-            speedups.append(
-                    self.load.get_med_speedup(coload)
-            )
-
-        return max(speedups)
+        return self.max_speedup
 
     def get_min_speedup(self):
-        speedups: list[float] = list()
-        for coload in self.load.coscheduled_timelogs:
-            speedups.append(
-                    self.load.get_med_speedup(coload)
-            )
-
-        return min(speedups)
+        return self.min_speedup
 
     def ratioed_remaining_time(self, cojob):
-        old_speedup = self.speedup
+        old_speedup = self.sim_speedup
         new_speedup = self.get_speedup(cojob)
         if old_speedup <= 0 or new_speedup <= 0 or isnan(old_speedup) or isnan(new_speedup):
             raise RuntimeError(f"{old_speedup}, {new_speedup}")
         self.remaining_time *= (old_speedup / new_speedup)
-        self.speedup = new_speedup
+        self.sim_speedup = new_speedup
 
     def deepcopy(self):
         """Return a new instance of Job that is a true copy
@@ -126,8 +120,12 @@ class Job:
                    wall_time=self.wall_time)
 
         copy.start_time = self.start_time
-        copy.speedup = self.speedup
+        copy.sim_speedup = self.sim_speedup
+        copy.avg_speedup = self.avg_speedup
+        copy.max_speedup = self.max_speedup
+        copy.min_speedup = self.min_speedup
         copy.job_tag = self.job_tag
+        copy.age = self.age
 
         return copy
 

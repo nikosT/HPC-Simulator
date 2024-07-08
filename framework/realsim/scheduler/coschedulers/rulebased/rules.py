@@ -23,6 +23,9 @@ class RulesCoscheduler(Coscheduler):
         Coscheduler.__init__(self)
         self.backfill_enabled = True
 
+    def setup(self) -> None:
+        return super().setup()
+
     def satisfies_coscheduling_rules(self, jobA: Job, jobB: Job) -> bool:
         if jobA.job_tag == JobTag.SPREAD and jobB.job_tag == JobTag.ROBUST:
             return True
@@ -90,7 +93,7 @@ class RulesCoscheduler(Coscheduler):
         for wjob in waiting_queue_slice:
 
             # The speedup values must exist
-            conditions  = self.heatmap[job.job_name][wjob.job_name] is not None
+            conditions  = self.database.heatmap[job.job_name][wjob.job_name] is not None
             if not conditions:
                 continue
             # The pair must fit in the remaining free processors of the cluster
@@ -284,7 +287,7 @@ class RulesCoscheduler(Coscheduler):
         #     estimated_start_time = estimated_start_time_merge
 
         # In finding the possible backfillers
-        waiting_queue = deepcopy_list(self.cluster.waiting_queue[1:])
+        waiting_queue = deepcopy_list(self.cluster.waiting_queue[1:self.backfill_depth+1])
 
         while waiting_queue != []:
 

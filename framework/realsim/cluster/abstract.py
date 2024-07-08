@@ -7,6 +7,7 @@ from realsim.jobs import Job, EmptyJob, JobTag
 from realsim.jobs.utils import deepcopy_list
 from realsim.scheduler.scheduler import Scheduler
 from realsim.logger.logger import Logger
+from realsim.database import Database
 
 import math
 import numpy as np
@@ -29,14 +30,15 @@ class AbstractCluster(abc.ABC):
 
         self.total_procs: ProcSet = ProcSet((1, self.total_cores))
 
+        # Database instance of cluster
+        self.database: Database
+
         # Scheduler instance for the cluster
         self.scheduler: Scheduler
 
         # Logger instance for the cluster
         self.logger: Logger
 
-        # Loaded jobs to pre-waiting queue based on their queued time
-        self.preloaded_queue: list[Job] = list()
         # Waiting queue size
         self.queue_size = math.inf
         # The generated jobs are first deployed here
@@ -55,6 +57,9 @@ class AbstractCluster(abc.ABC):
         # of a cluster
         self.makespan: float = 0
 
+    def assign_databse(self, db: Database) -> None:
+        self.database = db
+
     def assign_scheduler(self, scheduler: Scheduler):
         self.scheduler = scheduler
         self.scheduler.assign_cluster(self)
@@ -63,26 +68,40 @@ class AbstractCluster(abc.ABC):
         self.logger = logger
         self.logger.assign_cluster(self)
 
-    def preload_jobs(self, jobs_set: list[Job]) -> None:
-        # Get a clean deep copy of the set of jobs
-        copy = deepcopy_list(jobs_set)
+    def setup_preloaded_jobs(self) -> None:
+        """Setup the preloaded jobs that are currently stored in the database
+        """
 
-        # Sort jobs by their time they appear on the waiting queue
-        copy.sort(key=lambda job: job.submit_time)
+        # Sort jobs by their time they will be appearing in the waiting queue
+        self.database.preloaded_queue.sort(key=lambda job: job.submit_time)
 
         if self.makespan == 0:
             self.id_counter = 0
 
         # Preload jobs and calculate their respective half and full node cores
         # usage
-        for job in copy:
+        for job in self.database.preloaded_queue:
             job.job_id = self.id_counter
             job.half_node_cores = int(math.ceil(job.num_of_processes / (self.cores_per_node / 2)) * (self.cores_per_node / 2))
             job.full_node_cores = int(math.ceil(job.num_of_processes / self.cores_per_node) * self.cores_per_node)
 
-            speedups = [job.load.get_med_speedup(co_load)
-                        for co_load in job.load.coscheduled_timelogs.keys()]
-            avg = round(float(np.average(speedups)), 2)
+            speedups = list(self.database.heatmap[job.job_name].values())
+            max_speedup = min_speedup = speedups[0]
+            accumulator = length = 0
+            for speedup in speedups:
+                if speedup > max_speedup:
+                    max_speedup = speedup
+                if speedup < min_speedup:
+                    min_speedup = speedup
+
+                accumulator += speedup
+                length += 1
+
+            job.max_speedup = max_speedup
+            job.min_speedup = min_speedup
+            job.avg_speedup = (accumulator / length)
+
+            avg = job.avg_speedup
             std = round(float(np.std(speedups)), 2)
 
             if avg > 1.02:
@@ -96,27 +115,29 @@ class AbstractCluster(abc.ABC):
                     job.job_tag = JobTag.ROBUST
 
             self.id_counter += 1
-            self.preloaded_queue.append(job)
 
     def load_in_waiting_queue(self) -> None:
 
-        copy = deepcopy_list(self.preloaded_queue)
+        copy = deepcopy_list(self.database.preloaded_queue)
 
         for job in copy:
             if job.submit_time <= self.makespan:
+                # Infinite waiting queue size
                 if self.queue_size == -1:
-                    self.preloaded_queue.remove(job)
+                    self.database.preloaded_queue.remove(job)
                     self.waiting_queue.append(job)
 
+                # Zero size waiting queue
                 elif self.queue_size == 0 and\
                         len(self.waiting_queue) == 0 and\
                         self.scheduler.assign_nodes(job.full_node_cores, self.total_procs) is not None:
-                            self.preloaded_queue.remove(job)
+                            self.database.preloaded_queue.remove(job)
                             job.submit_time = self.makespan
                             self.waiting_queue.append(job)
 
+                # Finite waiting queue size but not 0
                 elif self.queue_size > 0 and len(self.waiting_queue) < self.queue_size:
-                        self.preloaded_queue.remove(job)
+                        self.database.preloaded_queue.remove(job)
                         job.submit_time = self.makespan
                         self.waiting_queue.append(job)
 
@@ -172,6 +193,31 @@ class AbstractCluster(abc.ABC):
 
         return nonfilled_units
 
+    def ratio_rem_time(self, job: Job, co_job: Job|str) -> None:
+        old_speedup = job.sim_speedup
+        if type(co_job) == Job:
+            new_speedup = self.database.heatmap[job.job_name][co_job.job_name]
+        elif type(co_job) == str:
+            if co_job == 'max':
+                new_speedup = job.get_max_speedup()
+            elif co_job == 'min':
+                new_speedup = job.get_min_speedup()
+            elif co_job == 'avg':
+                new_speedup = job.get_avg_speedup()
+            else:
+                raise RuntimeError(f"{co_job} : Unknown ratio policy")
+
+        else:
+            raise RuntimeError(f"{type(co_job)} is not appropriate type. Job or string are acceptable types")
+
+        # if old_speedup <= 0 or new_speedup <= 0 or isnan(old_speedup) or isnan(new_speedup):
+        if old_speedup <= 0 or new_speedup <= 0:
+            raise RuntimeError(f"{old_speedup}, {new_speedup}")
+
+        job.remaining_time *= (old_speedup / new_speedup)
+        job.sim_speedup = new_speedup
+
+
     @abc.abstractmethod
     def next_state(self) -> None:
         pass
@@ -225,4 +271,4 @@ class AbstractCluster(abc.ABC):
             # Free the resources
             self.free_resources()
 
-        print(self.total_procs)
+        #print(self.total_procs)

@@ -24,9 +24,9 @@ class ClusterExhaustive(AbstractCluster):
     def next_state(self):
         """Execute the jobs in the execution list
         """
-        print()
-        print(len(self.waiting_queue))
-        print()
+        # print()
+        # print(len(self.waiting_queue))
+        # print()
 
         # Find smallest remaining time of executing jobs
         min_rem_time = math.inf
@@ -36,7 +36,7 @@ class ClusterExhaustive(AbstractCluster):
                     min_rem_time = job.remaining_time
 
         # Find smallest remaining time for a job to show up in the waiting queue
-        for job in self.preloaded_queue:
+        for job in self.database.preloaded_queue:
             showup_time = job.submit_time - self.makespan
             if showup_time > 0 and showup_time < min_rem_time:
                 min_rem_time = showup_time
@@ -105,25 +105,28 @@ class ClusterExhaustive(AbstractCluster):
                     # self.free_cores += surplass
                     # idle_cores = sub_unit_cores
                     for job in substitute_unit:
-                        if job.speedup != job.get_max_speedup():
-                            job.remaining_time *= (job.speedup / job.get_max_speedup())
-                            job.speedup = job.get_max_speedup()
+                        if job.sim_speedup != job.get_max_speedup():
+                            self.ratio_rem_time(job, 'max')
+                            # job.remaining_time *= (job.sim_speedup / job.get_max_speedup())
+                            # job.sim_speedup = job.get_max_speedup()
                 else:
                 # In contrast, the tail jobs share their resources with the head
                 # job and vica versa
 
                     # Recalculate speedup of tail jobs
                     for job in substitute_unit[1:]:
-                        if job.speedup != job.get_speedup(substitute_unit[0]):
-                            job.ratioed_remaining_time(substitute_unit[0])
+                        if job.sim_speedup != self.database.heatmap[job.job_name][substitute_unit[0].job_name]:
+                            # job.ratioed_remaining_time(substitute_unit[0])
+                            self.ratio_rem_time(job, substitute_unit[0])
 
                     # Recalculate of head job
                     worst_job = min(substitute_unit[1:], key=(
-                        lambda wjob: substitute_unit[0].get_speedup(wjob)
+                        lambda wjob: self.database.heatmap[substitute_unit[0].job_name][wjob.job_name]
                     ))
 
-                    if substitute_unit[0].speedup != substitute_unit[0].get_speedup(worst_job):
-                        substitute_unit[0].ratioed_remaining_time(worst_job)
+                    if substitute_unit[0].sim_speedup != self.database.heatmap[substitute_unit[0].job_name][worst_job.job_name]:
+                        # substitute_unit[0].ratioed_remaining_time(worst_job)
+                        self.ratio_rem_time(substitute_unit[0], worst_job)
 
             if len(idle_procs) > 0:
                 # Create an empty job to occupy the idle cores of the xunit

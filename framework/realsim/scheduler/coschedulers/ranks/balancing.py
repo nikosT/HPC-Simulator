@@ -72,7 +72,7 @@ class BalancingRanksCoscheduler(RanksCoscheduler):
 
         # Is job's overall speedup important? Maybe to increase the average
         # speedup of the execution list
-        speedup = job.get_overall_speedup()
+        speedup = job.get_avg_speedup()
         # How important is speedup in the current state? If the value of average
         # speedup of all xunits is low then promote jobs that can increase the
         # value. Else do the opossite
@@ -96,8 +96,8 @@ class BalancingRanksCoscheduler(RanksCoscheduler):
         cores_r = co_job.half_node_cores / job.half_node_cores
         #cores_r = self.inner_frag / cores_r
 
-        if self.heatmap[job.job_name][co_job.job_name] is not None:
-            speedup = (self.heatmap[job.job_name][co_job.job_name] + self.heatmap[co_job.job_name][job.job_name]) / 2.0
+        if self.database.heatmap[job.job_name][co_job.job_name] is not None:
+            speedup = (self.database.heatmap[job.job_name][co_job.job_name] + self.database.heatmap[co_job.job_name][job.job_name]) / 2.0
             speedup_r = speedup# ** (2 / self.avg_xunits_speedup)
         else:
             speedup_r = 1.0
@@ -123,12 +123,12 @@ class BalancingRanksCoscheduler(RanksCoscheduler):
             # worst_neighbor = min(xunit, key=lambda neighbor: job.get_speedup(neighbor) if type(neighbor) != EmptyJob else math.inf)
             worst_neighbor = min(xunit, 
                                  key=lambda neighbor: 
-                                 self.heatmap[job.job_name][neighbor.job_name] 
-                                 if type(neighbor) != EmptyJob and self.heatmap[job.job_name][neighbor.job_name] is not None 
+                                 self.database.heatmap[job.job_name][neighbor.job_name] 
+                                 if type(neighbor) != EmptyJob and self.database.heatmap[job.job_name][neighbor.job_name] is not None 
                                  else math.inf)
-            speedup = (self.heatmap[job.job_name][worst_neighbor.job_name] + self.heatmap[worst_neighbor.job_name][job.job_name]) / 2.0
+            speedup = (self.database.heatmap[job.job_name][worst_neighbor.job_name] + self.database.heatmap[worst_neighbor.job_name][job.job_name]) / 2.0
         else:
-            speedup = (self.heatmap[job.job_name][head_job.job_name] + self.heatmap[head_job.job_name][job.job_name]) / 2.0
+            speedup = (self.database.heatmap[job.job_name][head_job.job_name] + self.database.heatmap[head_job.job_name][job.job_name]) / 2.0
         
         speedup_r = speedup ** (2 / self.avg_xunits_speedup)
 
@@ -154,7 +154,7 @@ class BalancingRanksCoscheduler(RanksCoscheduler):
                 if type(job) != EmptyJob:
                     # In reality we only know the heatmap, overall and max
                     # speedups so knowledge of runtime speedup is unknown
-                    xunit_jobs_speedups.append(job.get_overall_speedup())
+                    xunit_jobs_speedups.append(job.get_avg_speedup())
 
             # Calculate co-scheduled xunit's average overall speedup
             xunit_speedup.append(float(avg(xunit_jobs_speedups)))

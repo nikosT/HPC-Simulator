@@ -36,6 +36,8 @@ class RanksCoscheduler(Coscheduler, ABC):
 
         self.ranks : dict[int, int] = dict() # jobId --> number of good pairings
         self.ranks_threshold = ranks_threshold
+        # Aging, the process of transforming a co-scheduled job into a compact
+        self.age_threshold = 2
 
     def update_ranks(self):
 
@@ -46,8 +48,8 @@ class RanksCoscheduler(Coscheduler, ABC):
 
             for co_job in self.cluster.waiting_queue[i+1:]:
 
-                job_speedup = self.heatmap[job.job_name][co_job.job_name]
-                co_job_speedup = self.heatmap[co_job.job_name][job.job_name]
+                job_speedup = self.database.heatmap[job.job_name][co_job.job_name]
+                co_job_speedup = self.database.heatmap[co_job.job_name][job.job_name]
 
                 if job_speedup is None or co_job_speedup is None:
                     continue
@@ -60,7 +62,7 @@ class RanksCoscheduler(Coscheduler, ABC):
 
     def setup(self):
 
-        # Create heatmap
+        # Whatever setup that may be
         Coscheduler.setup(self)
 
         # Create ranks
@@ -72,7 +74,7 @@ class RanksCoscheduler(Coscheduler, ABC):
     def allocation_as_compact(self, job: Job) -> bool:
 
         # The job is not eligible for compact execution
-        if self.ranks[job.job_id] != 0:
+        if self.ranks[job.job_id] != 0 and job.age < self.age_threshold:
             return False
 
         procset = self.assign_nodes(job.full_node_cores, self.cluster.total_procs)
@@ -85,7 +87,6 @@ class RanksCoscheduler(Coscheduler, ABC):
             job.assigned_cores = procset
             self.cluster.execution_list.append([job])
             self.cluster.total_procs -= procset
-            # self.cluster.free_cores -= job.binded_cores
 
             return True
 
@@ -96,7 +97,7 @@ class RanksCoscheduler(Coscheduler, ABC):
 
         deployed = False
 
-        #print(f"BEFORE: Free cores = {self.cluster.free_cores}")
+        # Update the rank of each job before scheduling them
         self.update_ranks()
 
         waiting_queue = deepcopy_list(self.cluster.waiting_queue)
@@ -143,8 +144,9 @@ class RanksCoscheduler(Coscheduler, ABC):
 
             # All the allocation tries have failed. Return the job at the first
             # out position and reassign the waiting queue of the cluster
-            waiting_queue.insert(0, job)
-            self.cluster.waiting_queue = waiting_queue
+            self.cluster.waiting_queue[0].age += 1
+            # waiting_queue.insert(0, job)
+            # self.cluster.waiting_queue = waiting_queue
             break
 
         #print(f"AFTER: Free cores = {self.cluster.free_cores}")
@@ -254,7 +256,7 @@ class RanksCoscheduler(Coscheduler, ABC):
         #     estimated_start_time = estimated_start_time_merge
 
         # In finding the possible backfillers
-        waiting_queue = deepcopy_list(self.cluster.waiting_queue[1:])
+        waiting_queue = deepcopy_list(self.cluster.waiting_queue[1:self.backfill_depth+1])
 
         while waiting_queue != []:
 

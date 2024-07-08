@@ -48,12 +48,12 @@ class EASYScheduler(FIFOScheduler):
 
         # If a job couldn't reserve cores then cancel backfill at this point
         if not min_estimated_time < inf:
-            return
+            return False
 
         # Find job(s) that can backfill the execution list
 
         # Get the backfilling candidates
-        backfilling_jobs = deepcopy_list(self.cluster.waiting_queue[1:])
+        backfilling_jobs = deepcopy_list(self.cluster.waiting_queue[1:self.backfill_depth+1])
 
         # Ascending sorting by their wall time
         backfilling_jobs.sort(key=lambda b_job: b_job.wall_time)

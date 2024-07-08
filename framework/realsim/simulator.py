@@ -3,18 +3,22 @@ from multiprocessing import Manager
 import os
 import sys
 import math
+from cProfile import Profile
+import pstats
+import io
 
 sys.path.append(os.path.abspath(os.path.join(
     os.path.dirname(__file__), "../"
 )))
 
+from realsim.database import Database
 from realsim.cluster.exhaustive import ClusterExhaustive
 from realsim.logger.logger import Logger
 
 
 def run_sim(core):
 
-    cluster, scheduler, logger, comm_queue = core
+    database, cluster, scheduler, logger, comm_queue = core
 
     cluster.setup()
     scheduler.setup()
@@ -22,7 +26,7 @@ def run_sim(core):
 
     # The stopping condition is for the waiting queue and the execution list
     # to become empty
-    while cluster.preloaded_queue != [] or cluster.waiting_queue != [] or cluster.execution_list != []:
+    while database.preloaded_queue != [] or cluster.waiting_queue != [] or cluster.execution_list != []:
         cluster.step()
 
     default_list = comm_queue.get()
@@ -33,13 +37,23 @@ def run_sim(core):
     default_cluster_makespan = default_list[0]
     default_logger = default_list[1]
 
+    # profiler = Profile()
+    # profiler.enable()
+
     data = {
-            "Resource usage": logger.get_resource_usage(),
+            # "Resource usage": logger.get_resource_usage(),
             "Gantt diagram": logger.get_gantt_representation(),
             "Jobs utilization": logger.get_jobs_utilization(default_logger),
             "Waiting queue": logger.get_waiting_queue_graph(),
             "Makespan speedup": default_cluster_makespan / cluster.makespan
     }
+
+    # profiler.disable()
+    # stats = pstats.Stats(profiler).sort_stats('cumtime')
+    # stats.print_stats(30)
+    # with open("out.txt", "w") as fd:
+    #     fd.write(s.getvalue())
+    # stats.print_stats(15)
 
     # Return:
     # 1. Plot data for the resource usage in json format
@@ -65,7 +79,6 @@ class Simulation:
                  # scheduler algorithms bundled with inputs
                  schedulers_bundle):
 
-        self.num_of_jobs = len(jobs_set)
         self.default = "FIFO Scheduler"
         self.executor = ProcessPoolExecutor()
 
@@ -78,19 +91,30 @@ class Simulation:
 
         for sched_class, hyperparams in schedulers_bundle:
 
-            # Setup cluster
+            # Declare a database for each simulation step
+            database = Database(jobs_set)
+
+            # Declare cluster
             cluster = ClusterExhaustive(nodes, ppn)
+            cluster.assign_databse(database)
+
+            # Define the size of the queue for the cluster
             if queue_size == -1:
                 cluster.queue_size = math.inf
             else:
                 cluster.queue_size = queue_size
-            cluster.preload_jobs(jobs_set)
+            
+            # Setup the databse
+            database.setup()
+            cluster.setup_preloaded_jobs()
 
             # Setup scheduler
             scheduler = sched_class(**hyperparams)
+            scheduler.assign_database(database)
 
             # Setup logger
             logger = Logger()
+            logger.assign_database(database)
 
             # Setup experiment
             cluster.assign_scheduler(scheduler)
@@ -100,13 +124,15 @@ class Simulation:
 
             # The default simulation will be executed by the main process
             if sched_class.name == self.default:
+                self.default_database = database
                 self.default_cluster = cluster
                 self.default_scheduler = scheduler
                 self.default_logger = logger
                 continue
 
             # Record of a simulation
-            self.sims[scheduler.name] = (cluster, 
+            self.sims[scheduler.name] = (database,
+                                         cluster, 
                                          scheduler, 
                                          logger, 
                                          self.comm_queue)
@@ -118,9 +144,9 @@ class Simulation:
     def run(self):
 
         # Fork out the workers
-        for policy, sim in self.sims.items():
+        for policy, sim_args in self.sims.items():
             print(policy, "submitted")
-            self.futures[policy] = self.executor.submit(run_sim, sim)
+            self.futures[policy] = self.executor.submit(run_sim, sim_args)
 
         # Execute the default scheduler
         self.default_cluster.setup()
@@ -129,7 +155,7 @@ class Simulation:
 
         # The stopping condition is for the waiting queue and the execution list
         # to become empty
-        while self.default_cluster.preloaded_queue != [] or self.default_cluster.waiting_queue != [] or self.default_cluster.execution_list != []:
+        while self.default_database.preloaded_queue != [] or self.default_cluster.waiting_queue != [] or self.default_cluster.execution_list != []:
             self.default_cluster.step()
 
         # Submit to the shared list the results
@@ -143,7 +169,7 @@ class Simulation:
 
         # Set results for default scheduler
         data = {
-                "Resource usage": self.default_logger.get_resource_usage(),
+                # "Resource usage": self.default_logger.get_resource_usage(),
                 "Gantt diagram": self.default_logger.get_gantt_representation(),
                 "Jobs utilization": {},
                 "Makespan speedup": 1.0,

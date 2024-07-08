@@ -11,6 +11,7 @@ sys.path.append(os.path.abspath(
 #if TYPE_CHECKING:
 #    from realsim.cluster import ClusterV2
 from realsim.jobs.jobs import EmptyJob, Job
+from realsim.database import Database
 import plotly.graph_objects as go
 import plotly.express.colors as colors
 from procset import ProcSet
@@ -26,6 +27,9 @@ class Logger(object):
         self.recording = recording
         #self.scale = colors.sequential.Turbo
         self.scale = colors.sequential.Turbo
+
+    def assign_database(self, db: Database):
+        self.database = db
 
     def assign_cluster(self, cluster):
         self.cluster = cluster
@@ -49,7 +53,7 @@ class Logger(object):
         self.job_events: dict[str, dict] = dict()
 
         # Init job events
-        for job in self.cluster.preloaded_queue:
+        for job in self.database.preloaded_queue:
             # Job events
             jevts = {
                     "trace": [], # [co-job, start time, end time]
@@ -98,7 +102,7 @@ class Logger(object):
                         ["compact", self.cluster.makespan, None]
                 )
 
-                self.job_events[job_key]["speedups"].append(xunit[0].speedup)
+                self.job_events[job_key]["speedups"].append(xunit[0].sim_speedup)
 
                 # Get compact cores usage
                 self.job_events[job_key]["cores"].update({
@@ -142,7 +146,7 @@ class Logger(object):
                         )
 
                         self.job_events[job_key]["speedups"].append(
-                                job.speedup
+                                job.sim_speedup
                         )
 
                         self.job_events[job_key]["cores"].update({
@@ -157,7 +161,7 @@ class Logger(object):
                         [tail_key, self.cluster.makespan, None]
                 )
                 
-                self.job_events[head_key]["speedups"].append(xunit[0].speedup)
+                self.job_events[head_key]["speedups"].append(xunit[0].sim_speedup)
 
                 self.job_events[head_key]["cores"].update({
                     tail_key: xunit[0].binded_cores

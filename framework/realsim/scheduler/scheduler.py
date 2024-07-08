@@ -15,6 +15,7 @@ sys.path.append(os.path.abspath(
     ))
 
 from realsim.jobs import Job
+from realsim.database import Database
 from realsim.logger.logger import Logger
 
 if TYPE_CHECKING:
@@ -36,9 +37,21 @@ class Scheduler(ABC, Generic[Cluster]):
     # Describe the philosophy of the scheduler
     description = "The abstract base class for all scheduling algorithms"
 
-    def __init__(self):
+    def __init__(self, backfill_enabled: bool = False):
+
+        self.database: Database
+        self.cluster: Cluster
+        self.logger: Logger
+
         # Variable to test whether a backfill policy is enabled
-        self.backfill_enabled = False
+        self.backfill_enabled: bool = backfill_enabled
+        self.backfill_depth: int = 100
+
+    def assign_database(self, db: Database) -> None:
+        """The database stores useful information for a scheduling algorithm
+        that can be used as advice for better decision making.
+        """
+        self.database = db
 
     def assign_cluster(self, cluster: Cluster) -> None:
         """This method is called from a cluster instance
@@ -103,7 +116,7 @@ class Scheduler(ABC, Generic[Cluster]):
     def backfill(self) -> bool:
         """A backfill algorithm for the scheduler
         """
-        return
+        return False
         
     def waiting_queue_reorder(self, job: Job) -> float:
         """Waiting queue reordering logic
