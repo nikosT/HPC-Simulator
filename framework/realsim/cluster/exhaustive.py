@@ -47,6 +47,21 @@ class ClusterExhaustive(AbstractCluster):
             print(f"Infinity : {self.free_cores}\n {self.waiting_queue} {self.execution_list}")
             raise RuntimeError("Execution list is empty but the waiting queue still has jobs.")
 
+        # If there is an aging mechanism in the scheduling algorithm
+        if self.scheduler.aging_enabled and len(self.waiting_queue) > 0 and self.waiting_queue[0].age < self.scheduler.age_threshold:
+            # Find the interval until the next scheduler step
+            scheduler_timer = int(self.makespan / self.scheduler.time_step) * self.scheduler.time_step
+            next_shd_step = (scheduler_timer + self.scheduler.time_step) - self.makespan
+            # Find how much time should pass for the head job to reach the
+            # maximum age for compact allocation
+            max_age_step = next_shd_step + (self.scheduler.age_threshold - (self.waiting_queue[0].age + 1)) * self.scheduler.time_step
+            # If the time it takes to reach is less than the min_rem_time then
+            # re-enact deployment
+            if max_age_step < min_rem_time:
+                min_rem_time = max_age_step
+                self.waiting_queue[0].age = self.scheduler.age_threshold
+                print(self.waiting_queue[0].job_id, self.waiting_queue[0].job_name, self.makespan)
+
         # Increase the overall cluster runtime
         self.makespan += min_rem_time
 

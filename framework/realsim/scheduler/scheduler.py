@@ -46,6 +46,10 @@ class Scheduler(ABC, Generic[Cluster]):
         # Variable to test whether a backfill policy is enabled
         self.backfill_enabled: bool = backfill_enabled
         self.backfill_depth: int = 100
+        self.aging_enabled: bool = False
+        self.age_threshold: int = 10
+        self.time_step = 30 # Decide every 30 seconds 
+        self.timer = self.time_step
 
     def assign_database(self, db: Database) -> None:
         """The database stores useful information for a scheduling algorithm

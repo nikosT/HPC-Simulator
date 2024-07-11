@@ -226,7 +226,7 @@ def run_simulation(data, queue_size):
     
     # ONLY FOR REGALE
     try:
-        for load in ["bt.D.484", "bt.E.1024", "sp.D.484", "bt.E.2025", "cg.E.2048", "ft.E.2048", "lu.E.2048", "sp.E.2025"]:
+        for load in ["bt.E.2025", "cg.E.2048", "ft.E.2048", "lu.E.2048", "sp.E.2025"]:
             lm.loads.pop(load)
     except:
         pass
@@ -253,7 +253,7 @@ def run_simulation(data, queue_size):
             queue_size
     )
 
-    # Setup schedulers bundle
+    # Setup schedulers' bundle
     schedulers_bundle = []
     for name, hyperparams in data["schedulers"].items():
         sched_class = stored_modules[name]["classobj"]

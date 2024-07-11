@@ -35,6 +35,7 @@ class Coscheduler(Scheduler, ABC):
 
     def __init__(self,
                  backfill_enabled: bool = False,
+                 aging_enabled: bool = False,
                  speedup_threshold: float = 1.0,
                  system_utilization: float = 1.0,
                  engine: Optional[ScikitModel] = None):
@@ -42,6 +43,7 @@ class Coscheduler(Scheduler, ABC):
         Scheduler.__init__(self)
 
         self.backfill_enabled = backfill_enabled
+        self.aging_enabled = aging_enabled
         self.speedup_threshold = speedup_threshold
         self.system_utilization = system_utilization
 

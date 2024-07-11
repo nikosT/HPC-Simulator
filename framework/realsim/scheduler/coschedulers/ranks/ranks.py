@@ -23,6 +23,7 @@ class RanksCoscheduler(Coscheduler, ABC):
 
     def __init__(self,
                  backfill_enabled: bool = False,
+                 aging_enabled: bool = False,
                  speedup_threshold: float = 1.0,
                  ranks_threshold: float = 1.0,
                  system_utilization: float = 1.0,
@@ -30,14 +31,13 @@ class RanksCoscheduler(Coscheduler, ABC):
 
         Coscheduler.__init__(self, 
                              backfill_enabled, 
+                             aging_enabled,
                              speedup_threshold, 
                              system_utilization, 
                              engine)
 
         self.ranks : dict[int, int] = dict() # jobId --> number of good pairings
         self.ranks_threshold = ranks_threshold
-        # Aging, the process of transforming a co-scheduled job into a compact
-        self.age_threshold = 2
 
     def update_ranks(self):
 

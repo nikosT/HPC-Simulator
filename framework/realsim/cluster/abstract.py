@@ -85,6 +85,9 @@ class AbstractCluster(abc.ABC):
             job.half_node_cores = int(math.ceil(job.num_of_processes / (self.cores_per_node / 2)) * (self.cores_per_node / 2))
             job.full_node_cores = int(math.ceil(job.num_of_processes / self.cores_per_node) * self.cores_per_node)
 
+            if job.num_of_processes <= 512:
+                job.age = 1
+
             speedups = list(self.database.heatmap[job.job_name].values())
             max_speedup = min_speedup = speedups[0]
             accumulator = length = 0

@@ -47,6 +47,7 @@ class Logger(object):
         self.cluster_events["deploying:compact"] = 0
         self.cluster_events["deploying:success"] = 0
         self.cluster_events["deploying:failed"] = 0
+        self.cluster_events["finished jobs"] = [0]
 
         # Events #
         # Job events
@@ -185,10 +186,6 @@ class Logger(object):
         # Set the assigned processors for the job
         self.job_events[job_key]["assigned procs"] = job.assigned_cores
 
-        # Record a checkpoint
-        self.cluster_events["checkpoints"].add(
-                self.cluster.makespan
-        )
 
         # Record the arrival and waiting time
         self.job_events[job_key]["start time"] = job.start_time
@@ -196,10 +193,19 @@ class Logger(object):
         self.job_events[job_key]["submit time"] = job.submit_time
         self.job_events[job_key]["waiting time"] = job.waiting_time
 
-        # Record the number of used cores at this checkpoint
-        # self.cluster_events["used cores"].append(
-        #         self.cluster.total_cores - self.cluster.free_cores
-        # )
+        # Write down the total number of finished job at the checkpoint
+        if self.cluster.makespan in self.cluster_events["checkpoints"]:
+            self.cluster_events["finished jobs"][-1] += 1
+        else:
+            self.cluster_events["finished jobs"].append(
+                    self.cluster_events["finished jobs"][-1] + 1
+            )
+
+        # Record a checkpoint
+        self.cluster_events["checkpoints"].add(
+                self.cluster.makespan
+        )
+
 
     def get_gantt_representation(self):
 
@@ -550,14 +556,29 @@ class Logger(object):
         scatter = go.Scatter(
                 x=sorted(list(self.cluster_events["checkpoints"])),
                 y=num_of_jobs,
-                mode="lines"
+                mode="lines+markers"
         )
 
         fig = go.Figure(data=scatter)
         fig.update_layout(
-                title="<b>Waiting queue number of jobs per checkpoint</b>",
+                title=f"<b>Number of jobs inside waiting queue per checkpoint</b><br>{self.cluster.scheduler.name}",
                 title_x=0.5,
                 xaxis=dict(title="<b>Time (s)</b>"),
-                yaxis=dict(title="<b>Number of jobs</b>")
+                yaxis=dict(title="<b>Number of waiting jobs</b>")
+        )
+        return fig.to_json()
+
+    def get_jobs_throughput(self):
+        graph = go.Scatter(
+                x=sorted(list(self.cluster_events["checkpoints"])),
+                y=self.cluster_events["finished jobs"],
+                mode="lines+markers"
+        )
+        fig = go.Figure(data=graph)
+        fig.update_layout(
+                title=f"<b>Jobs throughput</b><br>{self.cluster.scheduler.name}",
+                title_x=0.5,
+                xaxis=dict(title="<b>Time (s)</b>"),
+                yaxis=dict(title="<b>Number of finished jobs</b>")
         )
         return fig.to_json()

@@ -41,10 +41,14 @@ def run_sim(core):
     # profiler.enable()
 
     data = {
+            # Graphs
             # "Resource usage": logger.get_resource_usage(),
             "Gantt diagram": logger.get_gantt_representation(),
             "Jobs utilization": logger.get_jobs_utilization(default_logger),
+            "Jobs throughput": logger.get_jobs_throughput(),
             "Waiting queue": logger.get_waiting_queue_graph(),
+            
+            # Extra metrics
             "Makespan speedup": default_cluster_makespan / cluster.makespan
     }
 
@@ -173,6 +177,7 @@ class Simulation:
                 "Gantt diagram": self.default_logger.get_gantt_representation(),
                 "Jobs utilization": {},
                 "Makespan speedup": 1.0,
+                "Jobs throughput": self.default_logger.get_jobs_throughput(),
                 "Waiting queue": self.default_logger.get_waiting_queue_graph(),
         }
 

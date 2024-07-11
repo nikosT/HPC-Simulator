@@ -28,6 +28,7 @@ class BalancingRanksCoscheduler(RanksCoscheduler):
 
     def __init__(self,
                  backfill_enabled: bool = False,
+                 aging_enabled: bool = False,
                  speedup_threshold: float = 1.0,
                  ranks_threshold: float = 1.0,
                  system_utilization: float = 1.0,
@@ -35,6 +36,7 @@ class BalancingRanksCoscheduler(RanksCoscheduler):
 
         RanksCoscheduler.__init__(self,
                                   backfill_enabled=backfill_enabled,
+                                  aging_enabled=aging_enabled,
                                   speedup_threshold=speedup_threshold,
                                   ranks_threshold=ranks_threshold,
                                   system_utilization=system_utilization,
