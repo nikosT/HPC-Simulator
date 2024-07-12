@@ -135,12 +135,12 @@ class RanksCoscheduler(Coscheduler, ABC):
 
             # Check if there is a waiting job that can pair up with the job
             # and that they are allowed to allocate in the cluster
-            res = self.colocation_with_wjobs(job, waiting_queue)
+            # res = self.colocation_with_wjobs(job, waiting_queue)
 
-            if res:
-                self.after_deployment()
-                deployed = True
-                continue
+            # if res:
+            #     self.after_deployment()
+            #     deployed = True
+            #     continue
 
             # All the allocation tries have failed. Return the job at the first
             # out position and reassign the waiting queue of the cluster
@@ -290,12 +290,12 @@ class RanksCoscheduler(Coscheduler, ABC):
 
                 # Check if there is a waiting job that can pair up with the job
                 # and that they are allowed to allocate in the cluster
-                res = self.colocation_with_wjobs(backfill_job, waiting_queue)
+                # res = self.colocation_with_wjobs(backfill_job, waiting_queue)
 
-                if res:
-                    self.after_deployment()
-                    deployed = True
-                    continue
+                # if res:
+                #     self.after_deployment()
+                #     deployed = True
+                #     continue
 
             else:
                 if backfill_job.wall_time <= estimated_start_time_merge:
@@ -326,11 +326,11 @@ class RanksCoscheduler(Coscheduler, ABC):
 
                     # Check if there is a waiting job that can pair up with the job
                     # and that they are allowed to allocate in the cluster
-                    res = self.colocation_with_wjobs(backfill_job, waiting_queue)
+                    # res = self.colocation_with_wjobs(backfill_job, waiting_queue)
 
-                    if res:
-                        self.after_deployment()
-                        deployed = True
-                        continue
+                    # if res:
+                    #     self.after_deployment()
+                    #     deployed = True
+                    #     continue
 
         return deployed

@@ -35,12 +35,58 @@ Object.assign(window.dash_clientside.clientside, {
 
 			menu_children.push(exp_btn);
 
-			let exp_collapse_children = [];
+			exp_id = exp_name.toLowerCase();
+			exp_id = exp_id.replace(/\s+/g, '_');
+
+			let all_jobs_throughput_btn = {
+				'type': 'Button',
+				'namespace': 'dash_bootstrap_components',
+				'props': {
+					'children': 'All jobs throughput',
+					'style': {'width': '100%'},
+					'color': 'secondary',
+					'outline': true,
+					'href': '#' + exp_id + '~all-jobs-throughputs'
+				}
+			}
+
+			let all_waiting_queues_btn = {
+				'type': 'Button',
+				'namespace': 'dash_bootstrap_components',
+				'props': {
+					'children': 'All waiting queues',
+					'style': {'width': '100%'},
+					'color': 'secondary',
+					'outline': true,
+					'href': '#' + exp_id + '~all-waiting-queues'
+				}
+			}
+
+			let all_unused_cores_btn = {
+				'type': 'Button',
+				'namespace': 'dash_bootstrap_components',
+				'props': {
+					'children': 'All unused cores',
+					'style': {'width': '100%'},
+					'color': 'secondary',
+					'outline': true,
+					'href': '#' + exp_id + '~all-unused-cores'
+				}
+			}
+
+			let exp_collapse_children = [{
+				'type': 'Container',
+				'namespace': 'dash_bootstrap_components',
+				'props': {
+					'children': [
+						all_jobs_throughput_btn,
+						all_waiting_queues_btn,
+						all_unused_cores_btn
+					]
+				}
+			}];
 
 			for ([sched_name, res_obj] of Object.entries(exp_obj)) {
-
-				exp_id = exp_name.toLowerCase();
-				exp_id = exp_id.replace(/\s+/g, '_');
 
 				sched_id = sched_name.toLowerCase();
 				sched_id = sched_id.replace(/\s+/g, '_');
@@ -205,6 +251,23 @@ Object.assign(window.dash_clientside.clientside, {
 		if (arr.length == 1 && arr[0] == 'all-experiments') {
 			this.create_all_graph(data);
 		}
+		else if (arr.length == 2) {
+			// Per experiment logs
+			exp_tag = arr[0]
+			experiment = exp_tag.replace(/_/g, ' ')
+			experiment = experiment.charAt(0).toUpperCase() + experiment.slice(1)
+			if (arr[1] == 'all-jobs-throughputs') {
+				this.graph_all_jobs_throughput(data[experiment])
+			}
+			else if (arr[1] == 'all-waiting-queues') {
+				this.graph_all_waiting_queues(data[experiment])
+			}
+			else if (arr[1] == 'all-unused-cores') {
+				this.graph_all_unused_cores(data[experiment])
+			}
+			else
+				return window.dash_clientside.no_update;
+		}
 		else {
 
 			if (arr.length != 3)
@@ -235,10 +298,10 @@ Object.assign(window.dash_clientside.clientside, {
 				Plotly.newPlot("results-graph", JSON.parse(data[experiment][scheduler][graph]), {'displayModeBar': false})
 			}
 			else if (graph == "Jobs throughput") {
-				Plotly.newPlot('results-graph', JSON.parse(data[experiment][scheduler][graph]), {'displayModeBar': false})
+				this.graph_jobs_throughput(scheduler, data[experiment][scheduler][graph])
 			}
 			else if (graph == "Waiting queue") {
-				Plotly.newPlot("results-graph", JSON.parse(data[experiment][scheduler][graph]), {'displayModeBar': false})
+				this.graph_waiting_queue(scheduler, data[experiment][scheduler][graph])
 			}
 			else if (graph == "Jobs utilization") {
 
@@ -305,6 +368,101 @@ Object.assign(window.dash_clientside.clientside, {
 				Plotly.newPlot('results-graph', traces, layout, {'displayModeBar': false});
 			}
 		}
+	},
+
+	graph_jobs_throughput: function(scheduler, tuple) {
+		let trace = {
+			'type': 'scatter',
+			'x': tuple[0],
+			'y': tuple[1],
+			'mode': 'lines+markers'
+		};
+		let layout = {
+			'title': '<b>Jobs throughput</b><br>' + scheduler,
+			'title_x': 0.5,
+			'xaxis': {'title': '<b>Time (s)</b>'},
+			'yaxis': {'title': '<b>Number of finished jobs</b>'}
+		};
+		Plotly.newPlot('results-graph', [trace], layout, {'displayModeBar': false});
+	},
+
+	graph_all_jobs_throughput: function(data) {
+		let traces = [];
+		for ([scheduler, graphs] of Object.entries(data)) {
+			arrays = graphs['Jobs throughput']
+			traces.push({
+				'type': 'scatter',
+				'mode': 'lines+markers',
+				'name': scheduler,
+				'x': arrays[0],
+				'y': arrays[1]
+			})
+		}
+		let layout = {
+			'title': '<b>All jobs throughput</b><br>',
+			'title_x': 0.5,
+			'xaxis': {'title': '<b>Time (s)</b>'},
+			'yaxis': {'title': '<b>Number of finished jobs</b>'}
+		};
+		Plotly.newPlot('results-graph', traces, layout, {'displayModeBar': false});
+	},
+
+	graph_waiting_queue: function(scheduler, tuple) {
+		let trace = {
+			'type': 'scatter',
+			'x': tuple[0],
+			'y': tuple[1],
+			'mode': 'lines+markers'
+		};
+		let layout = {
+			'title': '<b>Number of jobs inside waiting queue per checkpoint</b><br>{self.cluster.scheduler.name}' + scheduler,
+			'title_x': 0.5,
+			'xaxis': {'title': '<b>Time (s)</b>'},
+			'yaxis': {'title': '<b>Number of waiting jobs</b>'}
+		};
+		Plotly.newPlot('results-graph', [trace], layout, {'displayModeBar': false});
+	},
+
+	graph_all_waiting_queues: function(data) {
+		let traces = [];
+		for ([scheduler, graphs] of Object.entries(data)) {
+			arrays = graphs['Waiting queue']
+			traces.push({
+				'type': 'scatter',
+				'mode': 'lines+markers',
+				'name': scheduler,
+				'x': arrays[0],
+				'y': arrays[1]
+			})
+		}
+		let layout = {
+			'title': '<b>All waiting queues</b><br>',
+			'title_x': 0.5,
+			'xaxis': {'title': '<b>Time (s)</b>'},
+			'yaxis': {'title': '<b>Number of waiting jobs</b>'}
+		};
+		Plotly.newPlot('results-graph', traces, layout, {'displayModeBar': false});
+	},
+
+	graph_all_unused_cores: function(data) {
+		let traces = [];
+		for ([scheduler, graphs] of Object.entries(data)) {
+			arrays = graphs['Unused cores']
+			traces.push({
+				'type': 'scatter',
+				'mode': 'lines+markers',
+				'name': scheduler,
+				'x': arrays[0],
+				'y': arrays[1]
+			})
+		}
+		let layout = {
+			'title': '<b>All unused cores</b><br>',
+			'title_x': 0.5,
+			'xaxis': {'title': '<b>Time (s)</b>'},
+			'yaxis': {'title': '<b>Number of unused cores</b>'}
+		};
+		Plotly.newPlot('results-graph', traces, layout, {'displayModeBar': false});
 	},
 
 	create_all_graph: function(data) {

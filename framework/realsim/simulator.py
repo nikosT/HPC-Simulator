@@ -44,6 +44,7 @@ def run_sim(core):
             # Graphs
             # "Resource usage": logger.get_resource_usage(),
             "Gantt diagram": logger.get_gantt_representation(),
+            "Unused cores": logger.get_unused_cores_graph(),
             "Jobs utilization": logger.get_jobs_utilization(default_logger),
             "Jobs throughput": logger.get_jobs_throughput(),
             "Waiting queue": logger.get_waiting_queue_graph(),
@@ -175,6 +176,7 @@ class Simulation:
         data = {
                 # "Resource usage": self.default_logger.get_resource_usage(),
                 "Gantt diagram": self.default_logger.get_gantt_representation(),
+                "Unused cores": self.default_logger.get_unused_cores_graph(),
                 "Jobs utilization": {},
                 "Makespan speedup": 1.0,
                 "Jobs throughput": self.default_logger.get_jobs_throughput(),

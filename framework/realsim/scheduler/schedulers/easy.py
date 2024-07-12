@@ -28,8 +28,8 @@ class EASYScheduler(FIFOScheduler):
             return False
 
         execution_list = deepcopy_list(self.cluster.execution_list)
-        execution_list.sort(key=lambda jblock: jblock[0].wall_time +
-                            jblock[0].start_time - self.cluster.makespan)
+        execution_list.sort(key=lambda xunit: xunit[0].wall_time +
+                            xunit[0].start_time - self.cluster.makespan)
 
         blocked_job = self.cluster.waiting_queue[0]
 

@@ -40,7 +40,7 @@ class Logger(object):
         self.cluster_events = dict()
         self.cluster_events["checkpoints"] = set()
         self.cluster_events["checkpoints"].add(0)
-        self.cluster_events["used cores"] = list()
+        self.cluster_events["unused cores"] = list()
         self.cluster_events["deploying:spread"] = 0
         self.cluster_events["deploying:exec-colocation"] = 0
         self.cluster_events["deploying:wait-colocation"] = 0
@@ -82,15 +82,6 @@ class Logger(object):
             - remaining time: the remaining time of a job at the specific point
               in time with the specific speedup
         """
-
-        self.cluster_events["checkpoints"].add(
-                self.cluster.makespan
-        )
-
-        # Record the number of used cores at this checkpoint
-        self.cluster_events["used cores"].append(
-                self.cluster.total_cores - self.cluster.free_cores
-        )
 
         for xunit in self.cluster.execution_list:
 
@@ -193,12 +184,19 @@ class Logger(object):
         self.job_events[job_key]["submit time"] = job.submit_time
         self.job_events[job_key]["waiting time"] = job.waiting_time
 
-        # Write down the total number of finished job at the checkpoint
+        # Write down the total number of finished job and unused cores at the 
+        # checkpoint
+        # Because the method is accessed one time per job finish we need to make
+        # sure that we moved to the next checkpoint in order to increase the
+        # datapoints for each metric
         if self.cluster.makespan in self.cluster_events["checkpoints"]:
             self.cluster_events["finished jobs"][-1] += 1
         else:
             self.cluster_events["finished jobs"].append(
                     self.cluster_events["finished jobs"][-1] + 1
+            )
+            self.cluster_events["unused cores"].append(
+                    len(self.cluster.total_procs)
             )
 
         # Record a checkpoint
@@ -241,7 +239,7 @@ class Logger(object):
                     f"start time = {jevt['start time']:.2f} s<br>"+
                     f"finish time = {jevt['finish time']:.2f} s<br>"+
                     f"waiting time = {jevt['waiting time']:.2f} s<br>"+
-                    f"processors = {len(jevt['assigned procs'])}"
+                    f"processors = {len(jevt['assigned procs'])}",
                 ))
 
         fig = go.Figure(data=fig_data)
@@ -553,32 +551,20 @@ class Logger(object):
                     jobs_in_check += 1
             num_of_jobs.append(jobs_in_check)
 
-        scatter = go.Scatter(
-                x=sorted(list(self.cluster_events["checkpoints"])),
-                y=num_of_jobs,
-                mode="lines+markers"
+        return (
+                sorted(list(self.cluster_events["checkpoints"])),
+                num_of_jobs
         )
-
-        fig = go.Figure(data=scatter)
-        fig.update_layout(
-                title=f"<b>Number of jobs inside waiting queue per checkpoint</b><br>{self.cluster.scheduler.name}",
-                title_x=0.5,
-                xaxis=dict(title="<b>Time (s)</b>"),
-                yaxis=dict(title="<b>Number of waiting jobs</b>")
-        )
-        return fig.to_json()
 
     def get_jobs_throughput(self):
-        graph = go.Scatter(
-                x=sorted(list(self.cluster_events["checkpoints"])),
-                y=self.cluster_events["finished jobs"],
-                mode="lines+markers"
+        return (
+                sorted(list(self.cluster_events["checkpoints"])),
+                self.cluster_events["finished jobs"]
         )
-        fig = go.Figure(data=graph)
-        fig.update_layout(
-                title=f"<b>Jobs throughput</b><br>{self.cluster.scheduler.name}",
-                title_x=0.5,
-                xaxis=dict(title="<b>Time (s)</b>"),
-                yaxis=dict(title="<b>Number of finished jobs</b>")
+
+    def get_unused_cores_graph(self):
+        self.cluster_events["unused cores"].append(self.cluster.total_cores)
+        return (
+                sorted(list(self.cluster_events["checkpoints"])),
+                self.cluster_events["unused cores"]
         )
-        return fig.to_json()

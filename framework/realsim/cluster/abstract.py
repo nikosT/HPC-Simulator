@@ -46,7 +46,7 @@ class AbstractCluster(abc.ABC):
         # The queue of jobs that are executing
         self.execution_list: list[list[Job]] = list()
         # Finished jobs' ids list
-        self.finished_jobs: list[int] = list()
+        self.finished_jobs: int = 0
 
         # Important counters #
 
