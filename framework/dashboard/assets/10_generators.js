@@ -147,7 +147,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 						'type': 'Upload',
 						'namespace': 'dash_core_components',
 						'props': {
-							'id': 'gen-upload',
+							'id': 'upload-workload',
 							'children': [{
 								'type': 'Button',
 								'namespace': 'dash_bootstrap_components',
@@ -158,18 +158,10 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 							}]
 						}
 					};
+
 					return upload_btn;
-					// return {
-					// 	'type': 'Button',
-					// 	'namespace': 'dash_bootstrap_components',
-					// 	'props': {
-					// 		'children': 'Upload file',
-					// 		'style': {
-					// 			'width': '100%'
-					// 		}
-					// 	}
-					// };
 				}
+
 				else if (gen_value == 'Dictionary Generator') {
 
 					let children = [];

@@ -12,7 +12,7 @@ class KeysListGenerator(AbstractGenerator[str]):
     def __init__(self, load_manager):
         AbstractGenerator.__init__(self, load_manager=load_manager)
 
-    def generate_jobs_set(self, arg: list[tuple[str, float]]) -> list[Job]:
+    def generate_jobs_set(self, arg: str) -> list[Job]:
         """Generate jobs based on the names in the dictionary and their
         frequency of appeareance.
 
@@ -21,11 +21,17 @@ class KeysListGenerator(AbstractGenerator[str]):
 
         # Create a list of jobs based on arg
         jobs_set = list()
-        idx = 0
-        for load_name, submit_time in arg:
-            jobs_set.append(
-                    self.generate_job(idx, self.load_manager(load_name), submit_time)
-            )
+        text_split = arg.split('\n')
+
+        for line in text_split[1:]:
+            fields = line.split(',')
+            if len(fields) < 18:
+                continue
+            job = self.generate_job(int(fields[0]), self.load_manager(fields[13]))
+            job.submit_time = float(fields[1])
+
+            jobs_set.append(job)
+            
 
         return jobs_set
 

@@ -150,7 +150,6 @@ Object.assign(window.dash_clientside.clientside, {
 					}
 				};
 
-
 				let waiting_queue_btn = {
 					'type': 'Button',
 					'namespace': 'dash_bootstrap_components',
@@ -163,6 +162,28 @@ Object.assign(window.dash_clientside.clientside, {
 					}
 				}
 
+				let workload_download_btn = {
+					'type': 'Button',
+					'namespace': 'dash_bootstrap_components',
+					'props': {
+						'children': [
+							'Workload Download ',
+							{
+								'type': 'I',
+								'namespace': 'dash_html_components',
+								'props': {
+									'className': 'bi bi-file-earmark-arrow-down',
+								}
+							},
+
+						],
+						'style': {'width': '100%'},
+						'color': 'primary',
+						'outline': true,
+						'href': '#' + unique_id + '~download-workload'
+					}
+				};
+
 				if (sched_name == 'Default Scheduler') {
 					exp_collapse_children.push({
 						'type': 'Container',
@@ -172,8 +193,9 @@ Object.assign(window.dash_clientside.clientside, {
 								label,
 								// resource_usage_btn,
 								gantt_btn,
-								jobs_throughput_btn,
-								waiting_queue_btn
+								// jobs_throughput_btn,
+								// waiting_queue_btn,
+								workload_download_btn
 							]
 						}
 					})
@@ -188,8 +210,9 @@ Object.assign(window.dash_clientside.clientside, {
 								// resource_usage_btn,
 								gantt_btn,
 								jobs_utilization_btn,
-								jobs_throughput_btn,
-								waiting_queue_btn
+								// jobs_throughput_btn,
+								// waiting_queue_btn,
+								workload_download_btn
 							]
 						}
 					})
@@ -274,6 +297,9 @@ Object.assign(window.dash_clientside.clientside, {
 				return window.dash_clientside.no_update;
 
 			[exp_tag, sched_tag, graph_tag] = arr;
+
+			if (graph_tag == 'download-workload')
+				return window.dash_clientside.no_update;
 
 			experiment = exp_tag.replace(/_/g, ' ')
 			experiment = experiment.charAt(0).toUpperCase() + experiment.slice(1)
@@ -847,6 +873,41 @@ Object.assign(window.dash_clientside.clientside, {
 		});
 		
 		graph_elem.layout.updatemenus = updatemenus;
+	},
+
+	results_download_workload: function(hash, data) {
+		if (data === undefined)
+			return window.dash_clientside.no_update;
+
+		let selection = hash.replace('#', '');
+		let arr = selection.split('~')
+
+		if (arr.length != 3)
+			return window.dash_clientside.no_update;
+		else {
+			[exp_tag, sched_tag, graph_tag] = arr;
+
+			if (graph_tag != 'download-workload')
+				return window.dash_clientside.no_update;
+
+			experiment = exp_tag.replace(/_/g, ' ')
+			experiment = experiment.charAt(0).toUpperCase() + experiment.slice(1)
+
+			scheduler = ''
+			for (sched_name of Object.keys(data[experiment])) {
+				sched_name_tagged = sched_name.toLowerCase().replace(/\s+/g, '_')
+				if (sched_name_tagged == sched_tag) {
+					scheduler = sched_name;
+					break;
+				}
+			}
+
+			let workload = data[experiment][scheduler]["Workload"]
+			return {
+				'content': workload,
+				'filename': exp_tag + '.' + sched_tag + '.workload'
+			}
+		}
 	}
 
 })

@@ -7,6 +7,7 @@ from time import time_ns, time
 from datetime import timedelta
 import os
 import sys
+import base64
 
 sys.path.append(os.path.abspath(os.path.join(
     os.path.dirname(__file__), "../../../../"
@@ -232,9 +233,13 @@ def run_simulation(data, queue_size):
         pass
 
     # Setup generator bundle
-    # TODO: change 'mapping' name
     gen_class = mapping[data["generator-type"]]
     gen_input = data["generator-input"]
+    if gen_class.name == "List Generator":
+        gen_input = gen_input.split(",")[1]
+        gen_input = base64.b64decode(gen_input)
+        gen_input = gen_input.decode("utf-8")
+    print(gen_input)
     simulation_type = data["simulation-type"]
     simulation_dynamic_condition = data["simulation-dynamic-condition"]
 

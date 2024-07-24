@@ -48,6 +48,7 @@ def run_sim(core):
             "Jobs utilization": logger.get_jobs_utilization(default_logger),
             "Jobs throughput": logger.get_jobs_throughput(),
             "Waiting queue": logger.get_waiting_queue_graph(),
+            "Workload": logger.get_workload(),
             
             # Extra metrics
             "Makespan speedup": default_cluster_makespan / cluster.makespan
@@ -153,6 +154,8 @@ class Simulation:
             print(policy, "submitted")
             self.futures[policy] = self.executor.submit(run_sim, sim_args)
 
+        print("Running the default scheduler")
+
         # Execute the default scheduler
         self.default_cluster.setup()
         self.default_scheduler.setup()
@@ -180,6 +183,7 @@ class Simulation:
                 "Jobs utilization": {},
                 "Makespan speedup": 1.0,
                 "Jobs throughput": self.default_logger.get_jobs_throughput(),
+                "Workload": self.default_logger.get_workload(),
                 "Waiting queue": self.default_logger.get_waiting_queue_graph(),
         }
 

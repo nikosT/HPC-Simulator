@@ -31,7 +31,7 @@ class AbstractGenerator(abc.ABC, Generic[T]):
     def timer(self, timer: Callable[[], float]):
         self._timer = timer
 
-    def generate_job(self, idx: int, load: Load, submit_time: float = 0):
+    def generate_job(self, idx: int, load: Load) -> Job:
         seed(time_ns() % (2**32))
         return Job(load=load,
                    job_id=idx,
@@ -42,7 +42,7 @@ class AbstractGenerator(abc.ABC, Generic[T]):
                    half_node_cores=-1,
                    full_node_cores=-1,
                    remaining_time=load.get_avg_time(),
-                   submit_time=submit_time,
+                   submit_time=0,
                    waiting_time=0,
                    wall_time=(1.15 * load.get_avg_time()))
 

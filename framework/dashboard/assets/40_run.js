@@ -67,10 +67,10 @@ Object.assign(window.dash_clientside.clientside, {
 		}
 		else if (generator_type == 'List Generator') {
 			let enc_contents = generator_options.props.contents;
-			let data = enc_contents.split('base64,')[1];
-			let contents = atob(data);
-			console.log(contents);
-			data['generator-input'] = contents;
+			// let data = enc_contents.split('base64,')[1];
+			// let contents = atob(data);
+			// console.log(contents);
+			data['generator-input'] = enc_contents;
 		}
 		else return window.dash_clientside.no_update;
 

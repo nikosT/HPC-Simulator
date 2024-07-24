@@ -65,7 +65,9 @@ class Logger(object):
                     "start time": 0,
                     "finish time": 0,
                     "submit time": 0,
-                    "waiting time": 0
+                    "waiting time": 0,
+                    "wall time": job.wall_time,
+                    "num of processes": job.num_of_processes
             }
             self.job_events[f"{job.job_id}:{job.job_name}"] = jevts
 
@@ -568,3 +570,26 @@ class Logger(object):
                 sorted(list(self.cluster_events["checkpoints"])),
                 self.cluster_events["unused cores"]
         )
+
+    def get_workload(self):
+        """Return 1-5 and 9 fields frm the Standart Workload Format
+        """
+
+        header = "Job Number,"
+        header += "Submit Time,Wait Time,Run Time," # Actual times
+        header += "Number of Allocated Processors,Average CPU Time Used,Used Memory," # Used resources
+        header += "Requested Number of Processors,Requested Time,Requested Memory," # Requested resources
+        header += "Status,User ID,Group ID,Executable Number," # Assign job_name
+        header += "Queue Number,Partition Number,Preceding Job Number,Think Time from Preceding Job\n" # Irrelevant for us
+
+        workload = ""
+        for jevt_id, jevt in self.job_events.items():
+            job_id, job_name = jevt_id.split(':')
+            workload += f"{job_id},"
+            workload += f"{jevt['submit time']},{jevt['waiting time']},{jevt['finish time']-jevt['start time']},"
+            workload += f"{len(jevt['assigned procs'])},,,"
+            workload += f"{jevt['num of processes']},{jevt['wall time']},,"
+            workload += f"1,,,{job_name},"
+            workload += f",,,\n"
+
+        return header + workload
