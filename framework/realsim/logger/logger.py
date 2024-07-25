@@ -164,6 +164,7 @@ class Logger(object):
                 self.job_events[head_key]["remaining time"].append(
                         xunit[0].remaining_time
                 )
+
             else:
                 pass
 
@@ -193,12 +194,13 @@ class Logger(object):
         # datapoints for each metric
         if self.cluster.makespan in self.cluster_events["checkpoints"]:
             self.cluster_events["finished jobs"][-1] += 1
+            self.cluster_events["unused cores"][-1] += len(job.assigned_cores)
         else:
             self.cluster_events["finished jobs"].append(
                     self.cluster_events["finished jobs"][-1] + 1
             )
             self.cluster_events["unused cores"].append(
-                    len(self.cluster.total_procs)
+                    len(self.cluster.total_procs) + len(job.assigned_cores)
             )
 
         # Record a checkpoint
