@@ -23,10 +23,16 @@ class ClusterExhaustive(AbstractCluster):
 
     def next_state(self):
         """Execute the jobs in the execution list
+        We first calculate the minimum time jump (or step) for the next serious
+        event in the cluster. These events are:
+        1. A job has finished executing.
+        2. A job shows up in the waiting queue.
+        3. A job has aged so that the allocation policy changes to compact
+        execution.
+        Then we subtract the minimum next important time step from the execution
+        time of the running jobs. We add the time step to the waiting time of
+        the jobs insided the waiting queue.
         """
-        # print()
-        # print(len(self.waiting_queue))
-        # print()
 
         # Find smallest remaining time of executing jobs
         min_rem_time = math.inf
@@ -64,6 +70,15 @@ class ClusterExhaustive(AbstractCluster):
 
         # Increase the overall cluster runtime
         self.makespan += min_rem_time
+
+        # If makespan changes we reached a new checkpoint
+        # TODO: We should send a signal to logger instance
+        if min_rem_time > 0:
+            # self.logger.cluster_events["checkpoints"].add(self.makespan)
+            self.logger.cluster_events["checkpoints"].append(self.makespan)
+            self.logger.cluster_events["finished jobs"].append(
+                self.logger.cluster_events["finished jobs"][-1]
+            )
 
         # Increase the waiting/queued time of each job in the waiting queue
         for job in self.waiting_queue:

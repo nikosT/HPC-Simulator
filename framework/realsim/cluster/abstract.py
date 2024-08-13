@@ -11,7 +11,6 @@ from realsim.database import Database
 
 import math
 import numpy as np
-from typing import Optional
 from procset import ProcSet
 
 

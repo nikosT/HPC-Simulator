@@ -472,8 +472,12 @@ Object.assign(window.dash_clientside.clientside, {
 
 	graph_all_unused_cores: function(data) {
 		let traces = [];
+		let ymax = -1;
 		for ([scheduler, graphs] of Object.entries(data)) {
 			arrays = graphs['Unused cores']
+			if (ymax == -1)
+				ymax = arrays[1][arrays[1].length - 1];
+
 			traces.push({
 				'type': 'scatter',
 				'mode': 'lines+markers',
@@ -486,7 +490,7 @@ Object.assign(window.dash_clientside.clientside, {
 			'title': '<b>All unused cores</b><br>',
 			'title_x': 0.5,
 			'xaxis': {'title': '<b>Time (s)</b>'},
-			'yaxis': {'title': '<b>Number of unused cores</b>'}
+			'yaxis': {'title': '<b>Number of unused cores</b>', 'tickmode': 'array', 'tickvals': [0, ymax]}
 		};
 		Plotly.newPlot('results-graph', traces, layout, {'displayModeBar': false});
 	},

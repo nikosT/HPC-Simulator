@@ -38,8 +38,9 @@ class Logger(object):
 
         # Cluster wide events
         self.cluster_events = dict()
-        self.cluster_events["checkpoints"] = set()
-        self.cluster_events["checkpoints"].add(0)
+        # self.cluster_events["checkpoints"] = set()
+        # self.cluster_events["checkpoints"].add(0)
+        self.cluster_events["checkpoints"] = [0]
         self.cluster_events["unused cores"] = list()
         self.cluster_events["deploying:spread"] = 0
         self.cluster_events["deploying:exec-colocation"] = 0
@@ -85,7 +86,15 @@ class Logger(object):
               in time with the specific speedup
         """
 
+        if len(self.cluster_events["unused cores"]) == len(self.cluster_events["checkpoints"]) - 1:
+            self.cluster_events["unused cores"].append(len(self.cluster.total_procs))
+        else:
+            self.cluster_events["unused cores"][-1] = len(self.cluster.total_procs)
+
         for xunit in self.cluster.execution_list:
+
+            if type(xunit[-1]) == EmptyJob:
+                self.cluster_events["unused cores"][-1] += len(xunit[-1].assigned_cores)
 
             if len(xunit) == 1 and type(xunit[0]) != EmptyJob:
 
@@ -189,24 +198,7 @@ class Logger(object):
 
         # Write down the total number of finished job and unused cores at the 
         # checkpoint
-        # Because the method is accessed one time per job finish we need to make
-        # sure that we moved to the next checkpoint in order to increase the
-        # datapoints for each metric
-        if self.cluster.makespan in self.cluster_events["checkpoints"]:
-            self.cluster_events["finished jobs"][-1] += 1
-            self.cluster_events["unused cores"][-1] += len(job.assigned_cores)
-        else:
-            self.cluster_events["finished jobs"].append(
-                    self.cluster_events["finished jobs"][-1] + 1
-            )
-            self.cluster_events["unused cores"].append(
-                    len(self.cluster.total_procs) + len(job.assigned_cores)
-            )
-
-        # Record a checkpoint
-        self.cluster_events["checkpoints"].add(
-                self.cluster.makespan
-        )
+        self.cluster_events["finished jobs"][-1] += 1
 
 
     def get_gantt_representation(self):
@@ -565,6 +557,14 @@ class Logger(object):
                 sorted(list(self.cluster_events["checkpoints"])),
                 self.cluster_events["finished jobs"]
         )
+
+    def get_jobs_throughput_derivative(self):
+        checkpoints = self.cluster_events["checkpoints"]
+        finished_jobs = self.cluster_events["finished jobs"]
+        derivatives = [
+                (finished_jobs[i] - finished_jobs[i-1]) / (checkpoints[i] - checkpoints[i-1])
+                for i in range(1, len(checkpoints))
+        ]
 
     def get_unused_cores_graph(self):
         self.cluster_events["unused cores"].append(self.cluster.total_cores)

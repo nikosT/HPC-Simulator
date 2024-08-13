@@ -149,7 +149,6 @@ class Coscheduler(Scheduler, ABC):
             idle_job: Job = xunit[-1]
 
             # Number of idle processors
-            # idle_cores = idle_job.binded_cores
             idle_cores = len(idle_job.assigned_cores)
 
             # If idle cores are less than the resources the job wants to consume
@@ -159,7 +158,6 @@ class Coscheduler(Scheduler, ABC):
 
             # If the job can fit then check if it will be co-allocated as the 
             # head job or as a tail job
-            #if head_job.binded_cores >= idle_cores:
             if len(head_job.assigned_cores) >= idle_cores:
                 # The job will be co-allocated as a tail job
                 # We need to check whether the average speedup of the pairing

@@ -29,16 +29,18 @@ class BalancingRanksCoscheduler(RanksCoscheduler):
     def __init__(self,
                  backfill_enabled: bool = False,
                  aging_enabled: bool = False,
-                 speedup_threshold: float = 1.0,
-                 ranks_threshold: float = 1.0,
+                 # speedup_threshold: float = 1.0,
+                 # ranks_threshold: float = 1.0,
                  system_utilization: float = 1.0,
                  engine: Optional[ScikitModel] = None):
 
         RanksCoscheduler.__init__(self,
                                   backfill_enabled=backfill_enabled,
                                   aging_enabled=aging_enabled,
-                                  speedup_threshold=speedup_threshold,
-                                  ranks_threshold=ranks_threshold,
+                                  # speedup_threshold=speedup_threshold,
+                                  # ranks_threshold=ranks_threshold,
+                                  speedup_threshold=0.1,
+                                  ranks_threshold=0.1,
                                   system_utilization=system_utilization,
                                   engine=engine)
 
@@ -110,7 +112,7 @@ class BalancingRanksCoscheduler(RanksCoscheduler):
         rank_r = rank / len(self.cluster.waiting_queue)
 
         #return waiting_time * speedup_r
-        return waiting_time
+        return waiting_time * (speedup_r ** 0.5)
 
     def xunit_candidates_reorder(self, job: Job, xunit: list[Job]) -> float:
 
@@ -134,7 +136,8 @@ class BalancingRanksCoscheduler(RanksCoscheduler):
         
         speedup_r = speedup ** (2 / self.avg_xunits_speedup)
 
-        return speedup_r / cores_r
+        return speedup_r * cores_r
+        # return speedup_r / cores_r
 
     def after_deployment(self, *args):
 

@@ -72,6 +72,8 @@ class Scheduler(ABC, Generic[Cluster]):
         """Assign nodes based on the number of required physical cores and the 
         set of cores provided.
 
+        TODO: there are different allocation schemes for nodes
+
         + req_cores: required number of (physical) cores for job(s)
         + cores_set: a ProcSet from which the set of required cores will stem from
         """
