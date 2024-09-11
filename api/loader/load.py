@@ -1,6 +1,7 @@
 from typing import Optional, TypeVar
 from numpy import average as avg
 from numpy import median
+from json import dumps, loads
 
 T = TypeVar("T", 'Load', str)
 
@@ -203,15 +204,18 @@ class Load:
             # Get compact median execution time
             return float( median(self.compact_timelogs) )
         else:
-            # Get co-scheduled median execution time
-            return float(
-
-                    avg(list(map(
-                        lambda logs: median(logs), 
-                        self.coscheduled_timelogs[str(co_load)]
-                    )))
-
-            )
+            if (self.load_name == str(co_load)):
+                return float(
+                        avg(list(map(
+                            lambda logs: median(logs),
+                            self.coscheduled_timelogs[str(co_load)]
+                        )))
+                )
+            else:
+                concat_list = list()
+                for li in self.coscheduled_timelogs[str(co_load)]:
+                    concat_list += li
+                return float(median(concat_list))
 
     def get_avg_speedup(self, co_load: T) -> float:
         """Return the average speedup when co-scheduled with a load
@@ -260,8 +264,51 @@ class Load:
         """
         self.coscheduled_timelogs[str(co_load)] = time_bundle
 
-    def to_json(self) -> None:
-        pass
+    def to_json(self) -> str:
+        repres =\
+        {
+                "load_name": self.load_name,
+                "num_of_processes": self.num_of_processes,
+                "machine": self.machine,
+                "suite": self.suite,
+                "compact_timelogs": self.compact_timelogs,
+                "coscheduled_timelogs": self.coscheduled_timelogs,
+                "dpops": self.dpops,
+                "bytes_transferred": self.bytes_transferred,
+                "ipc": self.ipc,
+                "compute_time_norm": self.compute_time_norm,
+                "mpi_time_norm": self.mpi_time_norm
+        }
+        return dumps(repres)
 
-    def from_json(self, json_file) -> None:
-        pass
+    def inject_json(self, json_repres: str) -> None:
+        repres = loads(json_repres)
+        self.load_name = repres["load_name"]
+        self.num_of_processes = repres["num_of_processes"]
+        self.machine = repres["machine"]
+        self.suite = repres["suite"]
+        self.compact_timelogs = repres["compact_timelogs"]
+        self.coscheduled_timelogs = repres["coscheduled_timelogs"]
+        self.dpops = repres["dpops"]
+        self.bytes_transferred = repres["bytes_transferred"]
+        self.ipc = repres["ipc"]
+        self.compute_time_norm = repres["compute_time_norm"]
+        self.mpi_time_norm = repres["mpi_time_norm"]
+
+    @classmethod
+    def from_json(cls, json_repres: str) -> 'Load':
+        load = Load('', 0, '', '')
+        repres = loads(json_repres)
+        load.load_name = repres["load_name"]
+        load.num_of_processes = repres["num_of_processes"]
+        load.machine = repres["machine"]
+        load.suite = repres["suite"]
+        load.compact_timelogs = repres["compact_timelogs"]
+        load.coscheduled_timelogs = repres["coscheduled_timelogs"]
+        load.dpops = repres["dpops"]
+        load.bytes_transferred = repres["bytes_transferred"]
+        load.ipc = repres["ipc"]
+        load.compute_time_norm = repres["compute_time_norm"]
+        load.mpi_time_norm = repres["mpi_time_norm"]
+
+        return load

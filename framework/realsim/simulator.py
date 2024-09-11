@@ -78,8 +78,7 @@ class Simulation:
     """
 
     def __init__(self, 
-                 # generator bundle
-                 jobs_set,
+                 jobs_set, heatmap,
                  # cluster
                  nodes: int, ppn: int, queue_size: int,
                  # scheduler algorithms bundled with inputs
@@ -98,11 +97,11 @@ class Simulation:
         for sched_class, hyperparams in schedulers_bundle:
 
             # Declare a database for each simulation step
-            database = Database(jobs_set)
+            database = Database(jobs_set, heatmap)
 
             # Declare cluster
             cluster = ClusterExhaustive(nodes, ppn)
-            cluster.assign_databse(database)
+            cluster.assign_database(database)
 
             # Define the size of the queue for the cluster
             if queue_size == -1:

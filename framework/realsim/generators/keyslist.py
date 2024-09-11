@@ -29,6 +29,7 @@ class KeysListGenerator(AbstractGenerator[str]):
                 continue
             job = self.generate_job(int(fields[0]), self.load_manager(fields[13]))
             job.submit_time = float(fields[1])
+            job.wall_time = float(fields[8])
 
             jobs_set.append(job)
             

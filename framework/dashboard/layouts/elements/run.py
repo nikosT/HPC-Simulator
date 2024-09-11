@@ -194,7 +194,7 @@ def parallel_simulations(par_inp):
     nodes, ppn, queue_size = cluster_bundle
 
     # Setup simulation
-    sim = Simulation(jobs_set, 
+    sim = Simulation(jobs_set, lm.export_heatmap(),
                      nodes, ppn, queue_size,
                      schedulers_bundle)
     sim.set_default("Default Scheduler")

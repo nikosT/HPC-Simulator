@@ -103,10 +103,8 @@ class Coscheduler(Scheduler, ABC):
                 procset -= job.assigned_cores
 
                 idle_job = EmptyJob(Job(
-                    None, 
                     -1, 
                     "idle", 
-                    -1, 
                     -1, 
                     procset, 
                     -1, 
@@ -212,7 +210,6 @@ class Coscheduler(Scheduler, ABC):
         # Setup the job and the queues
         self.cluster.waiting_queue.remove(job)
         job.start_time = self.cluster.makespan
-        job.binded_cores = job.half_node_cores
 
         # Check if it will be as a head or tail job
         head_job = best_candidate[0]
@@ -231,7 +228,7 @@ class Coscheduler(Scheduler, ABC):
             # If the job produces worse speedup for the current head job of the
             # xunit then re-calculate the head job's remaining time and speedup
             if self.database.heatmap[head_job.job_name][job.job_name] < head_job.sim_speedup:
-                head_job.ratioed_remaining_time(job)
+                self.cluster.ratio_rem_time(head_job, job)
 
             # Add the job to the best xunit candidate
             best_candidate.append(job)
@@ -325,11 +322,9 @@ class Coscheduler(Scheduler, ABC):
         #if idle_job.binded_cores > job.binded_cores:
         if len(idle_job.assigned_cores) > len(job.assigned_cores):
             best_candidate.append(EmptyJob(Job(
-                None, 
                 -1, 
                 "idle", 
-                idle_job.binded_cores - job.binded_cores,
-                idle_job.binded_cores - job.binded_cores,
+                len(idle_job.assigned_cores) - len(job.assigned_cores),
                 idle_job.assigned_cores - job.assigned_cores,
                 -1, 
                 -1,

@@ -109,7 +109,7 @@ class Logger(object):
 
                 # Get compact cores usage
                 self.job_events[job_key]["cores"].update({
-                    "compact": xunit[0].binded_cores
+                    "compact": len(xunit[0].assigned_cores)
                 })
 
                 self.job_events[job_key]["remaining time"].append(
@@ -153,7 +153,7 @@ class Logger(object):
                         )
 
                         self.job_events[job_key]["cores"].update({
-                            head_key: job.binded_cores
+                            head_key: len(job.assigned_cores)
                         })
 
                         self.job_events[job_key]["remaining time"].append(
@@ -167,7 +167,7 @@ class Logger(object):
                 self.job_events[head_key]["speedups"].append(xunit[0].sim_speedup)
 
                 self.job_events[head_key]["cores"].update({
-                    tail_key: xunit[0].binded_cores
+                    tail_key: len(xunit[0].assigned_cores)
                 })
 
                 self.job_events[head_key]["remaining time"].append(

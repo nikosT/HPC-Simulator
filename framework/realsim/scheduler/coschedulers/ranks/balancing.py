@@ -87,8 +87,9 @@ class BalancingRanksCoscheduler(RanksCoscheduler):
         rank = self.ranks[job.job_id]
         rank_r = rank / len(self.cluster.waiting_queue)
 
-        #return response * cores_r * speedup_r * rank_r
-        return waiting_time
+        # return response * cores_r * speedup_r * rank_r
+        # return waiting_time
+        return wall_time
 
     def waiting_job_candidates_reorder(self, job: Job, co_job: Job) -> float:
 

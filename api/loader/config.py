@@ -13,3 +13,4 @@ CONFIG["leonardo"] = 32
 CONFIG["marconi"] = 48
 CONFIG["lrz"] = 48
 CONFIG["rennes.paravance.oar"] = 8
+CONFIG["remake-g5k.nancy.grvingt"] = 32 # check total cores per node

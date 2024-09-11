@@ -160,10 +160,8 @@ class ClusterExhaustive(AbstractCluster):
 
             if len(idle_procs) > 0:
                 # Create an empty job to occupy the idle cores of the xunit
-                empty_job = EmptyJob(Job(None,
-                                         -1,
+                empty_job = EmptyJob(Job(-1,
                                          "idle",
-                                         len(idle_procs),
                                          len(idle_procs),
                                          idle_procs,
                                          -1,

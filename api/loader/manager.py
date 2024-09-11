@@ -10,6 +10,8 @@ from pymongo.server_api import ServerApi
 import pickle
 from functools import reduce
 from pandas import DataFrame
+from numpy import median as med
+from json import dumps, loads
 
 Heatmap = dict[str, dict[str, Optional[float]]]
 
@@ -510,6 +512,25 @@ class LoadManager:
             except Exception:
                 print(f"\033[33m{load} -> EXTRACTED/MPI_CMDS_BYTES : File doesn't exist\033[0m")
 
+    def export_to_json(self):
+        repres =\
+        {
+                "machine": self.machine,
+                "suite": self.suite,
+                "loads": [
+                    load.to_json() for load in self.loads.values()
+                ]
+        }
+
+        with open("lm-{self.machine}-{self.suite}.json", "w") as fd:
+            fd.write(dumps(repres))
+
+    def import_from_json(self, file: Optional[str] = None):
+        if file is None:
+            print("Can't build LoadManager if no file is given")
+        pass
+
+
     def export_to_db(self, 
                      host="localhost", 
                      port=8080, 
@@ -546,12 +567,12 @@ class LoadManager:
         coll = db[collection]
 
         # Add or update a load
-        for load in self.loads:
+        for name, load in self:
             # Create the id of the load
             _id = {
-                "machine": self.machine,
-                "suite": self.loads[load].suite,
-                "load": load
+                "machine": load.machine,
+                "suite": load.suite,
+                "load": name
             }
 
             # First check if the load already exists in
@@ -563,9 +584,10 @@ class LoadManager:
 
             if findings != []:
                 # If the load exists then update all occurencies
-                coll.update_many(query, {"$set": {"bin": pickle.dumps(self.loads[load])}})
+                #coll.update_many(query, {"$set": {"bin": pickle.dumps(self.loads[load])}})
+                coll.update_many(query, {"$set": {"bin": load.to_json()}})
             else:
-                coll.insert_one({"_id": _id,  "bin": pickle.dumps(self.loads[load])})
+                coll.insert_one({"_id": _id,  "bin": load.to_json()})
 
     def import_from_db(self, 
                        host="localhost", 
@@ -607,7 +629,8 @@ class LoadManager:
             query = { "_id.machine": self.machine }
 
         for doc in coll.find(query):
-            load = pickle.loads(doc["bin"])
+            # load = pickle.loads(doc["bin"])
+            load = Load.from_json(doc["bin"])
             # load.coloads_median_speedup = dict()
             # for coload_name in load.coloads:
             #     load.set_median_speedup(coload_name)
@@ -623,6 +646,57 @@ class LoadManager:
                     correct_coloads[coload_name] = load.coscheduled_timelogs[coload_name]
 
             load.coscheduled_timelogs = correct_coloads
+
+    def export_coschedules(self) -> DataFrame:
+        """Export the co-scheduled load names and their execution time with
+        respect to one another.
+        """
+        columns = [
+                "name_A",
+                "procs_A",
+                "compact_A",
+                "name_B",
+                "procs_B",
+                "compact_B",
+                "co_A_B",
+                "co_B_A"
+        ]
+
+        data: list[list] = list()
+        load_names = sorted(self.loads.keys())
+
+        for i, name in enumerate(load_names):
+
+            load = self.loads[name]
+
+            for co_name in load_names[i:]:
+
+                co_load = self.loads[co_name]
+            
+                if co_name not in load.coscheduled_timelogs.keys():
+                    co_A_B = None
+                    co_B_A = None
+                else:
+                    if name != co_name:
+                        co_A_B = load.get_med_time(co_load)
+                        co_B_A = co_load.get_med_time(load)
+                    else:
+                        co_A_B = float(med(load.coscheduled_timelogs[co_name][1]))
+                        co_B_A = float(med(load.coscheduled_timelogs[co_name][0]))
+
+
+                data.append([
+                    name, 
+                    load.num_of_processes,
+                    load.get_med_time(), 
+                    co_name, 
+                    co_load.num_of_processes,
+                    co_load.get_med_time(),
+                    co_A_B,
+                    co_B_A
+                ])
+
+        return DataFrame(data=data, columns=columns)
 
     def export_ml_table(self) -> DataFrame:
         """Export a DataFrame for the machine learning model to train

@@ -3,7 +3,7 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
-from realsim.jobs import Job, EmptyJob, JobTag
+from realsim.jobs import Job, EmptyJob, JobCharacterization
 from realsim.jobs.utils import deepcopy_list
 from realsim.scheduler.scheduler import Scheduler
 from realsim.logger.logger import Logger
@@ -56,7 +56,7 @@ class AbstractCluster(abc.ABC):
         # of a cluster
         self.makespan: float = 0
 
-    def assign_databse(self, db: Database) -> None:
+    def assign_database(self, db: Database) -> None:
         self.database = db
 
     def assign_scheduler(self, scheduler: Scheduler):
@@ -107,14 +107,14 @@ class AbstractCluster(abc.ABC):
             std = round(float(np.std(speedups)), 2)
 
             if avg > 1.02:
-                job.job_tag = JobTag.SPREAD
+                job.job_character = JobCharacterization.SPREAD
             elif avg < 0.98:
-                job.job_tag = JobTag.COMPACT
+                job.job_character = JobCharacterization.COMPACT
             else:
                 if std > 0.07:
-                    job.job_tag = JobTag.FRAIL
+                    job.job_character = JobCharacterization.FRAIL
                 else:
-                    job.job_tag = JobTag.ROBUST
+                    job.job_character = JobCharacterization.ROBUST
 
             self.id_counter += 1
 

@@ -8,10 +8,6 @@ sys.path.append(os.path.abspath(
         )
     ))
 
-from api.loader import Load
-from typing import Optional
-from numpy import average as avg
-from numpy import isnan
 from procset import ProcSet
 
 
@@ -68,6 +64,9 @@ class Job:
         self.max_speedup: float = 1
         self.min_speedup: float = 1
 
+        # Job performance tag
+        self.job_tag = list()
+
         # Job characterization for schedulers
         self.job_character = JobCharacterization.COMPACT
 
@@ -79,13 +78,18 @@ class Job:
     def __eq__(self, job):
         if not isinstance(job, Job):
             return False
-        return self.job_id == job.job_id and self.job_name == job.job_name and self.num_of_processes == job.num_of_processes\
-                and self.remaining_time == job.remaining_time and self.submit_time == job.submit_time\
-                and self.wall_time == job.wall_time and self.start_time == job.start_time\
+        return  self.job_id == job.job_id\
+                and self.job_name == job.job_name\
+                and self.num_of_processes == job.num_of_processes\
+                and self.remaining_time == job.remaining_time\
+                and self.submit_time == job.submit_time\
+                and self.wall_time == job.wall_time\
+                and self.start_time == job.start_time\
                 and self.sim_speedup == job.sim_speedup\
                 and self.avg_speedup == job.avg_speedup\
                 and self.max_speedup == job.max_speedup\
                 and self.min_speedup == job.min_speedup\
+                and self.job_tag == job.job_tag\
                 and self.job_character == job.job_character
 
     def __repr__(self) -> str:
@@ -120,6 +124,7 @@ class Job:
         copy.avg_speedup = self.avg_speedup
         copy.max_speedup = self.max_speedup
         copy.min_speedup = self.min_speedup
+        copy.job_tag = self.job_tag
         copy.job_character = self.job_character
         copy.age = self.age
 
@@ -130,11 +135,9 @@ class EmptyJob(Job):
 
     def __init__(self, job: Job):
         Job.__init__(self, 
-                     None, 
                      job.job_id, 
                      job.job_name, 
                      job.num_of_processes, 
-                     job.binded_cores, 
                      job.assigned_cores,
                      -1, 
                      -1, 
@@ -144,17 +147,15 @@ class EmptyJob(Job):
                      None)
 
     def __repr__(self) -> str:
-        return "{" + f"{self.job_id}, idle : {self.remaining_time}, {self.binded_cores}" + "}"
+        return f"[{self.job_id}:{self.job_name}],(T:{self.remaining_time}),(C:{len(self.assigned_cores)}),(S:{self.sim_speedup})"
 
     def deepcopy(self):
         """Return a new instance of Job that is a true copy
         of the original
         """
-        copy = EmptyJob(Job(load=None,
-                            job_id=self.job_id,
+        copy = EmptyJob(Job(job_id=self.job_id,
                             job_name=self.job_name,
                             num_of_processes=self.num_of_processes,
-                            binded_cores=self.binded_cores,
                             assigned_cores=self.assigned_cores,
                             full_node_cores=self.full_node_cores,
                             half_node_cores=self.half_node_cores,

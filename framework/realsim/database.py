@@ -31,6 +31,7 @@ sys.path.append(os.path.abspath(os.path.join(
 from realsim.jobs.jobs import Job
 from realsim.jobs.utils import deepcopy_list
 
+Heatmap = dict[str,dict[str, Optional[float]]]
 
 # Define the inference engine
 class InferenceEngine(Protocol):
@@ -40,10 +41,13 @@ class InferenceEngine(Protocol):
 
 class Database:
 
-    def __init__(self, jobs_set: list[Job], engine: Optional[InferenceEngine] = None):
-        self.preloaded_queue: list[Job] = deepcopy_list(jobs_set)
-        self.engine: Optional[InferenceEngine] = engine
-        self.heatmap: dict[str,dict[str,float]] = dict()
+    def __init__(self, 
+                 jobs_set: list[Job], 
+                 heatmap: Heatmap = dict(),
+                 engine: Optional[InferenceEngine] = None):
+        self.preloaded_queue = deepcopy_list(jobs_set)
+        self.heatmap = heatmap
+        self.engine = engine
 
     def pop(self, queue: list[Job]) -> Job:
         job: Job = queue[0]
@@ -52,73 +56,40 @@ class Database:
 
     def init_heatmap(self):
 
-        # Initialize the heatmap
-        for job in self.preloaded_queue:
-            self.heatmap[job.job_name] = {}
+        # If there is an inference engine and the heatmap is not populated
+        # with values
+        if self.engine is not None and self.heatmap == dict():
 
-        # Get a copy of the preloaded queue
-        preloaded_queue = deepcopy_list(self.preloaded_queue)
+            # Initialize the heatmap
+            for job in self.preloaded_queue:
+                self.heatmap[job.job_name] = {}
 
-        while preloaded_queue != []:
+            # Get a copy of the preloaded queue
+            preloaded_queue = deepcopy_list(self.preloaded_queue)
 
-            job: Job = self.pop(preloaded_queue)
+            while preloaded_queue != []:
 
-            load: Optional[Load] = job.load
+                job: Job = self.pop(preloaded_queue)
 
-            if load is None:
-                raise RuntimeError("A job with an empty load was found inside the waiting queue at the startup stage")
+                for co_job in preloaded_queue:
 
-            for co_job in preloaded_queue:
-
-                co_load: Optional[Load] = co_job.load
-
-                if co_load is None:
-                    raise RuntimeError("A job with an empty load was found inside the waiting queue at the startup stage")
-
-                if self.engine is not None:
                     # If an inference engine is provided then predict the
                     # speedup for both load and co-load when co-scheduled
 
                     # Get speedup for load when co-scheduled with co-load
-                    self.heatmap[load.load_name].update({
-                            co_load.load_name: self.engine.predict(
-                                load.get_tag(), co_load.get_tag()
-                            )
+                    tag = list()
+                    tag.extend(job.job_tag)
+                    tag.extend(co_job.job_tag)
+                    self.heatmap[job.job_name].update({
+                            co_job.job_name: self.engine.predict(tag)
                     })
 
                     # Get speedup for co-load when co-scheduled with load
-                    self.heatmap[co_load.load_name].update({
-                            load.load_name: self.engine.predict(
-                                co_load.get_tag(), load.get_tag()
-                            )
-                    })
-
-                else:
-                    # If we do not have an inference engine, then use the stored
-                    # knowledge inside each load to get their speedups
-                    # and if we do not have knowledge of their co-execution then
-                    # submit a None value inside the heatmap
-
-                    # Get speedup for load when co-scheduled with co-load
-                    self.heatmap[load.load_name].update({
-
-                            co_load.load_name:
-
-                            load.get_med_speedup(co_load.load_name) 
-                            if co_load.load_name in load.coscheduled_timelogs
-                            else None
-
-                    })
-
-                    # Get speedup for co-load when co-scheduled with load
-                    self.heatmap[co_load.load_name].update({
-
-                            load.load_name:
-
-                            co_load.get_med_speedup(load.load_name) 
-                            if load.load_name in co_load.coscheduled_timelogs
-                            else None
-
+                    co_tag = list()
+                    co_tag.extend(co_job.job_tag)
+                    co_tag.extend(job.job_tag)
+                    self.heatmap[co_job.job_name].update({
+                            job.job_name: self.engine.predict(co_tag)
                     })
 
     def setup(self):

@@ -6,7 +6,7 @@ sys.path.append(os.path.abspath(os.path.join(
     os.path.dirname(__file__), "../../../../"
 )))
 
-from realsim.jobs.jobs import Job, EmptyJob, JobTag
+from realsim.jobs.jobs import Job, EmptyJob, JobCharacterization
 from realsim.jobs.utils import deepcopy_list
 from realsim.scheduler.coscheduler import Coscheduler, ScikitModel
 import math
@@ -27,13 +27,13 @@ class RulesCoscheduler(Coscheduler):
         return super().setup()
 
     def satisfies_coscheduling_rules(self, jobA: Job, jobB: Job) -> bool:
-        if jobA.job_tag == JobTag.SPREAD and jobB.job_tag == JobTag.ROBUST:
+        if jobA.job_character == JobCharacterization.SPREAD and jobB.job_character == JobCharacterization.ROBUST:
             return True
-        if jobA.job_tag == JobTag.ROBUST and jobB.job_tag == JobTag.SPREAD:
+        if jobA.job_character == JobCharacterization.ROBUST and jobB.job_character == JobCharacterization.SPREAD:
             return True
-        if jobA.job_tag == JobTag.FRAIL and jobB.job_tag == JobTag.ROBUST:
+        if jobA.job_character == JobCharacterization.FRAIL and jobB.job_character == JobCharacterization.ROBUST:
             return True
-        if jobA.job_tag == JobTag.ROBUST and jobB.job_tag == JobTag.FRAIL:
+        if jobA.job_character == JobCharacterization.ROBUST and jobB.job_character == JobCharacterization.FRAIL:
             return True
 
         return False
@@ -141,7 +141,7 @@ class RulesCoscheduler(Coscheduler):
             # Remove from the waiting queue
             job = self.pop(waiting_queue)
 
-            if job.job_tag in [JobTag.COMPACT, JobTag.FRAIL]:
+            if job.job_character in [JobCharacterization.COMPACT, JobCharacterization.FRAIL]:
                 # Check if it is eligible for compact allocation
                 res = self.allocation_as_compact(job)
 
@@ -297,7 +297,7 @@ class RulesCoscheduler(Coscheduler):
                     estimated_start_time_coloc < estimated_start_time_merge:
 
 
-                if backfill_job.job_tag in [JobTag.COMPACT, JobTag.FRAIL]:
+                if backfill_job.job_character in [JobCharacterization.COMPACT, JobCharacterization.FRAIL]:
                     # Check if it is eligible for compact allocation
                     res = self.allocation_as_compact(backfill_job)
 
@@ -325,7 +325,7 @@ class RulesCoscheduler(Coscheduler):
 
             else:
                 if backfill_job.wall_time <= estimated_start_time_merge:
-                    if backfill_job.job_tag in [JobTag.COMPACT, JobTag.FRAIL]:
+                    if backfill_job.job_character in [JobCharacterization.COMPACT, JobCharacterization.FRAIL]:
                         # Check if it is eligible for compact allocation
                         res = self.allocation_as_compact(backfill_job)
 
