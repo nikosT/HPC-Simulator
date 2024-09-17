@@ -19,8 +19,9 @@ class RandomRanksCoscheduler(RanksCoscheduler):
     to classic scheduling algorithms"""
 
     def waiting_queue_reorder(self, job: Job) -> float:
-        seed(time_ns() % (2 ** 32))
-        return float(randint(len(self.cluster.waiting_queue)))
+        # seed(time_ns() % (2 ** 32))
+        # return float(randint(len(self.cluster.waiting_queue)))
+	    return 1.0
 
     def waiting_job_candidates_reorder(self, job: Job, co_job: Job) -> float:
         seed(time_ns() % (2 ** 32))
