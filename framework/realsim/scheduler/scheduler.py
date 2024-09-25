@@ -4,6 +4,7 @@ from typing import TypeVar, Generic, TYPE_CHECKING, Optional
 import os
 import sys
 import math
+from functools import reduce
 
 from procset import ProcSet
 
@@ -104,6 +105,51 @@ class Scheduler(ABC, Generic[Cluster]):
             return ProcSet.from_str(" ".join(cores_to_assign))
         else:
             return None
+
+    def find_suitable_nodes(self, 
+                            req_cores: int, 
+                            socket_conf: tuple) -> dict[str, list[ProcSet]]:
+        """ Allocate nodes and the cores inside those nodes
+        + req_cores   : required cores for the job
+        + socket_conf : under a certain socket mapping/configuration
+        """
+        cores_per_host = sum(socket_conf)
+        to_be_allocated = dict()
+        for hostname, host in self.cluster.hosts.items():
+            if reduce(lambda x, y: x[0] <= len(x[1]) and y[0] <= len(y[1]), list(zip(socket_conf, host.sockets))):
+                req_cores -= cores_per_host
+                to_be_allocated.update({hostname: [
+                    ProcSet.from_str(' '.join([str(x) for x in p_set[:socket_conf[i]]]))
+                    for i, p_set in enumerate(host.sockets)]
+                })
+
+        # If the amount of cores needed is covered then return the list of possible
+        # hosts
+        if req_cores <= 0:
+            return to_be_allocated
+        # Else, if not all the cores can be allocated return an empty list
+        else:
+            return {}
+
+    def compact_allocation(self, job: Job) -> bool:
+        req_cores = job.num_of_processes
+        suitable_hosts = self.find_suitable_nodes(req_cores,
+                                                  self.cluster.full_socket_allocation)
+
+        # Can't allocate job
+        if suitable_hosts == {}:
+            return False
+
+        needed_ppn = sum(self.cluster.full_socket_allocation)
+        for hostname, pset in suitable_hosts.items():
+            self.cluster.add_job_to_host(job, hostname)
+            req_cores -= needed_ppn
+            if req_cores <= 0:
+                break
+
+        return True
+
+
 
     def pop(self, queue: list[Job]) -> Job:
         """Get and remove an object from a queue

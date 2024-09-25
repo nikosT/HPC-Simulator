@@ -36,6 +36,7 @@ class AbstractGenerator(abc.ABC, Generic[T]):
         job =  Job(job_id=idx,
                    job_name=load.load_name,
                    num_of_processes=load.num_of_processes,
+                   assigned_hosts=set(),
                    assigned_cores=ProcSet(),
                    half_node_cores=-1,
                    full_node_cores=-1,

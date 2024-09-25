@@ -16,10 +16,10 @@ import math
 
 class ClusterExhaustive(AbstractCluster):
 
-    def __init__(self, nodes, cores_per_node):
+    def __init__(self, nodes: int, socket_conf: tuple):
         AbstractCluster.__init__(self, 
                                  nodes=nodes, 
-                                 cores_per_node=cores_per_node)
+                                 socket_conf=socket_conf)
 
     def next_state(self):
         """Execute the jobs in the execution list

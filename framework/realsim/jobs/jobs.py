@@ -33,6 +33,7 @@ class Job:
                  job_id: int, 
                  job_name: str, 
                  num_of_processes: int,
+                 assigned_hosts: set[str],
                  assigned_cores: ProcSet,
                  full_node_cores: int,
                  half_node_cores: int,
@@ -47,6 +48,7 @@ class Job:
 
         # Cores/Nodes resources
         self.num_of_processes = num_of_processes
+        self.assigned_hosts = assigned_hosts
         self.assigned_cores = assigned_cores
         self.full_node_cores = full_node_cores
         self.half_node_cores = half_node_cores
@@ -81,6 +83,8 @@ class Job:
         return  self.job_id == job.job_id\
                 and self.job_name == job.job_name\
                 and self.num_of_processes == job.num_of_processes\
+                and self.assigned_hosts == job.assigned_hosts\
+                and self.assigned_cores == job.assigned_cores\
                 and self.remaining_time == job.remaining_time\
                 and self.submit_time == job.submit_time\
                 and self.wall_time == job.wall_time\
@@ -111,6 +115,7 @@ class Job:
         copy = Job(job_id=self.job_id,
                    job_name=self.job_name,
                    num_of_processes=self.num_of_processes,
+                   assigned_hosts=self.assigned_hosts,
                    assigned_cores=self.assigned_cores,
                    full_node_cores=self.full_node_cores,
                    half_node_cores=self.half_node_cores,
@@ -138,6 +143,7 @@ class EmptyJob(Job):
                      job.job_id, 
                      job.job_name, 
                      job.num_of_processes, 
+                     job.assigned_hosts,
                      job.assigned_cores,
                      -1, 
                      -1, 
@@ -156,6 +162,7 @@ class EmptyJob(Job):
         copy = EmptyJob(Job(job_id=self.job_id,
                             job_name=self.job_name,
                             num_of_processes=self.num_of_processes,
+                            assigned_hosts=self.assigned_hosts,
                             assigned_cores=self.assigned_cores,
                             full_node_cores=self.full_node_cores,
                             half_node_cores=self.half_node_cores,

@@ -3,6 +3,7 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
+from realsim.cluster.host import Host
 from realsim.jobs import Job, EmptyJob, JobCharacterization
 from realsim.jobs.utils import deepcopy_list
 from realsim.scheduler.scheduler import Scheduler
@@ -16,18 +17,32 @@ from procset import ProcSet
 
 class AbstractCluster(abc.ABC):
 
-    def __init__(self, nodes, cores_per_node):
+    def __init__(self, nodes: int, socket_conf: tuple):
+        """
+        + nodes: the number of nodes
+        + socket_conf: the socket configuration; for example (10, 16) means 2
+        sockets of which the first has 10 cores and the second has 16 cores
+        """
 
         # Number of nodes
         self.nodes = nodes
-        # Number of cores per node
-        self.cores_per_node = cores_per_node
-        # Number of total cores
-        self.total_cores = self.nodes * self.cores_per_node
-        # Number of current free cores
-        self.free_cores = self.total_cores
 
-        self.total_procs: ProcSet = ProcSet((1, self.total_cores))
+        # Socket configuration
+        self.socket_conf = socket_conf
+
+        # Fast socket allocation schemes
+        self.full_socket_allocation = socket_conf
+        self.half_socket_allocation = tuple([int(x/2) for x in socket_conf])
+
+        # Hosts where the hostname is a the string 'host' followed by a number
+        _cores_per_node = sum(socket_conf)
+        self.hosts: dict[str, Host] = {
+                f"host{i}": Host(socket_conf, i * _cores_per_node + 1)
+                for i in range(nodes)
+        }
+
+        # Number of current free cores
+        self.free_cores = self.nodes * _cores_per_node
 
         # Database instance of cluster
         self.database: Database
@@ -219,6 +234,13 @@ class AbstractCluster(abc.ABC):
         job.remaining_time *= (old_speedup / new_speedup)
         job.sim_speedup = new_speedup
 
+    def add_job_to_host(self, job: Job, hostname: str, pset: ProcSet):
+        self.hosts[hostname].jobs.append(job)
+
+    def remove_job_from_hosts(self, job: Job, hostname):
+        for _, host in self.hosts.items():
+            if job in host.jobs:
+                host.jobs.remove(job)
 
     @abc.abstractmethod
     def next_state(self) -> None:

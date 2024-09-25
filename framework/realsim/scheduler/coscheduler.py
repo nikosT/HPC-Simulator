@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import math
+from functools import reduce
 
 import os
 import sys
@@ -508,6 +509,57 @@ class Coscheduler(Scheduler, ABC):
 
         self.cluster.execution_list.append(new_xunit)
         return True
+
+    def best_candidate(self, job: Job, co_job: Job) -> float:
+        return 1.0
+
+    def colocation(self, job: Job) -> bool:
+        """We'll first try the occupied hosts that have available space for the
+        job, hosts that are suitable
+        """
+        # Get only the suitable hosts
+        suitable_hosts = self.find_suitable_nodes(job.num_of_processes,
+                                                  self.cluster.half_socket_allocation)
+        # If no suitable hosts where found
+        if suitable_hosts == dict():
+            return False
+
+        # Get the hostnames for suitable hosts that have at most one job running
+        # in the host
+        hostnames = [hostname 
+                     for hostname in self.cluster.hosts.keys()
+                     if hostname in suitable_hosts 
+                     and len(self.cluster.hosts[hostname].jobs) == 1]
+
+        # Sort the hostnames by the best_candidate condition
+        hostnames.sort(key=lambda name: 
+                       self.best_candidate(job, self.cluster.hosts[name].jobs[0]),
+                       reverse=True)
+
+        # Allocate the necessary cores inside each host
+        # Starting from the populated bust best suited hosts
+        cores_per_node = sum(self.cluster.half_socket_allocation)
+        req_cores = job.num_of_processes
+        for hostname in hostnames:
+            to_be_assigned = reduce(lambda x, y: x.union(y), suitable_hosts[hostname])
+            job.assigned_cores.union(to_be_assigned)
+            req_cores -= cores_per_node
+            if req_cores <= 0:
+                break
+
+        # If haven't satisfied the needs of cores for the job continue to the
+        # unallocated hosts
+        while req_cores > 0:
+            for hostname, host in suitable_hosts.items():
+                if hostname in hostnames:
+                    continue
+                job.assigned_cores.union(
+                    reduce(lambda x, y: x.union(y), )
+                )
+
+        # occupied_hosts = reduce(lambda x, y: x.union(y), 
+        #                         [job.assigned_hosts for job in self.cluster.execution_list])
+        
 
     @abstractmethod
     def deploy(self) -> bool:
