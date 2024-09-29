@@ -20,7 +20,7 @@ class LoadManager:
     """Class to manage the loads of a specific machine and suite of benchmarks
     """
 
-    def __init__(self, machine, suite=None, rootdir = None):
+    def __init__(self, machine: str, suite: str, rootdir = None):
         """Initialize a LoadManager instance
 
         ⟡ machine ⟡ the name of the machine on which the benchmarks were executed.
@@ -28,13 +28,14 @@ class LoadManager:
         and the name of the partition which was used. For example, 
         machine = "machineA.particionC"
 
-        ⟡ ppn ⟡ the number of processors per node. This is a necessary value to 
-        calculate the nodes that were necessary for each experiment to run
-
         ⟡ suite ⟡ the suite of benchmarks that we experimented on
+
+        ⟡ rootdir ⟡ the root directory to search for the logs, the main search
+        path is {root_dir}/Co-Scheduling/logs/
+
         """
         self.machine: str = machine
-        self.suite: Optional[str] = suite
+        self.suite: str = suite
         self.rootdir: Optional[str] = rootdir
 
         if self.rootdir is None:
@@ -95,16 +96,16 @@ class LoadManager:
 
         return new_lm
 
-    def __add__(self, lm: 'LoadManager') -> 'LoadManager':
+    def __add__(self, other_lm: 'LoadManager') -> 'LoadManager':
         """Return a new LoadManager instance when they are added together
         """
 
         # Create a new instance of LoadManager
         new_lm = LoadManager(machine=self.machine, suite=self.suite)
 
-        # If the logs were recored on different machines return a different load
+        # If the logs were recorded on different machines return an empty load
         # manager
-        if self.machine != lm.machine:
+        if self.machine != other_lm.machine:
             return new_lm
 
         # 1. Create a deep copy of the current load manager
@@ -112,9 +113,15 @@ class LoadManager:
         for name, load in self.loads.items():
             new_lm.loads[name] = load.deepcopy()
 
+        # 2. If the new suite name is not in the list of managed suites of the
+        # current LoadManager extend it. If it is the return a copy of the
+        # original LoadManager
+        if other_lm.suite not in self.suite.split(","):
+            new_lm.suite += f",{other_lm.suite}"
+
         # 2. Add new Loads to our copied LoadManager instance if there aren't
         # or update our loads' coloads
-        for other_name, other_load in lm:
+        for other_name, other_load in other_lm:
             # If it doesn't exist then add new load
             if other_name not in new_lm.loads.keys():
                 new_lm.loads[other_name] = other_load.deepcopy()
@@ -175,7 +182,7 @@ class LoadManager:
         # load exists
         try:
             files = os.listdir(cmp_dir)
-            file = list(filter(lambda f: "_cmp" in f, files))[0]
+            file = list(filter(lambda f: ".out" in f, files))[0]
         except:
             # If not print that nothing was found
             # and continue to the next directory
@@ -522,7 +529,7 @@ class LoadManager:
                 ]
         }
 
-        with open("lm-{self.machine}-{self.suite}.json", "w") as fd:
+        with open(f"lm-{self.machine}-{self.suite}.json", "w") as fd:
             fd.write(dumps(repres))
 
     def import_from_json(self, file: Optional[str] = None):
@@ -585,9 +592,9 @@ class LoadManager:
             if findings != []:
                 # If the load exists then update all occurencies
                 #coll.update_many(query, {"$set": {"bin": pickle.dumps(self.loads[load])}})
-                coll.update_many(query, {"$set": {"bin": load.to_json()}})
+                coll.update_many(query, {"$set": {"repres": load.to_json()}})
             else:
-                coll.insert_one({"_id": _id,  "bin": load.to_json()})
+                coll.insert_one({"_id": _id,  "repres": load.to_json()})
 
     def import_from_db(self, 
                        host="localhost", 
@@ -630,7 +637,7 @@ class LoadManager:
 
         for doc in coll.find(query):
             # load = pickle.loads(doc["bin"])
-            load = Load.from_json(doc["bin"])
+            load = Load.from_json(doc["repres"])
             # load.coloads_median_speedup = dict()
             # for coload_name in load.coloads:
             #     load.set_median_speedup(coload_name)

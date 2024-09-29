@@ -529,7 +529,7 @@ class Coscheduler(Scheduler, ABC):
         hostnames = [hostname 
                      for hostname in self.cluster.hosts.keys()
                      if hostname in suitable_hosts 
-                     and len(self.cluster.hosts[hostname].jobs) == 1]
+                     and len(self.cluster.hosts[hostname].jobs) <= 1]
 
         # Sort the hostnames by the best_candidate condition
         hostnames.sort(key=lambda name: 

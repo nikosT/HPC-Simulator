@@ -12,8 +12,9 @@ sys.path.append(os.path.abspath(os.path.join(
 )))
 
 from realsim.database import Database
-from realsim.cluster.exhaustive import ClusterExhaustive
+from realsim.cluster.cluster import Cluster
 from realsim.logger.logger import Logger
+from realsim.compengine import ComputeEngine
 
 
 def run_sim(core):
@@ -80,7 +81,7 @@ class Simulation:
     def __init__(self, 
                  jobs_set, heatmap,
                  # cluster
-                 nodes: int, ppn: int, queue_size: int,
+                 nodes: int, socket_conf: tuple, queue_size: int,
                  # scheduler algorithms bundled with inputs
                  schedulers_bundle):
 
@@ -100,8 +101,7 @@ class Simulation:
             database = Database(jobs_set, heatmap)
 
             # Declare cluster
-            cluster = ClusterExhaustive(nodes, ppn)
-            cluster.assign_database(database)
+            cluster = Cluster(nodes, socket_conf)
 
             # Define the size of the queue for the cluster
             if queue_size == -1:
@@ -122,10 +122,11 @@ class Simulation:
             logger.assign_database(database)
 
             # Setup experiment
-            cluster.assign_scheduler(scheduler)
             scheduler.assign_cluster(cluster)
-            cluster.assign_logger(logger)
             scheduler.assign_logger(logger)
+
+            # Create the Compute Engine
+            compeng: ComputeEngine = ComputeEngine(database, cluster, scheduler, logger)
 
             # The default simulation will be executed by the main process
             if sched_class.name == self.default:
@@ -133,6 +134,7 @@ class Simulation:
                 self.default_cluster = cluster
                 self.default_scheduler = scheduler
                 self.default_logger = logger
+                self.default_compengine = compeng
                 continue
 
             # Record of a simulation
@@ -140,6 +142,7 @@ class Simulation:
                                          cluster, 
                                          scheduler, 
                                          logger, 
+                                         compeng,
                                          self.comm_queue)
 
     def set_default(self, name):

@@ -15,7 +15,8 @@ class Host:
             self.sockets.append(ProcSet((_count, _count + cores - 1)))
             _count += cores
 
-        self.jobs = list()
+        # Get references of the jobs running on the host
+        self.jobs: dict[str, list[ProcSet]] = dict()
 
 # Alias for Host class
 Node = Host

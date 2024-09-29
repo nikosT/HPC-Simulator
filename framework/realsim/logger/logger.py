@@ -16,17 +16,47 @@ import plotly.graph_objects as go
 import plotly.express.colors as colors
 from procset import ProcSet
 
+
+class LogEvent:
+    COMPENG_LOG = 0
+    JOB_LOG = 1
+    DB_LOG = 2
+    CLUSTER_LOG = 3
+    SCHEDULER_LOG = 4
+
+
 class Logger(object):
     """
     Logs important events of the simulation into the memory
     for later use
     """
 
-    def __init__(self, recording=True):
-        # Controls if the events will be logged
-        self.recording = recording
+    def __init__(self, debug=True):
+        # Controls if 
+        self.debug = debug
         #self.scale = colors.sequential.Turbo
         self.scale = colors.sequential.Turbo
+
+        self.job_logs: list[str] = list()
+        self.db_logs: list[str] = list()
+        self.cluster_logs: list[str] = list()
+        self.scheduler_logs: list[str] = list()
+
+    def log(self, evt: int, msg: str) -> None:
+
+        if not self.debug:
+            return
+
+        if evt == LogEvent.JOB_LOG:
+            self.job_logs.append(msg)
+        elif evt == LogEvent.DB_LOG:
+            self.db_logs.append(msg)
+        elif evt == LogEvent.CLUSTER_LOG:
+            self.cluster_logs.append(msg)
+        elif evt == LogEvent.SCHEDULER_LOG:
+            self.scheduler_logs.append(msg)
+        else:
+            raise RuntimeError("The log event specified ({evt}) doesn't exist")
 
     def assign_database(self, db: Database):
         self.database = db

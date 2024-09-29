@@ -18,6 +18,7 @@ sys.path.append(os.path.abspath(
 from realsim.jobs import Job
 from realsim.database import Database
 from realsim.logger.logger import Logger
+from realsim.compengine import ComputeEngine
 
 if TYPE_CHECKING:
     from realsim.cluster.abstract import AbstractCluster
@@ -69,53 +70,18 @@ class Scheduler(ABC, Generic[Cluster]):
     def assign_logger(self, logger: Logger) -> None:
         self.logger = logger
 
-    def assign_nodes(self, req_cores: int, cores_set: ProcSet) -> Optional[ProcSet]:
-        """Assign nodes based on the number of required physical cores and the 
-        set of cores provided.
-
-        TODO: there are different allocation schemes for nodes
-
-        + req_cores: required number of (physical) cores for job(s)
-        + cores_set: a ProcSet from which the set of required cores will stem from
-        """
-        cores_to_assign: list[str] = list()
-        for procint in cores_set.intervals():
-            # Although there are idle cores the node is being used
-            if len(procint) < self.cluster.cores_per_node:
-                continue
-            else:
-                # Available cores for assignment in the interval
-                assignable_cores = [str(cr) for cr in range(procint.inf, procint.sup + 1)]
-                # Current required nodes for the job(s)
-                req_nodes = math.ceil(req_cores / self.cluster.cores_per_node)
-                # Available nodes in the interval
-                avail_nodes = int(len(procint) / self.cluster.cores_per_node)
-
-                if req_nodes <= avail_nodes:
-                    cores_to_assign.extend(assignable_cores[:req_nodes * self.cluster.cores_per_node])
-                    req_cores -= req_nodes * self.cluster.cores_per_node
-                else:
-                    cores_to_assign.extend(assignable_cores[:avail_nodes * self.cluster.cores_per_node])
-                    req_cores -= avail_nodes * self.cluster.cores_per_node
-
-            if req_cores == 0:
-                break
-
-        if req_cores == 0:
-            return ProcSet.from_str(" ".join(cores_to_assign))
-        else:
-            return None
-
     def find_suitable_nodes(self, 
                             req_cores: int, 
                             socket_conf: tuple) -> dict[str, list[ProcSet]]:
-        """ Allocate nodes and the cores inside those nodes
+        """ Returns hosts and their procsets that a job can use as resources
         + req_cores   : required cores for the job
         + socket_conf : under a certain socket mapping/configuration
         """
         cores_per_host = sum(socket_conf)
         to_be_allocated = dict()
         for hostname, host in self.cluster.hosts.items():
+            # If under the specifications of the required cores and socket 
+            # allocation
             if reduce(lambda x, y: x[0] <= len(x[1]) and y[0] <= len(y[1]), list(zip(socket_conf, host.sockets))):
                 req_cores -= cores_per_host
                 to_be_allocated.update({hostname: [
@@ -132,20 +98,37 @@ class Scheduler(ABC, Generic[Cluster]):
             return {}
 
     def compact_allocation(self, job: Job) -> bool:
+
+        # Mark job as compact
+        job.socket_conf = self.cluster.full_socket_allocation
+
+        # Get number of required cores
         req_cores = job.num_of_processes
+
+        # Find suitable hosts
         suitable_hosts = self.find_suitable_nodes(req_cores,
                                                   self.cluster.full_socket_allocation)
+
+        #
+        # Add filter to the suitable hosts (maybe general method for coloc)
+        #
 
         # Can't allocate job
         if suitable_hosts == {}:
             return False
 
         needed_ppn = sum(self.cluster.full_socket_allocation)
-        for hostname, pset in suitable_hosts.items():
-            self.cluster.add_job_to_host(job, hostname)
+        for hostname, psets in suitable_hosts.items():
+
+            # Deploy job to hosts
+            ComputeEngine.deploy_job_to_host(hostname, job, psets)
+
             req_cores -= needed_ppn
             if req_cores <= 0:
                 break
+
+        # Calculate the remaining time of the job
+        ComputeEngine.calculate_job_rem_time(job)
 
         return True
 

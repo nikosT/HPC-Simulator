@@ -34,7 +34,6 @@ class Job:
                  job_name: str, 
                  num_of_processes: int,
                  assigned_hosts: set[str],
-                 assigned_cores: ProcSet,
                  full_node_cores: int,
                  half_node_cores: int,
                  remaining_time, 
@@ -45,13 +44,12 @@ class Job:
         # Important identifiers of the job
         self.job_id = job_id
         self.job_name = job_name
+        self.job_signature = f"{job_id}:{job_name}"
 
         # Cores/Nodes resources
         self.num_of_processes = num_of_processes
         self.assigned_hosts = assigned_hosts
-        self.assigned_cores = assigned_cores
-        self.full_node_cores = full_node_cores
-        self.half_node_cores = half_node_cores
+        self.socket_conf = tuple()
 
         # Time resources
         self.remaining_time = remaining_time
@@ -59,6 +57,7 @@ class Job:
         self.waiting_time = waiting_time
         self.wall_time = wall_time
         self.start_time: float = 0.0
+        self.finish_time: float = -1.0
 
         # Speedups of job
         self.sim_speedup: float = 1
@@ -84,7 +83,6 @@ class Job:
                 and self.job_name == job.job_name\
                 and self.num_of_processes == job.num_of_processes\
                 and self.assigned_hosts == job.assigned_hosts\
-                and self.assigned_cores == job.assigned_cores\
                 and self.remaining_time == job.remaining_time\
                 and self.submit_time == job.submit_time\
                 and self.wall_time == job.wall_time\
@@ -95,6 +93,7 @@ class Job:
                 and self.min_speedup == job.min_speedup\
                 and self.job_tag == job.job_tag\
                 and self.job_character == job.job_character
+                # and self.assigned_cores == job.assigned_cores\
 
     def __repr__(self) -> str:
         return f"[{self.job_id}:{self.job_name}],(T:{self.remaining_time}),(C:{len(self.assigned_cores)}),(S:{self.sim_speedup})"
