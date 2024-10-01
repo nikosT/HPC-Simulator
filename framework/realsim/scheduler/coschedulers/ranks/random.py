@@ -25,8 +25,10 @@ class RandomRanksCoscheduler(RanksCoscheduler):
 
     def waiting_job_candidates_reorder(self, job: Job, co_job: Job) -> float:
         seed(time_ns() % (2 ** 32))
-        return float(randint(len(self.cluster.waiting_queue) - 1))
+        #return float(randint(len(self.cluster.waiting_queue) - 1))
+        return 1.0
 
     def xunit_candidates_reorder(self, job: Job, xunit: list[Job]) -> float:
         seed(time_ns() % (2 ** 32))
-        return float(randint(len(self.cluster.execution_list)))
+        #return float(randint(len(self.cluster.execution_list)))
+        return 1.0
