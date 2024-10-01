@@ -18,7 +18,7 @@ from realsim.logger.logger import Logger
 
 def run_sim(core):
 
-    database, cluster, scheduler, logger, comm_queue = core
+    i, database, cluster, scheduler, logger, comm_queue = core
 
     cluster.setup()
     scheduler.setup()
@@ -39,6 +39,11 @@ def run_sim(core):
 
     # profiler = Profile()
     # profiler.enable()
+    workload = logger.get_workload()
+    if not os.path.exists(f"{os.environ['HOME']}/workloads"):
+        os.mkdir(f"{os.environ['HOME']}/workloads")
+    with open(f"{os.environ['HOME']}/workloads/exp{i}_{scheduler.name.replace(' ', '_')}.workload", "w") as fd:
+        fd.write(workload)
 
     data = {
             # Graphs
@@ -48,7 +53,7 @@ def run_sim(core):
             "Jobs utilization": logger.get_jobs_utilization(default_logger),
             "Jobs throughput": logger.get_jobs_throughput(),
             "Waiting queue": logger.get_waiting_queue_graph(),
-            "Workload": logger.get_workload(),
+            "Workload": workload,
             
             # Extra metrics
             "Makespan speedup": default_cluster_makespan / cluster.makespan
@@ -78,11 +83,14 @@ class Simulation:
     """
 
     def __init__(self, 
+                 i,
                  jobs_set, heatmap,
                  # cluster
                  nodes: int, ppn: int, queue_size: int,
                  # scheduler algorithms bundled with inputs
                  schedulers_bundle):
+
+        self.i = i
 
         self.default = "FIFO Scheduler"
         self.executor = ProcessPoolExecutor()
@@ -129,6 +137,7 @@ class Simulation:
 
             # The default simulation will be executed by the main process
             if sched_class.name == self.default:
+                self.default_i = self.i
                 self.default_database = database
                 self.default_cluster = cluster
                 self.default_scheduler = scheduler
@@ -136,7 +145,8 @@ class Simulation:
                 continue
 
             # Record of a simulation
-            self.sims[scheduler.name] = (database,
+            self.sims[scheduler.name] = (self.i,
+                                         database,
                                          cluster, 
                                          scheduler, 
                                          logger, 
@@ -173,6 +183,11 @@ class Simulation:
 
 
     def get_results(self):
+        workload = self.default_logger.get_workload()
+        if not os.path.exists(f"{os.environ['HOME']}/workloads"):
+            os.mkdir(f"{os.environ['HOME']}/workloads")
+        with open(f"{os.environ['HOME']}/workloads/exp{self.default_i}_{self.default_scheduler.name.replace(' ', '_')}.workload", "w") as fd:
+            fd.write(workload)
 
         # Set results for default scheduler
         data = {
@@ -182,7 +197,7 @@ class Simulation:
                 "Jobs utilization": {},
                 "Makespan speedup": 1.0,
                 "Jobs throughput": self.default_logger.get_jobs_throughput(),
-                "Workload": self.default_logger.get_workload(),
+                "Workload": workload,
                 "Waiting queue": self.default_logger.get_waiting_queue_graph(),
         }
 

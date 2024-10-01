@@ -88,6 +88,7 @@ class AbstractCluster(abc.ABC):
                 job.age = 1
 
             speedups = list(self.database.heatmap[job.job_name].values())
+            speedups = [spd for spd in speedups if spd is not None]
             max_speedup = min_speedup = speedups[0]
             accumulator = length = 0
             for speedup in speedups:

@@ -148,7 +148,7 @@ clientside_callback(
 def parallel_simulations(par_inp):
 
     # num, generator, gen_input, nodes, ppn, schedulers = par_inp
-    generator_bundle, cluster_bundle, schedulers_bundle = par_inp
+    i, generator_bundle, cluster_bundle, schedulers_bundle = par_inp
 
     # Unpack generator bundle
     lm, gen_class, gen_inp, sim_type, sim_dynamic_condition = generator_bundle
@@ -194,7 +194,8 @@ def parallel_simulations(par_inp):
     nodes, ppn, queue_size = cluster_bundle
 
     # Setup simulation
-    sim = Simulation(jobs_set, lm.export_heatmap(),
+    sim = Simulation(i,
+                     jobs_set, lm.export_heatmap(),
                      nodes, ppn, queue_size,
                      schedulers_bundle)
     sim.set_default("Default Scheduler")
@@ -271,8 +272,8 @@ def run_simulation(data, queue_size):
 
     executor = ProcessPoolExecutor()
     futures = list()
-    for _ in range(num_of_experiments):
-        par_inp = (generator_bundle, cluster_bundle, schedulers_bundle)
+    for i in range(num_of_experiments):
+        par_inp = (i, generator_bundle, cluster_bundle, schedulers_bundle)
         futures.append(
                 executor.submit(parallel_simulations, par_inp)
         )

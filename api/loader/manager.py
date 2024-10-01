@@ -585,9 +585,9 @@ class LoadManager:
             if findings != []:
                 # If the load exists then update all occurencies
                 #coll.update_many(query, {"$set": {"bin": pickle.dumps(self.loads[load])}})
-                coll.update_many(query, {"$set": {"bin": load.to_json()}})
+                coll.update_many(query, {"$set": {"repres": load.to_json()}})
             else:
-                coll.insert_one({"_id": _id,  "bin": load.to_json()})
+                coll.insert_one({"_id": _id,  "repres": load.to_json()})
 
     def import_from_db(self, 
                        host="localhost", 
@@ -630,7 +630,7 @@ class LoadManager:
 
         for doc in coll.find(query):
             # load = pickle.loads(doc["bin"])
-            load = Load.from_json(doc["bin"])
+            load = Load.from_json(doc["repres"])
             # load.coloads_median_speedup = dict()
             # for coload_name in load.coloads:
             #     load.set_median_speedup(coload_name)
