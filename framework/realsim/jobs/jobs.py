@@ -48,6 +48,8 @@ class Job:
 
         # Cores/Nodes resources
         self.num_of_processes = num_of_processes
+        self.full_socket_nodes: int = -1
+        self.half_socket_nodes: int = -1
         self.assigned_hosts = assigned_hosts
         self.socket_conf = tuple()
 
@@ -70,6 +72,9 @@ class Job:
 
         # Job characterization for schedulers
         self.job_character = JobCharacterization.COMPACT
+
+        # Job's state
+        self.current_state = JobState.PENDING
 
         # If head job of waiting queue reaches a certain age then 
         # change from co-schedule policy to compact allocation policy

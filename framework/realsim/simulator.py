@@ -19,7 +19,7 @@ from realsim.compengine import ComputeEngine
 
 def run_sim(core):
 
-    database, cluster, scheduler, logger, comm_queue = core
+    database, cluster, scheduler, logger, compengine, comm_queue = core
 
     cluster.setup()
     scheduler.setup()
@@ -28,7 +28,7 @@ def run_sim(core):
     # The stopping condition is for the waiting queue and the execution list
     # to become empty
     while database.preloaded_queue != [] or cluster.waiting_queue != [] or cluster.execution_list != []:
-        cluster.step()
+        compengine.step()
 
     default_list = comm_queue.get()
     comm_queue.put(default_list)
@@ -111,7 +111,6 @@ class Simulation:
             
             # Setup the databse
             database.setup()
-            cluster.setup_preloaded_jobs()
 
             # Setup scheduler
             scheduler = sched_class(**hyperparams)
@@ -127,6 +126,7 @@ class Simulation:
 
             # Create the Compute Engine
             compeng: ComputeEngine = ComputeEngine(database, cluster, scheduler, logger)
+            compeng.setup_preloaded_jobs()
 
             # The default simulation will be executed by the main process
             if sched_class.name == self.default:
@@ -166,7 +166,7 @@ class Simulation:
         # The stopping condition is for the waiting queue and the execution list
         # to become empty
         while self.default_database.preloaded_queue != [] or self.default_cluster.waiting_queue != [] or self.default_cluster.execution_list != []:
-            self.default_cluster.step()
+            self.default_compengine.sim_step()
 
         # Submit to the shared list the results
         self.comm_queue.put([self.default_cluster.makespan, self.default_logger])

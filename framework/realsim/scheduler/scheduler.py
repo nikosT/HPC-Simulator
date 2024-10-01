@@ -17,16 +17,12 @@ sys.path.append(os.path.abspath(
 
 from realsim.jobs import Job
 from realsim.database import Database
+from realsim.cluster.cluster import Cluster
 from realsim.logger.logger import Logger
 from realsim.compengine import ComputeEngine
 
-if TYPE_CHECKING:
-    from realsim.cluster.abstract import AbstractCluster
 
-Cluster = TypeVar("Cluster", bound="AbstractCluster")
-
-
-class Scheduler(ABC, Generic[Cluster]):
+class Scheduler(ABC):
     """Scheduler provides a base class for scheduling methods. When creating an
     instance of Cluster a scheduler must always be provided and a reference to
     the cluster should also be provided to the scheduler instance. This way both
@@ -126,9 +122,6 @@ class Scheduler(ABC, Generic[Cluster]):
             req_cores -= needed_ppn
             if req_cores <= 0:
                 break
-
-        # Calculate the remaining time of the job
-        ComputeEngine.calculate_job_rem_time(job)
 
         return True
 

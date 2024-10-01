@@ -28,21 +28,8 @@ class FIFOScheduler(Scheduler):
         while waiting_queue != []:
 
             job = self.pop(waiting_queue)
-            procset = self.assign_nodes(job.full_node_cores, self.cluster.total_procs)
-
-            # If there are nodes left for the job to execute
-            if procset is not None:
-
-                self.cluster.waiting_queue.remove(job)
-                # job.binded_cores = self.cluster.full_node_cores(job)
-                self.cluster.execution_list.append([job])
-                job.start_time = self.cluster.makespan
-                # self.cluster.free_cores -= job.binded_cores
-                job.assigned_cores = procset
-                self.cluster.total_procs -= procset
-
+            if self.compact_allocation(job):
                 deployed = True
-
             else:
                 break
 

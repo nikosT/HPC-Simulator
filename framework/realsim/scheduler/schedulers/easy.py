@@ -1,10 +1,12 @@
 import os
 import sys
+from functools import reduce
 
 sys.path.append(os.path.abspath(os.path.join(
     os.path.dirname(__file__), "../../../"
 )))
 
+from realsim.cluster.host import Host
 from realsim.jobs.utils import deepcopy_list
 from .fifo import FIFOScheduler
 from math import inf
@@ -19,7 +21,6 @@ class EASYScheduler(FIFOScheduler):
         FIFOScheduler.__init__(self)
         self.backfill_enabled = True
 
-
     def backfill(self) -> bool:
 
         deployed = False
@@ -28,22 +29,25 @@ class EASYScheduler(FIFOScheduler):
             return False
 
         execution_list = deepcopy_list(self.cluster.execution_list)
-        execution_list.sort(key=lambda xunit: xunit[0].wall_time +
-                            xunit[0].start_time - self.cluster.makespan)
+        execution_list.sort(key=lambda job: job.wall_time + job.start_time - self.cluster.makespan)
 
         blocked_job = self.cluster.waiting_queue[0]
 
+        # Get all the idle hosts
+        idle_hosts = [host for host in self.cluster.hosts.values() if host.state == Host.IDLE]
+
         # Find the minimum estimated start time of the job
-        aggr_cores = len(self.cluster.total_procs)
+
+        # Calculate the number of idle hosts needed
+        aggr_hosts = len(idle_hosts)
         min_estimated_time = inf
 
-        for xunit in execution_list:
+        for xjob in execution_list:
 
-            running_job = xunit[0]
-            aggr_cores += len(running_job.assigned_cores)
+            aggr_hosts += len(xjob.assigned_hosts)
 
-            if aggr_cores >= blocked_job.full_node_cores:
-                min_estimated_time = running_job.wall_time - (self.cluster.makespan - running_job.start_time)
+            if aggr_hosts >= blocked_job.full_socket_nodes:
+                min_estimated_time = xjob.wall_time - (self.cluster.makespan - xjob.start_time)
                 break
 
         # If a job couldn't reserve cores then cancel backfill at this point
@@ -62,16 +66,7 @@ class EASYScheduler(FIFOScheduler):
 
             if b_job.wall_time <= min_estimated_time:
 
-                procset = self.assign_nodes(b_job.full_node_cores, self.cluster.total_procs)
-
-                if procset is not None:
-
-                    self.cluster.waiting_queue.remove(b_job)
-                    b_job.start_time = self.cluster.makespan
-                    b_job.assigned_cores = procset
-                    self.cluster.execution_list.append([b_job])
-                    self.cluster.total_procs -= procset
-
+                if self.compact_allocation(b_job):
                     deployed = True
 
             else:
@@ -79,4 +74,3 @@ class EASYScheduler(FIFOScheduler):
                 break
         
         return deployed
-

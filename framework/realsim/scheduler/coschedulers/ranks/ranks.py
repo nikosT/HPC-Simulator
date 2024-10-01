@@ -71,27 +71,13 @@ class RanksCoscheduler(Coscheduler, ABC):
     def after_deployment(self, *args):
         self.update_ranks()
 
-    def allocation_as_compact(self, job: Job) -> bool:
+    def compact_allocation(self, job: Job) -> bool:
 
         # The job is not eligible for compact execution
         if self.ranks[job.job_id] != 0 and job.age < self.age_threshold:
             return False
 
-        procset = self.assign_nodes(job.full_node_cores, self.cluster.total_procs)
-
-        # Check if the job can be allocated for compact execution
-        if procset is not None:
-            self.cluster.waiting_queue.remove(job)
-            job.start_time = self.cluster.makespan
-            job.binded_cores = job.full_node_cores
-            job.assigned_cores = procset
-            self.cluster.execution_list.append([job])
-            self.cluster.total_procs -= procset
-
-            return True
-
-        else:
-            return False
+        return super().compact_allocation(job)
 
     def deploy(self) -> bool:
 
@@ -109,47 +95,13 @@ class RanksCoscheduler(Coscheduler, ABC):
             # Remove from the waiting queue
             job = self.pop(waiting_queue)
 
-            # Try to fit the job in an xunit
-            res = self.colocation_to_xunit(job)
-
-            if res:
-                self.after_deployment()
+            # Colocate
+            if self.colocation(job, self.cluster.half_socket_allocation):
                 deployed = True
-                continue
-
-            # Check if it is eligible for spread allocation
-            res = self.allocation_as_spread(job)
-
-            if res:
                 self.after_deployment()
-                deployed = True
-                continue
+            else:
+                break
 
-            # Check if it is eligible for compact allocation
-            res = self.allocation_as_compact(job)
-
-            if res:
-                self.after_deployment()
-                deployed = True
-                continue
-
-            # Check if there is a waiting job that can pair up with the job
-            # and that they are allowed to allocate in the cluster
-            res = self.colocation_with_wjobs(job, waiting_queue)
-
-            if res:
-                self.after_deployment()
-                deployed = True
-                continue
-
-            # All the allocation tries have failed. Return the job at the first
-            # out position and reassign the waiting queue of the cluster
-            self.cluster.waiting_queue[0].age += 1
-            # waiting_queue.insert(0, job)
-            # self.cluster.waiting_queue = waiting_queue
-            break
-
-        #print(f"AFTER: Free cores = {self.cluster.free_cores}")
         return deployed
 
     def xunit_estimated_finish_time(self, xunit: list[Job]) -> float:

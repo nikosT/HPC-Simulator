@@ -1,12 +1,13 @@
 # Utilities
 from datetime import timedelta
-from math import inf
+from math import inf, ceil
 import numpy as np
 
 # Simulation
 from procset import ProcSet
-from realsim.jobs.jobs import Job, JobCharacterization
+from realsim.jobs.jobs import Job, JobCharacterization, JobState
 from realsim.jobs.utils import deepcopy_list
+from realsim.cluster.host import Host
 from realsim.cluster.cluster import Cluster
 from realsim.database import Database
 from realsim.scheduler.scheduler import Scheduler
@@ -25,11 +26,10 @@ class ComputeEngine:
         cls.cluster = cluster
         cls.scheduler = scheduler
         cls.logger = logger
-
         cls.makespan: float = 0
 
-    def __init__(self):
-        pass
+        return object.__new__(cls)
+
 
     @classmethod
     def __log_details(cls, msg: str) -> str:
@@ -50,11 +50,14 @@ class ComputeEngine:
         # usage
         for job in self.db.preloaded_queue:
 
+            # Set job id
             job.job_id = self.id_counter
 
-            if job.num_of_processes <= 512:
-                job.age = 1
+            # Setup core resources needed
+            job.full_socket_nodes = ceil(job.num_of_processes / sum(self.cluster.full_socket_allocation))
+            job.half_socket_nodes = ceil(job.num_of_processes / sum(self.cluster.half_socket_allocation))
 
+            # Setup job speedups
             speedups = list(self.db.heatmap[job.job_name].values())
             max_speedup = min_speedup = speedups[0]
             accumulator = length = 0
@@ -71,6 +74,7 @@ class ComputeEngine:
             job.min_speedup = min_speedup
             job.avg_speedup = (accumulator / length)
 
+            # Setup job characterization
             avg = job.avg_speedup
             std = round(float(np.std(speedups)), 2)
 
@@ -182,8 +186,14 @@ class ComputeEngine:
         for i, socket_pset in enumerate(cls.cluster.hosts[hostname].sockets):
             socket_pset -= psets[i]
 
+        # Set state of host
+        cls.cluster.hosts[hostname].state = Host.ALLOCATED
+
         # Add the job to the execution list of the cluster
-        cls.cluster.execution_list.append(job)
+        if job.current_state == JobState.PENDING:
+            cls.cluster.waiting_queue.remove(job)
+            cls.cluster.execution_list.append(job)
+            job.current_state = JobState.EXECUTING
 
     @classmethod
     def clean_job_from_hosts(cls, job: Job) -> None:
@@ -193,14 +203,24 @@ class ComputeEngine:
 
         # Set the finish time of the job
         job.finish_time = cls.makespan
+        job.current_state = JobState.FINISHED
 
-        # Return the allocated processors of a job to each host
+        # Clean job and return resources back to host
         for hostname in job.assigned_hosts:
             # Log the event
             cls.logger.log(LogEvent.CLUSTER_LOG, cls.__log_details("Job[{job.job_signature}] finished execution in host[{hostname}]"))
 
+            # Return the allocated processors of a job to each host
             for i, pset in enumerate(cls.cluster.hosts[hostname].jobs[job.job_signature]):
                 cls.cluster.hosts[hostname].sockets[i].union(pset)
+
+            # Remove job signature from host
+            cls.cluster.hosts[hostname].jobs.pop(job.job_signature)
+            
+            # Change state of host if nothing is executing
+            if len(cls.cluster.hosts[hostname].jobs.keys()) == 0:
+                cls.cluster.hosts[hostname].state = Host.IDLE
+
 
         # Remove job from the execution list of the cluster
         cls.cluster.execution_list.remove(job)
@@ -208,6 +228,10 @@ class ComputeEngine:
 
     # Simulation loop computations
     def goto_next_sim_state(self) -> None:
+
+        # Recalculate the remaining time of jobs
+        for job in self.cluster.execution_list:
+            self.calculate_job_rem_time(job)
 
         # Find the minimum remaining execution time of the jobs currently executing
         min_rem_time = inf
