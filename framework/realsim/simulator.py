@@ -9,6 +9,7 @@ import math
 from cProfile import Profile
 import pstats
 import io
+import datetime
 
 sys.path.append(os.path.abspath(os.path.join(
     os.path.dirname(__file__), "../"
@@ -52,6 +53,11 @@ def run_sim(core):
         # Extra metrics
         "Makespan speedup": default_cluster_makespan / cluster.makespan
     }
+
+
+    _csvpath = f'/home/nikos/Desktop/ipdps2025/thanos/dummy_workloads/experiment_{datetime.datetime.now().strftime("%Y%m%d%H%M%S%f")}.csv'
+    with open (_csvpath,'w') as _f:
+        _f.write(data["Workload"])
 
     # profiler.disable()
     # stats = pstats.Stats(profiler).sort_stats('cumtime')
