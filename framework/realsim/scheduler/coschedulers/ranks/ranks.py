@@ -1,3 +1,8 @@
+import math
+from abc import ABC
+from realsim.scheduler.coscheduler import Coscheduler, ScikitModel
+from realsim.jobs.utils import deepcopy_list
+from realsim.jobs.jobs import Job, EmptyJob
 import os
 import sys
 from typing import Optional
@@ -5,13 +10,6 @@ from typing import Optional
 sys.path.append(os.path.abspath(os.path.join(
     os.path.dirname(__file__), "../../../../"
 )))
-
-from realsim.jobs.jobs import Job, EmptyJob
-from realsim.jobs.utils import deepcopy_list
-from realsim.scheduler.coscheduler import Coscheduler, ScikitModel
-
-from abc import ABC
-import math
 
 
 class RanksCoscheduler(Coscheduler, ABC):
@@ -29,19 +27,20 @@ class RanksCoscheduler(Coscheduler, ABC):
                  system_utilization: float = 1.0,
                  engine: Optional[ScikitModel] = None):
 
-        Coscheduler.__init__(self, 
-                             backfill_enabled, 
+        Coscheduler.__init__(self,
+                             backfill_enabled,
                              aging_enabled,
-                             speedup_threshold, 
-                             system_utilization, 
+                             speedup_threshold,
+                             system_utilization,
                              engine)
 
-        self.ranks : dict[int, int] = dict() # jobId --> number of good pairings
+        # jobId --> number of good pairings
+        self.ranks: dict[int, int] = dict()
         self.ranks_threshold = ranks_threshold
 
     def update_ranks(self):
 
-        self.ranks = {job.job_id : 0 for job in self.cluster.waiting_queue}
+        self.ranks = {job.job_id: 0 for job in self.cluster.waiting_queue}
 
         # Update ranks for each job
         for i, job in enumerate(self.cluster.waiting_queue):
@@ -77,7 +76,8 @@ class RanksCoscheduler(Coscheduler, ABC):
         if self.ranks[job.job_id] != 0 and job.age < self.age_threshold:
             return False
 
-        procset = self.assign_nodes(job.full_node_cores, self.cluster.total_procs)
+        procset = self.assign_nodes(
+            job.full_node_cores, self.cluster.total_procs)
 
         # Check if the job can be allocated for compact execution
         if procset is not None:
@@ -110,7 +110,7 @@ class RanksCoscheduler(Coscheduler, ABC):
             job = self.pop(waiting_queue)
 
             # Try to fit the job in an xunit
-            res = self.colocation_to_xunit(job)
+            res = self.allocation_as_spread(job)
 
             if res:
                 self.after_deployment()
@@ -118,7 +118,7 @@ class RanksCoscheduler(Coscheduler, ABC):
                 continue
 
             # Check if it is eligible for spread allocation
-            res = self.allocation_as_spread(job)
+            res = self.colocation_to_xunit(job)
 
             if res:
                 self.after_deployment()
@@ -149,7 +149,7 @@ class RanksCoscheduler(Coscheduler, ABC):
             # self.cluster.waiting_queue = waiting_queue
             break
 
-        #print(f"AFTER: Free cores = {self.cluster.free_cores}")
+        # print(f"AFTER: Free cores = {self.cluster.free_cores}")
         return deployed
 
     def xunit_estimated_finish_time(self, xunit: list[Job]) -> float:
@@ -164,9 +164,11 @@ class RanksCoscheduler(Coscheduler, ABC):
         for job in xunit:
             if type(job) != EmptyJob:
                 # Estimation is based on the worst speedup of a job
-                estimate = job.wall_time / job.get_min_speedup() + job.start_time - self.cluster.makespan
+                estimate = job.wall_time / job.get_min_speedup() + job.start_time - \
+                    self.cluster.makespan
                 if estimate < 0:
-                    print(estimate, job.start_time, job.wall_time / job.get_min_speedup(), self.cluster.makespan, job)
+                    print(estimate, job.start_time, job.wall_time /
+                          job.get_min_speedup(), self.cluster.makespan, job)
                 estimations.append(estimate)
 
         return max(estimations)
@@ -201,20 +203,22 @@ class RanksCoscheduler(Coscheduler, ABC):
                 xunits_for_merge.append(xunit)
             else:
                 head_job = xunit[0]
-                last_job = xunit[-1] # possible idle job
+                last_job = xunit[-1]  # possible idle job
                 if blocked_job.half_node_cores <= max(len(head_job.assigned_cores), len(last_job.assigned_cores)):
                     xunits_for_colocation.append(xunit)
                 else:
                     xunits_for_merge.append(xunit)
 
         # Starting with xunits to merge we sort them by estimated finish time
-        xunits_for_merge.sort(key=lambda xunit: self.xunit_estimated_finish_time(xunit))
+        xunits_for_merge.sort(
+            key=lambda xunit: self.xunit_estimated_finish_time(xunit))
         aggr_cores = len(self.cluster.total_procs)
 
         for xunit in xunits_for_merge:
             if len(xunit) == 1:
                 if len(xunit[0].assigned_cores) + aggr_cores >= 2 * blocked_job.half_node_cores:
-                    estimated_start_time_merge = self.xunit_estimated_finish_time(xunit)
+                    estimated_start_time_merge = self.xunit_estimated_finish_time(
+                        xunit)
                     break
                 else:
                     aggr_cores += len(xunit[0].assigned_cores)
@@ -224,7 +228,8 @@ class RanksCoscheduler(Coscheduler, ABC):
                 ])
 
                 if xunit_binded_cores + aggr_cores >= 2 * blocked_job.half_node_cores:
-                    estimated_start_time_merge = self.xunit_estimated_finish_time(xunit)
+                    estimated_start_time_merge = self.xunit_estimated_finish_time(
+                        xunit)
                     break
                 else:
                     aggr_cores += xunit_binded_cores
@@ -239,10 +244,12 @@ class RanksCoscheduler(Coscheduler, ABC):
                 xunit_copy.remove(last_job)
                 aggr_cores = len(last_job.assigned_cores)
 
-            xunit_copy.sort(key=lambda job: job.wall_time / job.get_min_speedup() + job.start_time - self.cluster.makespan)
+            xunit_copy.sort(key=lambda job: job.wall_time /
+                            job.get_min_speedup() + job.start_time - self.cluster.makespan)
             for job in xunit_copy:
                 if len(job.assigned_cores) + aggr_cores >= blocked_job.half_node_cores:
-                    estimations.append(job.wall_time / job.get_min_speedup() + job.start_time - self.cluster.makespan)
+                    estimations.append(
+                        job.wall_time / job.get_min_speedup() + job.start_time - self.cluster.makespan)
                     break
                 else:
                     aggr_cores += len(job.assigned_cores)
@@ -256,7 +263,8 @@ class RanksCoscheduler(Coscheduler, ABC):
         #     estimated_start_time = estimated_start_time_merge
 
         # In finding the possible backfillers
-        waiting_queue = deepcopy_list(self.cluster.waiting_queue[1:self.backfill_depth+1])
+        waiting_queue = deepcopy_list(
+            self.cluster.waiting_queue[1:self.backfill_depth+1])
 
         while waiting_queue != []:
 
@@ -265,7 +273,7 @@ class RanksCoscheduler(Coscheduler, ABC):
             if estimated_start_time_coloc is not None and\
                     estimated_start_time_coloc < estimated_start_time_merge:
 
-                res = self.colocation_to_xunit(backfill_job)
+                res = self.allocation_as_spread(backfill_job)
 
                 if res:
                     self.after_deployment()
@@ -273,7 +281,7 @@ class RanksCoscheduler(Coscheduler, ABC):
                     continue
 
                 # Check if it is eligible for spread allocation
-                res = self.allocation_as_spread(backfill_job)
+                res = self.colocation_to_xunit(backfill_job)
 
                 if res:
                     self.after_deployment()
@@ -301,7 +309,7 @@ class RanksCoscheduler(Coscheduler, ABC):
                 if backfill_job.wall_time <= estimated_start_time_merge:
 
                     # Try to fit the job in an xunit
-                    res = self.colocation_to_xunit(backfill_job)
+                    res = self.allocation_as_spread(backfill_job)
 
                     if res:
                         self.after_deployment()
@@ -309,7 +317,7 @@ class RanksCoscheduler(Coscheduler, ABC):
                         continue
 
                     # Check if it is eligible for spread allocation
-                    res = self.allocation_as_spread(backfill_job)
+                    res = self.colocation_to_xunit(backfill_job)
 
                     if res:
                         self.after_deployment()

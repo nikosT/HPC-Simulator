@@ -1,17 +1,16 @@
+from procset import ProcSet
+import numpy as np
+import math
+from realsim.database import Database
+from realsim.logger.logger import Logger
+from realsim.scheduler.scheduler import Scheduler
+from realsim.jobs.utils import deepcopy_list
+from realsim.jobs import Job, EmptyJob, JobCharacterization
 import abc
 import os
 import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
-
-from realsim.jobs import Job, EmptyJob, JobCharacterization
-from realsim.jobs.utils import deepcopy_list
-from realsim.scheduler.scheduler import Scheduler
-from realsim.logger.logger import Logger
-from realsim.database import Database
-
-import math
-import numpy as np
-from procset import ProcSet
+sys.path.append(os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '../../')))
 
 
 class AbstractCluster(abc.ABC):
@@ -51,7 +50,7 @@ class AbstractCluster(abc.ABC):
 
         # Job id counter
         self.id_counter: int = 0
-        
+
         # The total execution time
         # of a cluster
         self.makespan: float = 0
@@ -81,8 +80,10 @@ class AbstractCluster(abc.ABC):
         # usage
         for job in self.database.preloaded_queue:
             job.job_id = self.id_counter
-            job.half_node_cores = int(math.ceil(job.num_of_processes / (self.cores_per_node / 2)) * (self.cores_per_node / 2))
-            job.full_node_cores = int(math.ceil(job.num_of_processes / self.cores_per_node) * self.cores_per_node)
+            job.half_node_cores = int(math.ceil(
+                job.num_of_processes / (self.cores_per_node / 2)) * (self.cores_per_node / 2))
+            job.full_node_cores = int(
+                math.ceil(job.num_of_processes / self.cores_per_node) * self.cores_per_node)
 
             if job.num_of_processes <= 512:
                 job.age = 1
@@ -133,15 +134,15 @@ class AbstractCluster(abc.ABC):
                 elif self.queue_size == 0 and\
                         len(self.waiting_queue) == 0 and\
                         self.scheduler.assign_nodes(job.full_node_cores, self.total_procs) is not None:
-                            self.database.preloaded_queue.remove(job)
-                            job.submit_time = self.makespan
-                            self.waiting_queue.append(job)
+                    self.database.preloaded_queue.remove(job)
+                    job.submit_time = self.makespan
+                    self.waiting_queue.append(job)
 
                 # Finite waiting queue size but not 0
                 elif self.queue_size > 0 and len(self.waiting_queue) < self.queue_size:
-                        self.database.preloaded_queue.remove(job)
-                        job.submit_time = self.makespan
-                        self.waiting_queue.append(job)
+                    self.database.preloaded_queue.remove(job)
+                    job.submit_time = self.makespan
+                    self.waiting_queue.append(job)
 
                 else:
                     break
@@ -195,7 +196,7 @@ class AbstractCluster(abc.ABC):
 
         return nonfilled_units
 
-    def ratio_rem_time(self, job: Job, co_job: Job|str) -> None:
+    def ratio_rem_time(self, job: Job, co_job: Job | str) -> None:
         old_speedup = job.sim_speedup
         if type(co_job) == Job:
             new_speedup = self.database.heatmap[job.job_name][co_job.job_name]
@@ -210,7 +211,8 @@ class AbstractCluster(abc.ABC):
                 raise RuntimeError(f"{co_job} : Unknown ratio policy")
 
         else:
-            raise RuntimeError(f"{type(co_job)} is not appropriate type. Job or string are acceptable types")
+            raise RuntimeError(
+                f"{type(co_job)} is not appropriate type. Job or string are acceptable types")
 
         # if old_speedup <= 0 or new_speedup <= 0 or isnan(old_speedup) or isnan(new_speedup):
         if old_speedup <= 0 or new_speedup <= 0:
@@ -218,7 +220,6 @@ class AbstractCluster(abc.ABC):
 
         job.remaining_time *= (old_speedup / new_speedup)
         job.sim_speedup = new_speedup
-
 
     @abc.abstractmethod
     def next_state(self) -> None:
@@ -244,7 +245,7 @@ class AbstractCluster(abc.ABC):
 
         # Deploy to waiting queue any preloaded jobs that remain
         self.load_in_waiting_queue()
-        
+        # self.waiting_queue = self.waiting_queue[:1]
         # Check if there are any jobs left waiting
         if self.waiting_queue != []:
 
@@ -273,4 +274,4 @@ class AbstractCluster(abc.ABC):
             # Free the resources
             self.free_resources()
 
-        #print(self.total_procs)
+        # print(self.total_procs)

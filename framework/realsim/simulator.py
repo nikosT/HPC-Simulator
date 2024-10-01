@@ -1,3 +1,6 @@
+from realsim.logger.logger import Logger
+from realsim.cluster.exhaustive import ClusterExhaustive
+from realsim.database import Database
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 from multiprocessing import Manager
 import os
@@ -10,10 +13,6 @@ import io
 sys.path.append(os.path.abspath(os.path.join(
     os.path.dirname(__file__), "../"
 )))
-
-from realsim.database import Database
-from realsim.cluster.exhaustive import ClusterExhaustive
-from realsim.logger.logger import Logger
 
 
 def run_sim(core):
@@ -41,17 +40,17 @@ def run_sim(core):
     # profiler.enable()
 
     data = {
-            # Graphs
-            # "Resource usage": logger.get_resource_usage(),
-            "Gantt diagram": logger.get_gantt_representation(),
-            "Unused cores": logger.get_unused_cores_graph(),
-            "Jobs utilization": logger.get_jobs_utilization(default_logger),
-            "Jobs throughput": logger.get_jobs_throughput(),
-            "Waiting queue": logger.get_waiting_queue_graph(),
-            "Workload": logger.get_workload(),
-            
-            # Extra metrics
-            "Makespan speedup": default_cluster_makespan / cluster.makespan
+        # Graphs
+        # "Resource usage": logger.get_resource_usage(),
+        "Gantt diagram": logger.get_gantt_representation(),
+        "Unused cores": logger.get_unused_cores_graph(),
+        "Jobs utilization": logger.get_jobs_utilization(default_logger),
+        "Jobs throughput": logger.get_jobs_throughput(),
+        "Waiting queue": logger.get_waiting_queue_graph(),
+        "Workload": logger.get_workload(),
+
+        # Extra metrics
+        "Makespan speedup": default_cluster_makespan / cluster.makespan
     }
 
     # profiler.disable()
@@ -70,6 +69,7 @@ def run_sim(core):
     # 3. Makespan speedup
     return data
 
+
 class Simulation:
     """The entry point of a simulation for scheduling and scheduling algorithms.
     A user can decide whether the simulation will be 'static' be creating a bag
@@ -77,7 +77,7 @@ class Simulation:
     the the waiting queue of a cluster.
     """
 
-    def __init__(self, 
+    def __init__(self,
                  jobs_set, heatmap,
                  # cluster
                  nodes: int, ppn: int, queue_size: int,
@@ -108,7 +108,7 @@ class Simulation:
                 cluster.queue_size = math.inf
             else:
                 cluster.queue_size = queue_size
-            
+
             # Setup the databse
             database.setup()
             cluster.setup_preloaded_jobs()
@@ -137,9 +137,9 @@ class Simulation:
 
             # Record of a simulation
             self.sims[scheduler.name] = (database,
-                                         cluster, 
-                                         scheduler, 
-                                         logger, 
+                                         cluster,
+                                         scheduler,
+                                         logger,
                                          self.comm_queue)
 
     def set_default(self, name):
@@ -166,24 +166,24 @@ class Simulation:
             self.default_cluster.step()
 
         # Submit to the shared list the results
-        self.comm_queue.put([self.default_cluster.makespan, self.default_logger])
+        self.comm_queue.put(
+            [self.default_cluster.makespan, self.default_logger])
 
         # Wait until all the futures are complete
         self.executor.shutdown(wait=True)
-
 
     def get_results(self):
 
         # Set results for default scheduler
         data = {
-                # "Resource usage": self.default_logger.get_resource_usage(),
-                "Gantt diagram": self.default_logger.get_gantt_representation(),
-                "Unused cores": self.default_logger.get_unused_cores_graph(),
-                "Jobs utilization": {},
-                "Makespan speedup": 1.0,
-                "Jobs throughput": self.default_logger.get_jobs_throughput(),
-                "Workload": self.default_logger.get_workload(),
-                "Waiting queue": self.default_logger.get_waiting_queue_graph(),
+            # "Resource usage": self.default_logger.get_resource_usage(),
+            "Gantt diagram": self.default_logger.get_gantt_representation(),
+            "Unused cores": self.default_logger.get_unused_cores_graph(),
+            "Jobs utilization": {},
+            "Makespan speedup": 1.0,
+            "Jobs throughput": self.default_logger.get_jobs_throughput(),
+            "Workload": self.default_logger.get_workload(),
+            "Waiting queue": self.default_logger.get_waiting_queue_graph(),
         }
 
         self.results[self.default] = data
@@ -194,4 +194,3 @@ class Simulation:
             self.results[policy] = future.result()
 
         return self.results
-
