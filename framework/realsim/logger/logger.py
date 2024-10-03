@@ -1,5 +1,8 @@
 import os
 import sys
+from functools import reduce
+from typing import TYPE_CHECKING
+from datetime import timedelta
 
 sys.path.append(os.path.abspath(
     os.path.join(
@@ -10,19 +13,16 @@ sys.path.append(os.path.abspath(
 
 #if TYPE_CHECKING:
 #    from realsim.cluster import ClusterV2
-from realsim.jobs.jobs import EmptyJob, Job
+from realsim.jobs.jobs import Job
 from realsim.database import Database
+from realsim.cluster.cluster import Cluster
+import realsim.logger.logevts as evts
 import plotly.graph_objects as go
 import plotly.express.colors as colors
 from procset import ProcSet
 
-
-class LogEvent:
-    COMPENG_LOG = 0
-    JOB_LOG = 1
-    DB_LOG = 2
-    CLUSTER_LOG = 3
-    SCHEDULER_LOG = 4
+if TYPE_CHECKING:
+    from realsim.scheduler.scheduler import Scheduler
 
 
 class Logger(object):
@@ -34,35 +34,54 @@ class Logger(object):
     def __init__(self, debug=True):
         # Controls if 
         self.debug = debug
-        #self.scale = colors.sequential.Turbo
+
+        self.database: Database
+        self.cluster: Cluster
+        self.scheduler: Scheduler
+
         self.scale = colors.sequential.Turbo
 
+        self.compeng_logs: list[str] = list()
         self.job_logs: list[str] = list()
         self.db_logs: list[str] = list()
         self.cluster_logs: list[str] = list()
         self.scheduler_logs: list[str] = list()
 
-    def log(self, evt: int, msg: str) -> None:
+    def log(self, evt: type[evts.LogEvent], **kwargs) -> None:
 
-        if not self.debug:
-            return
+        if self.debug:
+            try:
+                self.__dict__[evt.hook].append(evt.log(kwargs["msg"], self.cluster.makespan))
+            except:
+                raise RuntimeError(f"The log event specified ({evt}) doesn't exist")
 
-        if evt == LogEvent.JOB_LOG:
-            self.job_logs.append(msg)
-        elif evt == LogEvent.DB_LOG:
-            self.db_logs.append(msg)
-        elif evt == LogEvent.CLUSTER_LOG:
-            self.cluster_logs.append(msg)
-        elif evt == LogEvent.SCHEDULER_LOG:
-            self.scheduler_logs.append(msg)
-        else:
-            raise RuntimeError("The log event specified ({evt}) doesn't exist")
+        if evt == evts.JobStart:
+            job: Job = kwargs["job"]
+            psets: list[ProcSet] = kwargs["psets"]
+            pset = reduce(lambda pA, pB: pA.union(pB), psets)
+            hostname: str = kwargs["hostname"]
+            self.job_events[job.job_signature]["submit time"] = job.submit_time
+            self.job_events[job.job_signature]["start time"] = job.start_time
+            self.job_events[job.job_signature]["waiting time"] = job.waiting_time
+            self.job_events[job.job_signature]["assigned procs"] = self.job_events[job.job_signature]["assigned procs"].union(pset)
+            self.job_events[job.job_signature]["hosts"].add(hostname)
 
-    def assign_database(self, db: Database):
-        self.database = db
+        if evt == evts.JobFinish:
+            job: Job = kwargs["job"]
+            self.job_events[job.job_signature]["finish time"] = job.finish_time
 
-    def assign_cluster(self, cluster):
-        self.cluster = cluster
+        # When a log is submitted update also the values
+        if evt == evts.JobStart or evt == evts.JobFinish:
+            if self.cluster_events["checkpoints"][-1] != self.cluster.makespan:
+                self.cluster_events["checkpoints"].append(self.cluster.makespan)
+                self.cluster_events["unused cores"].append(self.cluster.get_idle_cores())
+                if evt == evts.JobFinish:
+                    self.cluster_events["finished jobs"].append(self.cluster_events["finished jobs"][-1] + 1)
+            else:
+                self.cluster_events["unused cores"][-1] = self.cluster.get_idle_cores()
+                if evt == evts.JobFinish:
+                    self.cluster_events["finished jobs"][-1] = self.cluster_events["finished jobs"][-1] + 1
+ 
 
     def setup(self):
 
@@ -71,7 +90,7 @@ class Logger(object):
         # self.cluster_events["checkpoints"] = set()
         # self.cluster_events["checkpoints"].add(0)
         self.cluster_events["checkpoints"] = [0]
-        self.cluster_events["unused cores"] = list()
+        self.cluster_events["unused cores"] = [self.cluster.total_cores]
         self.cluster_events["deploying:spread"] = 0
         self.cluster_events["deploying:exec-colocation"] = 0
         self.cluster_events["deploying:wait-colocation"] = 0
@@ -92,6 +111,7 @@ class Logger(object):
                     "speedups": [], # [sp1, sp2, ..]
                     "cores": dict(), # {cojob1: cores1, cojob2: cores2, ..}
                     "assigned procs": ProcSet(),
+                    "hosts": set(),
                     "remaining time": [],
                     "start time": 0,
                     "finish time": 0,
@@ -100,136 +120,7 @@ class Logger(object):
                     "wall time": job.wall_time,
                     "num of processes": job.num_of_processes
             }
-            self.job_events[f"{job.job_id}:{job.job_name}"] = jevts
-
-    def evt_jobs_executing(self):
-        """Record events of jobs that are still executing such as:
-
-            - trace: point in time running alone/spread/with another job
-
-            - speedup: the speedup of a job at the specific point in time
-
-            - cores: binded cores at the specific point in time running
-              alone/spread/with another job
-
-            - remaining time: the remaining time of a job at the specific point
-              in time with the specific speedup
-        """
-
-        if len(self.cluster_events["unused cores"]) == len(self.cluster_events["checkpoints"]) - 1:
-            self.cluster_events["unused cores"].append(len(self.cluster.total_procs))
-        else:
-            self.cluster_events["unused cores"][-1] = len(self.cluster.total_procs)
-
-        for xunit in self.cluster.execution_list:
-
-            if type(xunit[-1]) == EmptyJob:
-                self.cluster_events["unused cores"][-1] += len(xunit[-1].assigned_cores)
-
-            if len(xunit) == 1 and type(xunit[0]) != EmptyJob:
-
-                job_key = f"{xunit[0].job_id}:{xunit[0].job_name}"
-
-                # Get the starting time of job for each checkpoint
-                self.job_events[job_key]["trace"].append(
-                        ["compact", self.cluster.makespan, None]
-                )
-
-                self.job_events[job_key]["speedups"].append(xunit[0].sim_speedup)
-
-                # Get compact cores usage
-                self.job_events[job_key]["cores"].update({
-                    "compact": len(xunit[0].assigned_cores)
-                })
-
-                self.job_events[job_key]["remaining time"].append(
-                        xunit[0].remaining_time
-                )
-
-            elif len(xunit) > 1:
-                # Find if every job has finished
-                empty = True
-                for job in xunit:
-                    if type(job) != EmptyJob:
-                        empty = False
-                        break
-                
-                if empty:
-                    continue
-
-                head_key = f"{xunit[0].job_id}:{xunit[0].job_name}"
-
-                # Get tail key
-                tail_key = "spread"
-                tail = [job for job in xunit[1:] if type(job) != EmptyJob ]
-
-                if tail != []:
-
-                    tail_key = "|".join([
-                        f"{job.job_id}:{job.job_name}" for job in tail
-                        if type(job) != EmptyJob
-                    ])
-
-                    for job in tail:
-
-                        job_key = f"{job.job_id}:{job.job_name}"
-
-                        self.job_events[job_key]["trace"].append(
-                                [head_key, self.cluster.makespan, None]
-                        )
-
-                        self.job_events[job_key]["speedups"].append(
-                                job.sim_speedup
-                        )
-
-                        self.job_events[job_key]["cores"].update({
-                            head_key: len(job.assigned_cores)
-                        })
-
-                        self.job_events[job_key]["remaining time"].append(
-                                job.remaining_time
-                        )
-
-                self.job_events[head_key]["trace"].append(
-                        [tail_key, self.cluster.makespan, None]
-                )
-                
-                self.job_events[head_key]["speedups"].append(xunit[0].sim_speedup)
-
-                self.job_events[head_key]["cores"].update({
-                    tail_key: len(xunit[0].assigned_cores)
-                })
-
-                self.job_events[head_key]["remaining time"].append(
-                        xunit[0].remaining_time
-                )
-
-            else:
-                pass
-
-    def evt_job_finishes(self, job: Job):
-        """Record time when job finished
-        """
-
-        job_key = f"{job.job_id}:{job.job_name}"
-
-        # Set ending time in last trace
-        self.job_events[job_key]["trace"][-1][-1] = self.cluster.makespan
-
-        # Set the assigned processors for the job
-        self.job_events[job_key]["assigned procs"] = job.assigned_cores
-
-
-        # Record the arrival and waiting time
-        self.job_events[job_key]["start time"] = job.start_time
-        self.job_events[job_key]["finish time"] = self.cluster.makespan
-        self.job_events[job_key]["submit time"] = job.submit_time
-        self.job_events[job_key]["waiting time"] = job.waiting_time
-
-        # Write down the total number of finished job and unused cores at the 
-        # checkpoint
-        self.cluster_events["finished jobs"][-1] += 1
-
+            self.job_events[job.job_signature] = jevts
 
     def get_gantt_representation(self):
 
@@ -265,250 +156,17 @@ class Logger(object):
                     f"start time = {jevt['start time']:.2f} s<br>"+
                     f"finish time = {jevt['finish time']:.2f} s<br>"+
                     f"waiting time = {jevt['waiting time']:.2f} s<br>"+
+                    f"hosts = {len(jevt['hosts'])}<br>"+
                     f"processors = {len(jevt['assigned procs'])}",
                 ))
 
+        xaxis_tickvals = [i * (self.cluster.makespan / 10) for i in range(0, 11)]
+        xaxis_ticktext = [str(timedelta(seconds=i)).split('.')[0] for i in xaxis_tickvals]
+
         fig = go.Figure(data=fig_data)
         fig.update_layout(
-                title=f"<b>{self.cluster.scheduler.name}</b><br>Gantt Plot",
+                title=f"<b>{self.scheduler.name}</b><br>Gantt Plot",
                 title_x=0.5,
-                yaxis=dict(
-                    title="<b>Cores</b>",
-                    range=[0, self.cluster.total_cores],
-                    tickmode="array",
-                    tickvals=[self.cluster.total_cores],
-                ),
-                xaxis=dict(
-                    title="<b>Time</b>"
-                ),
-                template="seaborn"
-        )
-        return fig.to_json()
-
-    def get_history_trace(self):
-        """Get the execution history for each job that was deployed to the
-        cluster
-
-        {
-            job_key_1: {
-                cojob_key_1_1: [starting time, end time],
-                cojob_key_1_2: [starting time 2, end time 2],
-                .....
-                ....
-                cojob_key_1_n: [starting time n, end time n],
-            },
-
-            job_key_2: {
-                cojob_key_2_1: [starting time, end time],
-                cojob_key_2_2: [starting time 2, end time 2],
-                .....
-                ....
-                cojob_key_2_k: [starting time k, end time k],
-            },
-
-            ......
-            ....
-
-
-
-        }
-        """
-
-        # Historical data for each job
-        # job_key: {cojob_key: [start time, end time]}, {cojob_key2: [st2, et2]}
-        historical_data: dict[str, dict] = dict()
-
-        # CONSTANTS
-        CJ_KEY = 0 # co-job key
-        START = 1 # starting time
-        END = 2 # end time
-
-        for job_key, job_event in self.job_events.items():
-
-            traces = job_event["trace"]
-
-            # Some runtimes lists will be empty
-            # because we didn't want to save information twice
-            if traces == []:
-                continue
-
-            # Initialize a dictionary for each non empty job key
-            historical_data[job_key] = dict()
-
-            # Get starting time of job and the first co-scheduled job key
-            first_trace = traces[0]
-            current_cojob_key = first_trace[CJ_KEY]
-            current_starting_time = first_trace[START]
-
-            # Initialize historical data
-            historical_data[job_key].update({
-
-                current_cojob_key: 
-                [
-                    [current_starting_time, first_trace[END]]
-                ]
-
-            })
-
-            for trace in traces:
-
-                # If the co-scheduled job(s) changed then record the history
-                # with the previous job and move on to the next jobs
-                if current_cojob_key != trace[CJ_KEY]:
-
-                    # Set end time for the previouse co-job key
-                    historical_data[job_key][current_cojob_key][-1][-1] = trace[START]
-                    
-                    # Set the current cojob key and starting time
-                    current_cojob_key = trace[CJ_KEY]
-                    current_starting_time = trace[START]
-
-                    # If the newly found co-job key already exists then create a
-                    # new list
-                    if current_cojob_key in historical_data[job_key]:
-                        historical_data[job_key][current_cojob_key].append([
-                            current_starting_time, trace[END]
-                        ])
-                    # Else create a new record for the new co-job key
-                    else:
-                        historical_data[job_key].update({
-
-                            current_cojob_key: 
-                            [
-                                [current_starting_time, first_trace[END]]
-                            ]
-
-                        })
-
-
-            # Get the end time from last trace
-            historical_data[job_key][current_cojob_key][-1][-1] = traces[-1][END]
-
-        return historical_data
-
-    def get_resource_usage(self):
-
-        # Get all the checkpoints of the simulation
-        checks = list(sorted(
-                self.cluster_events["checkpoints"]
-        ))
-
-        # Calculate the intervals between the checkpoints
-        intervals = [b - a for a, b in list(zip(
-            checks[:len(checks)], checks[1:]
-        ))]
-
-        # Get the history trace of the simulation
-        history_trace = self.get_history_trace()
-
-        # Create the color palette for each job
-        num_of_jobs = len(history_trace.keys())
-        jcolors = colors.sample_colorscale(self.scale, [n/(num_of_jobs - 1) for n in range(num_of_jobs)])
-
-        traces = list()
-        for idx, [job_key, job_history] in enumerate(history_trace.items()):
-
-            for cojob_key, list_times in job_history.items():
-
-                for times in list_times:
-
-                    job_cores = self.job_events[job_key]["cores"][cojob_key]
-
-                    # Calculate unused cores from an xunit
-                    unused_cores = 0
-                    if cojob_key != "spread" and cojob_key != "compact":
-                        
-                        lesser_cores = sum([
-                            self.job_events[cj_key]["cores"][job_key]
-                            for cj_key in cojob_key.split("|")
-                            if job_key in self.job_events[cj_key]["cores"].keys()
-                        ])
-
-                        # We only show unused cores for the big job so as to not
-                        # duplicate their value in the graph
-                        if lesser_cores > 0 and lesser_cores < job_cores:
-                            unused_cores = job_cores - lesser_cores
-
-                    elif cojob_key == "spread":
-                        unused_cores = job_cores
-
-                    # The position of each box on the x-axis (time axis)
-                    xs = [
-                        checks[i] + intervals[i] / 2
-                        # We don't care about the last checkpoint because all jobs
-                        # have finished by that time
-                        for i, time in enumerate(checks[:len(checks)])
-                        if time >= times[0] and time < times[1]
-                    ]
-
-                    # The width of each box
-                    ws = [
-                        intervals[i]
-                        for i, time in enumerate(checks[:len(checks)])
-                        if time >= times[0] and time < times[1]
-                    ]
-
-                    # The height of each box
-                    ys = [job_cores] * len(xs)
-
-                    # The label on top of the box
-                    if cojob_key == "compact":
-                        text = f"<b>{job_key}<br>[{cojob_key}]</b><br>nodes = {int(job_cores / self.cluster.cores_per_node)}"
-                    else:
-                        text = f"<b>{job_key}<br>[{cojob_key}]</b><br>nodes = {int(2 * job_cores / self.cluster.cores_per_node)}"
-
-                    # Add the box to the plot
-                    traces.append(
-                            go.Bar(
-                                x=xs,
-                                y=ys,
-                                width=ws,
-                                name=f"{job_key}_{cojob_key}",
-                                text=text,
-                                insidetextanchor="middle",
-                                marker_line=dict(width=2, color="black"),
-                                marker=dict(
-                                    color=jcolors[idx]
-                                )
-                            )
-                    )
-
-                    # If there are unused cores inside the xunit then show them
-                    if unused_cores > 0:
-
-                        traces.append(
-                                go.Bar(
-                                    x=xs,
-                                    y=[unused_cores] * len(xs),
-                                    width=ws,
-                                    name=f"{job_key.split(':')[0]}:unused",
-                                    text="",
-                                    insidetextanchor="middle",
-                                    marker_line=dict(width=2, color=jcolors[idx]),
-                                    marker=dict(
-                                        color=jcolors[idx],
-                                        pattern=dict(
-                                            fillmode="replace",
-                                            shape="x",
-                                            size=6,
-                                            solidity=0.7
-                                        )
-                                    ),
-                                )
-                        )
-
-        # Create figure with the box resource usage
-        fig = go.Figure(data=traces)
-
-        # Draw vertical lines for each checkpoint
-        for check in checks:
-            fig.add_vline(x=check, line_width=1, line_dash="dot",)
-
-        # Change the layout of the plot
-        fig.update_layout(
-                title=f"<b>{self.cluster.scheduler.name}</b><br>Resources usage",
-                title_x=0.5,
-                showlegend=True,
                 yaxis=dict(
                     title="<b>Cores</b>",
                     range=[0, self.cluster.total_cores],
@@ -518,14 +176,11 @@ class Logger(object):
                 xaxis=dict(
                     title="<b>Time</b>",
                     tickmode="array",
-                    tickvals=checks,
-                    ticktext=[f"{t:.3f}" for t in checks]
+                    tickvals=xaxis_tickvals,
+                    ticktext=xaxis_ticktext
                 ),
-                barmode="stack",
-                autosize=True,
-                bargap=0.1
+                template="seaborn"
         )
-
         return fig.to_json()
 
     def get_jobs_utilization(self, logger):
@@ -534,37 +189,21 @@ class Logger(object):
         """
 
         if not isinstance(logger, Logger):
-            raise Exception("Provide a Logger instance")
+            raise RuntimeError("Provide a Logger instance")
 
         # Boxplot points
         points = dict()
 
-        # Get the time spent on a job in both loggers
-        our_history = self.get_history_trace()
-        their_history = logger.get_history_trace()
-
-        for job_key in our_history:
-
-            # Get all the times in our job_key
-            our_job_times = list()
-            for _, trace in our_history[job_key].items():
-                for times in trace:
-                    our_job_times.extend(times)
-
-            # Get all the times in their job_key
-            their_job_times = list()
-            for _, trace in their_history[job_key].items():
-                for times in trace:
-                    their_job_times.extend(times)
+        for job_sig in self.job_events:
 
             # Utilization numbers
             job_points = {
-                    "speedup": (max(their_job_times) - min(their_job_times)) / (max(our_job_times) - min(our_job_times)),
-                    "turnaround": (max(their_job_times) - logger.job_events[job_key]["submit time"]) / (max(our_job_times) - self.job_events[job_key]["submit time"]),
-                    "waiting": logger.job_events[job_key]["waiting time"] - self.job_events[job_key]["waiting time"]
+                "speedup": (logger.job_events[job_sig]["finish time"] - logger.job_events[job_sig]["start time"]) / (self.job_events[job_sig]["finish time"] -self.job_events[job_sig]["start time"]),
+                "turnaround": (logger.job_events[job_sig]["finish time"] - logger.job_events[job_sig]["submit time"]) / (self.job_events[job_sig]["finish time"] -self.job_events[job_sig]["submit time"]),
+                "waiting": logger.job_events[job_sig]["waiting time"] - self.job_events[job_sig]["waiting time"]
             }
 
-            points[job_key] = job_points
+            points[job_sig] = job_points
 
         return points
 
@@ -587,14 +226,6 @@ class Logger(object):
                 sorted(list(self.cluster_events["checkpoints"])),
                 self.cluster_events["finished jobs"]
         )
-
-    def get_jobs_throughput_derivative(self):
-        checkpoints = self.cluster_events["checkpoints"]
-        finished_jobs = self.cluster_events["finished jobs"]
-        derivatives = [
-                (finished_jobs[i] - finished_jobs[i-1]) / (checkpoints[i] - checkpoints[i-1])
-                for i in range(1, len(checkpoints))
-        ]
 
     def get_unused_cores_graph(self):
         self.cluster_events["unused cores"].append(self.cluster.total_cores)

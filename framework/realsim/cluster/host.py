@@ -8,7 +8,7 @@ class Host:
     DOWN = 2
 
     def __init__(self,
-                 socket_conf: tuple[int], 
+                 socket_conf: tuple, 
                  first_core_id: int):
         
         self.socket_conf = socket_conf
@@ -25,6 +25,17 @@ class Host:
 
         # Get references of the jobs running on the host
         self.jobs: dict[str, list[ProcSet]] = dict()
+ 
+    def get_idle_cores_num(self) -> int:
+        _sum = 0
+        for pset in self.sockets:
+            _sum += len(pset)
+
+        return _sum
+
+    def get_used_cores_num(self) -> int:
+        return sum(self.socket_conf) * len(self.sockets) - self.get_idle_cores_num()
+
 
 # Alias for Host class
 Node = Host

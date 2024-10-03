@@ -1,3 +1,4 @@
+from abc import ABC
 import os
 import sys
 from typing import Optional
@@ -6,14 +7,14 @@ sys.path.append(os.path.abspath(os.path.join(
     os.path.dirname(__file__), "../../../../"
 )))
 
-from realsim.jobs import Job, EmptyJob
+from realsim.jobs import Job
 from .ranks import RanksCoscheduler, ScikitModel
 
 from numpy import average as avg
 import math
 
 
-class BalancingRanksCoscheduler(RanksCoscheduler):
+class BalancingRanksCoscheduler(RanksCoscheduler, ABC):
 
     name = "Balancing Ranks Co-Scheduler"
 

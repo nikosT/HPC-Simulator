@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
-import math
-from functools import reduce
+from math import ceil
+from itertools import islice
 
 import os
 import sys
@@ -54,36 +54,26 @@ class Coscheduler(Scheduler, ABC):
     def setup(self) -> None:
         pass
 
-    @abstractmethod
-    def waiting_job_candidates_reorder(self, job: Job, co_job: Job) -> float:
-        pass
-
-    @abstractmethod
-    def xunit_candidates_reorder(self, job: Job, xunit: list[Job]) -> float:
-        pass
-
-    def after_deployment(self, *args):
-        """After deploying a job in a pair or compact then some after processing
-        events may need to take place. For example to calculate values necesary
-        for the heuristics functions (e.g. the fragmentation of the cluster)
-        """
-        pass
-
     def coloc_condition(self, hostname: str, job: Job) -> float:
-        """Condition on how to sort the 'in use' hosts/nodes
-        The current implementation is sorting by the best worst speedup from the
-        neighboring jobs
+        """Condition on how to sort the hosts based on the speedup that the job
+        will gain/lose. Always spread first
         """
 
         co_job_sigs = list(self.cluster.hosts[hostname].jobs.keys())
 
+        # If no signatures then spread
+        if co_job_sigs == []:
+            return job.max_speedup
+
         # Get the worst possible speedup
         first_co_job_name = co_job_sigs[0].split(":")[-1]
         worst_speedup = self.database.heatmap[job.job_name][first_co_job_name]
+        worst_speedup = worst_speedup if worst_speedup is not None else 1
 
         for co_job_sig in co_job_sigs[1:]:
             co_job_name = co_job_sig.split(":")[-1]
             speedup = self.database.heatmap[job.job_name][co_job_name]
+            speedup = speedup if speedup is not None else 1
             if speedup < worst_speedup:
                 worst_speedup = speedup
 
@@ -94,8 +84,8 @@ class Coscheduler(Scheduler, ABC):
         """
 
         job.socket_conf = socket_conf
-        req_cores = job.num_of_processes
         needed_ppn = sum(job.socket_conf)
+        needed_hosts = ceil(job.num_of_processes / needed_ppn)
 
         # Get only the suitable hosts
         suitable_hosts = self.find_suitable_nodes(job.num_of_processes,
@@ -104,34 +94,12 @@ class Coscheduler(Scheduler, ABC):
         if suitable_hosts == dict():
             return False
 
-        # Start allocating to the idle hosts
-        idle_hosts = [
-                hostname 
-                for hostname in suitable_hosts
-                if self.cluster.hosts[hostname].state == Host.IDLE
-        ]
+        # Apply the colocation condition
+        suitable_hosts = dict(
+                sorted(suitable_hosts.items(), key=lambda it: self.coloc_condition(it[0], job), reverse=True)
+        )
 
-        for hostname in idle_hosts:
-            ComputeEngine.deploy_job_to_host(hostname, job, suitable_hosts[hostname])
-            suitable_hosts.pop(hostname)
-
-            req_cores -= needed_ppn
-            if req_cores <= 0:
-                break
-
-        # If the job still needs hosts to allocate cores then continue to the
-        # sorted by best, not idle hosts
-        if req_cores > 0:
-
-            # Sort the remaining hosts by best candidates
-            rem_hostnames = sorted(list(suitable_hosts.keys()), 
-                                   key=lambda hostname: self.coloc_condition(hostname, job),
-                                   reverse=True)
-
-            for hostname in rem_hostnames:
-                ComputeEngine.deploy_job_to_host(hostname, job, suitable_hosts[hostname])
-                if req_cores <= 0:
-                    break
+        self.compeng.deploy_job_to_hosts(islice(suitable_hosts.items(), needed_hosts), job)
 
         return True
 

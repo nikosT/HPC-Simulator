@@ -1,10 +1,11 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing import TypeVar, Generic, TYPE_CHECKING, Optional
 import os
 import sys
-import math
 from functools import reduce
+from itertools import islice
+from typing import TYPE_CHECKING
+from math import ceil
 
 from procset import ProcSet
 
@@ -20,7 +21,6 @@ from realsim.database import Database
 from realsim.cluster.cluster import Cluster
 from realsim.logger.logger import Logger
 from realsim.compengine import ComputeEngine
-
 
 class Scheduler(ABC):
     """Scheduler provides a base class for scheduling methods. When creating an
@@ -40,6 +40,7 @@ class Scheduler(ABC):
         self.database: Database
         self.cluster: Cluster
         self.logger: Logger
+        self.compeng: ComputeEngine
 
         # Variable to test whether a backfill policy is enabled
         self.backfill_enabled: bool = backfill_enabled
@@ -48,23 +49,6 @@ class Scheduler(ABC):
         self.age_threshold: int = 10
         self.time_step = 30 # Decide every 30 seconds 
         self.timer = self.time_step
-
-    def assign_database(self, db: Database) -> None:
-        """The database stores useful information for a scheduling algorithm
-        that can be used as advice for better decision making.
-        """
-        self.database = db
-
-    def assign_cluster(self, cluster: Cluster) -> None:
-        """This method is called from a cluster instance
-        when it is created. It can also be used to reassign
-        the scheduler to other clusters. It is essential for
-        rapid experimenting.
-        """
-        self.cluster = cluster
-
-    def assign_logger(self, logger: Logger) -> None:
-        self.logger = logger
 
     def find_suitable_nodes(self, 
                             req_cores: int, 
@@ -114,18 +98,10 @@ class Scheduler(ABC):
             return False
 
         needed_ppn = sum(self.cluster.full_socket_allocation)
-        for hostname, psets in suitable_hosts.items():
-
-            # Deploy job to hosts
-            ComputeEngine.deploy_job_to_host(hostname, job, psets)
-
-            req_cores -= needed_ppn
-            if req_cores <= 0:
-                break
+        needed_hosts = ceil(job.num_of_processes / needed_ppn)
+        self.compeng.deploy_job_to_hosts(islice(suitable_hosts.items(), needed_hosts), job)
 
         return True
-
-
 
     def pop(self, queue: list[Job]) -> Job:
         """Get and remove an object from a queue

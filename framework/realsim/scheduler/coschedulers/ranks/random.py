@@ -1,3 +1,4 @@
+from abc import ABC
 from .ranks import RanksCoscheduler
 from numpy.random import seed, randint
 from time import time_ns
@@ -12,7 +13,7 @@ from realsim.jobs.jobs import Job
 from realsim.scheduler.coschedulers.ranks.ranks import RanksCoscheduler
 
 
-class RandomRanksCoscheduler(RanksCoscheduler):
+class RandomRanksCoscheduler(RanksCoscheduler, ABC):
 
     name = "Random Ranks Co-Scheduler"
     description = """Random co-scheduling using ranks architecture as a fallback
@@ -23,10 +24,5 @@ class RandomRanksCoscheduler(RanksCoscheduler):
         # return float(randint(len(self.cluster.waiting_queue)))
 	    return 1.0
 
-    def waiting_job_candidates_reorder(self, job: Job, co_job: Job) -> float:
-        seed(time_ns() % (2 ** 32))
-        return float(randint(len(self.cluster.waiting_queue) - 1))
-
-    def xunit_candidates_reorder(self, job: Job, xunit: list[Job]) -> float:
-        seed(time_ns() % (2 ** 32))
-        return float(randint(len(self.cluster.execution_list)))
+    def coloc_condition(self, hostname: str, job: Job) -> float:
+        return 1.0

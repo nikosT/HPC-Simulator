@@ -6,7 +6,7 @@ sys.path.append(os.path.abspath(os.path.join(
     os.path.dirname(__file__), "../../../../"
 )))
 
-from realsim.jobs.jobs import Job, EmptyJob, JobCharacterization
+from realsim.jobs.jobs import Job, JobCharacterization
 from realsim.jobs.utils import deepcopy_list
 from realsim.scheduler.coscheduler import Coscheduler, ScikitModel
 import math
@@ -14,7 +14,7 @@ import math
 from abc import ABC
 
 
-class RulesCoscheduler(Coscheduler):
+class RulesCoscheduler(Coscheduler, ABC):
 
     name = "Rules Co-Scheduler"
     description = """Rules-based co-scheduling """

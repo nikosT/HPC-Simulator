@@ -28,7 +28,9 @@ def run_sim(core):
     # The stopping condition is for the waiting queue and the execution list
     # to become empty
     while database.preloaded_queue != [] or cluster.waiting_queue != [] or cluster.execution_list != []:
-        compengine.step()
+        # print(cluster.waiting_queue)
+        # print(cluster.execution_list)
+        compengine.sim_step()
 
     default_list = comm_queue.get()
     comm_queue.put(default_list)
@@ -49,10 +51,11 @@ def run_sim(core):
             "Jobs utilization": logger.get_jobs_utilization(default_logger),
             "Jobs throughput": logger.get_jobs_throughput(),
             "Waiting queue": logger.get_waiting_queue_graph(),
-            "Workload": logger.get_workload(),
             
             # Extra metrics
-            "Makespan speedup": default_cluster_makespan / cluster.makespan
+            "Makespan speedup": default_cluster_makespan / cluster.makespan,
+
+            "Workload": logger.get_workload(),
     }
 
     # profiler.disable()
@@ -112,20 +115,14 @@ class Simulation:
             # Setup the databse
             database.setup()
 
-            # Setup scheduler
+            # Initialize scheduler
             scheduler = sched_class(**hyperparams)
-            scheduler.assign_database(database)
 
-            # Setup logger
+            # Initalize logger
             logger = Logger()
-            logger.assign_database(database)
 
-            # Setup experiment
-            scheduler.assign_cluster(cluster)
-            scheduler.assign_logger(logger)
-
-            # Create the Compute Engine
-            compeng: ComputeEngine = ComputeEngine(database, cluster, scheduler, logger)
+            # Initialize the Compute Engine and prepare the loaded workload
+            compeng = ComputeEngine(database, cluster, scheduler, logger)
             compeng.setup_preloaded_jobs()
 
             # The default simulation will be executed by the main process
@@ -183,10 +180,10 @@ class Simulation:
                 "Gantt diagram": self.default_logger.get_gantt_representation(),
                 "Unused cores": self.default_logger.get_unused_cores_graph(),
                 "Jobs utilization": {},
-                "Makespan speedup": 1.0,
                 "Jobs throughput": self.default_logger.get_jobs_throughput(),
-                "Workload": self.default_logger.get_workload(),
                 "Waiting queue": self.default_logger.get_waiting_queue_graph(),
+                "Makespan speedup": 1.0,
+                "Workload": self.default_logger.get_workload()
         }
 
         self.results[self.default] = data

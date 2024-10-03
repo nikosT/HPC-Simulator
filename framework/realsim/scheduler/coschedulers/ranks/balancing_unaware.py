@@ -1,3 +1,4 @@
+from abc import ABC
 import os
 import sys
 from typing import Optional
@@ -6,7 +7,7 @@ sys.path.append(os.path.abspath(os.path.join(
     os.path.dirname(__file__), "../../../../"
 )))
 
-from realsim.jobs import Job, EmptyJob
+from realsim.jobs import Job
 from .balancing import BalancingRanksCoscheduler
 
 from numpy import average as avg
@@ -15,7 +16,7 @@ from time import time_ns
 import math
 
 
-class BalancingRanksCoschedulerXUnaware(BalancingRanksCoscheduler):
+class BalancingRanksCoschedulerXUnaware(BalancingRanksCoscheduler, ABC):
 
     name = "Execution Unaware Co-Scheduler"
 

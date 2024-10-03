@@ -193,9 +193,12 @@ def parallel_simulations(par_inp):
     # Unpack cluster bundle
     nodes, ppn, queue_size = cluster_bundle
 
+    #TODO: generalize it -> different number of sockets and assymetrical sockets
+    socket_conf = (int(ppn/2), int(ppn/2))
+
     # Setup simulation
     sim = Simulation(jobs_set, lm.export_heatmap(),
-                     nodes, ppn, queue_size,
+                     nodes, socket_conf, queue_size,
                      schedulers_bundle)
     sim.set_default("Default Scheduler")
 
@@ -218,6 +221,7 @@ def run_simulation(data, queue_size):
 
     # Create load manager
     if data["datalogs-suite"] == "All":
+        raise Exception("All suites is WIP")
         lm = LoadManager(machine=data["datalogs-machine"])
     else:
         lm = LoadManager(machine=data["datalogs-machine"],
