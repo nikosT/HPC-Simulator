@@ -55,7 +55,7 @@ def run_sim(core):
     }
 
 
-    _csvpath = f'/home/nikos/Desktop/ipdps2025/thanos/dummy_workloads/experiment_{datetime.datetime.now().strftime("%Y%m%d%H%M%S%f")}.csv'
+    _csvpath = f'/home/nikos/Desktop/ipdps2025/thanos/dummy_workloads/experiment_{scheduler.name}_{datetime.datetime.now().strftime("%Y%m%d%H%M%S%f")}.csv'
     with open (_csvpath,'w') as _f:
         _f.write(data["Workload"])
 
