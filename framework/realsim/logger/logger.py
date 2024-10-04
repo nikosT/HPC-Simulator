@@ -62,7 +62,7 @@ class Logger(object):
             hostname: str = kwargs["hostname"]
             self.job_events[job.get_signature()]["submit time"] = job.submit_time
             self.job_events[job.get_signature()]["start time"] = job.start_time
-            self.job_events[job.get_signature()]["waiting time"] = job.waiting_time
+            self.job_events[job.get_signature()]["waiting time"] = job.start_time - job.submit_time
             self.job_events[job.get_signature()]["assigned procs"] = self.job_events[job.get_signature()]["assigned procs"].union(pset)
             self.job_events[job.get_signature()]["hosts"].add(hostname)
 

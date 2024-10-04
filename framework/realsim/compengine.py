@@ -288,7 +288,6 @@ class ComputeEngine:
         # Log the event
         self.logger.log(evts.CompEngineNextTimeStep, msg=f"{min_rem_time}")
 
-
         # "Execute" the jobs
         execution_list: list[Job] = list()
 
