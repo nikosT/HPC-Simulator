@@ -21,7 +21,9 @@ def deepcopy_list(jobs_list: list[Job]):
     if jobs_list == []:
         return []
 
-    new_list = list(map(lambda job: job.deepcopy(), jobs_list))
+    new_list = list()
+    for job in jobs_list:
+        new_list.append(job.deepcopy())
 
     # If everything turns out okay then return the new list
     return new_list

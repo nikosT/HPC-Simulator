@@ -42,7 +42,6 @@ class Job:
         # Important identifiers of the job
         self.job_id = job_id
         self.job_name = job_name
-        self.job_signature = f"{job_id}:{job_name}"
 
         # Cores/Nodes resources
         self.num_of_processes = num_of_processes
@@ -141,3 +140,6 @@ class Job:
         copy.age = self.age
 
         return copy
+
+    def get_signature(self) -> str:
+        return f"{self.job_id}:{self.job_name}"

@@ -45,15 +45,12 @@ class ComputeEngine:
         # Sort jobs by their time they will be appearing in the waiting queue
         self.db.preloaded_queue.sort(key=lambda job: job.submit_time)
 
-        if self.cluster.makespan == 0:
-            self.id_counter = 0
-
         # Preload jobs and calculate their respective half and full node cores
         # usage
         for job in self.db.preloaded_queue:
 
             # Set job id
-            job.job_id = self.id_counter
+            job.job_id = self.cluster.id_counter
 
             # Setup core resources needed
             job.full_socket_nodes = ceil(job.num_of_processes / sum(self.cluster.full_socket_allocation))
@@ -91,7 +88,7 @@ class ComputeEngine:
                 else:
                     job.job_character = JobCharacterization.ROBUST
 
-            self.id_counter += 1
+            self.cluster.id_counter += 1
 
     def load_in_waiting_queue(self) -> None:
 
@@ -136,7 +133,7 @@ class ComputeEngine:
             for co_job_signature in self.cluster.hosts[hostname].jobs.keys():
 
                 # Shouldn't check with ourselves
-                if job.job_signature == co_job_signature:
+                if job.get_signature() == co_job_signature:
                     continue
 
                 neighbors_exist = True
@@ -176,7 +173,7 @@ class ComputeEngine:
 
         # Add job signature to the host and the processor set it allocates
         self.cluster.hosts[hostname].jobs.update({
-            job.job_signature: psets
+            job.get_signature(): psets
         })
 
         # Remove psets from host
@@ -184,8 +181,8 @@ class ComputeEngine:
             socket_pset -= psets[i]
 
         # Log the event
-        self.logger.log(evts.JobStart, msg=job.job_signature, job=job, psets=psets, hostname=hostname)
-        self.logger.log(evts.JobDeployedToHost, msg=f"{job.job_signature} in-> {hostname}")
+        self.logger.log(evts.JobStart, msg=job.get_signature(), job=job, psets=psets, hostname=hostname)
+        self.logger.log(evts.JobDeployedToHost, msg=f"{job.get_signature()} in-> {hostname}")
 
     def deploy_job_to_hosts(self, suitable_hosts, job) -> None:
 
@@ -214,14 +211,14 @@ class ComputeEngine:
         # Clean job and return resources back to host
         for hostname in job.assigned_hosts:
             # Log the event
-            self.logger.log(evts.JobCleanedFromHost, msg=f"{hostname} out-> {job.job_signature}")
+            self.logger.log(evts.JobCleanedFromHost, msg=f"{hostname} out-> {job.get_signature()}")
 
             # Return the allocated processors of a job to each host
-            for i, pset in enumerate(self.cluster.hosts[hostname].jobs[job.job_signature]):
+            for i, pset in enumerate(self.cluster.hosts[hostname].jobs[job.get_signature()]):
                 self.cluster.hosts[hostname].sockets[i] = self.cluster.hosts[hostname].sockets[i].union(pset)
 
             # Remove job signature from host
-            self.cluster.hosts[hostname].jobs.pop(job.job_signature)
+            self.cluster.hosts[hostname].jobs.pop(job.get_signature())
             
             # Change state of host if nothing is executing
             if len(self.cluster.hosts[hostname].jobs.keys()) == 0:
@@ -232,7 +229,7 @@ class ComputeEngine:
         # self.cluster.execution_list.remove(job)
         
         # Log the event
-        self.logger.log(evts.JobFinish, msg=f"{job.job_signature}", job=job)
+        self.logger.log(evts.JobFinish, msg=f"{job.get_signature()}", job=job)
 
 
     # Simulation loop computations
