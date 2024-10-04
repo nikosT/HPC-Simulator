@@ -29,8 +29,6 @@ def run_sim(core):
     # The stopping condition is for the waiting queue and the execution list
     # to become empty
     while database.preloaded_queue != [] or cluster.waiting_queue != [] or cluster.execution_list != []:
-        # print(cluster.waiting_queue)
-        # print(cluster.execution_list)
         compengine.sim_step()
 
     default_list = comm_queue.get()

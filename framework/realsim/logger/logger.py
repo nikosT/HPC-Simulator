@@ -60,15 +60,15 @@ class Logger(object):
             psets: list[ProcSet] = kwargs["psets"]
             pset = reduce(lambda pA, pB: pA.union(pB), psets)
             hostname: str = kwargs["hostname"]
-            self.job_events[job.job_signature]["submit time"] = job.submit_time
-            self.job_events[job.job_signature]["start time"] = job.start_time
-            self.job_events[job.job_signature]["waiting time"] = job.waiting_time
-            self.job_events[job.job_signature]["assigned procs"] = self.job_events[job.job_signature]["assigned procs"].union(pset)
-            self.job_events[job.job_signature]["hosts"].add(hostname)
+            self.job_events[job.get_signature()]["submit time"] = job.submit_time
+            self.job_events[job.get_signature()]["start time"] = job.start_time
+            self.job_events[job.get_signature()]["waiting time"] = job.waiting_time
+            self.job_events[job.get_signature()]["assigned procs"] = self.job_events[job.get_signature()]["assigned procs"].union(pset)
+            self.job_events[job.get_signature()]["hosts"].add(hostname)
 
         if evt == evts.JobFinish:
             job: Job = kwargs["job"]
-            self.job_events[job.job_signature]["finish time"] = job.finish_time
+            self.job_events[job.get_signature()]["finish time"] = job.finish_time
 
         # When a log is submitted update also the values
         if evt == evts.JobStart or evt == evts.JobFinish:
@@ -120,7 +120,7 @@ class Logger(object):
                     "wall time": job.wall_time,
                     "num of processes": job.num_of_processes
             }
-            self.job_events[job.job_signature] = jevts
+            self.job_events[job.get_signature()] = jevts
 
     def get_gantt_representation(self):
 
