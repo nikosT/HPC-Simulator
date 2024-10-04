@@ -197,5 +197,9 @@ class Simulation:
             # Get the results
             self.results[policy] = future.result()
 
+
+        _csvpath = f'/home/nikos/Desktop/ipdps2025/thanos/dummy_workloads/experiment_FIFO_{datetime.datetime.now().strftime("%Y%m%d%H%M%S%f")}.csv'
+        with open (_csvpath,'w') as _f:
+            _f.write(data["Workload"])
         return self.results
 
