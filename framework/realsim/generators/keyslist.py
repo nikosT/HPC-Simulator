@@ -33,6 +33,7 @@ class KeysListGenerator(AbstractGenerator[str]):
 
             jobs_set.append(job)
             
-
+        seed(time_ns() % (2 ** 32))
+        shuffle(jobs_set)
         return jobs_set
 

@@ -6,6 +6,7 @@ import math
 from cProfile import Profile
 import pstats
 import io
+import datetime
 
 sys.path.append(os.path.abspath(os.path.join(
     os.path.dirname(__file__), "../"
@@ -72,6 +73,11 @@ def run_sim(core):
     #       b. Turnaround ratio for each job
     #       c. Waiting time difference for each job
     # 3. Makespan speedup
+
+    _csvpath = f'/home/nikos/Desktop/ipdps2025/thanos/dummy_workloads/experiment_{scheduler.name}_{datetime.datetime.now().strftime("%Y%m%d%H%M%S%f")}.csv'
+    with open (_csvpath,'w') as _f:
+        _f.write(data["Workload"])
+
     return data
 
 class Simulation:
