@@ -75,7 +75,8 @@ class RanksCoscheduler(Coscheduler, ABC):
     def compact_allocation(self, job: Job) -> bool:
 
         # The job is not eligible for compact execution
-        if self.ranks[job.job_id] != 0 and job.age < self.age_threshold:
+        # if self.ranks[job.job_id] != 0 and job.age < self.age_threshold:
+        if self.ranks[job.job_id] != 0:
             return False
 
         return super().compact_allocation(job)
@@ -98,6 +99,10 @@ class RanksCoscheduler(Coscheduler, ABC):
 
             # Colocate
             if self.colocation(job, self.cluster.half_socket_allocation):
+                deployed = True
+                self.after_deployment()
+            # Compact
+            elif self.compact_allocation(job):
                 deployed = True
                 self.after_deployment()
             else:
@@ -123,14 +128,14 @@ class RanksCoscheduler(Coscheduler, ABC):
         # Find the minimum estimated start time of the job
 
         # Calculate the number of idle hosts needed
-        aggr_hosts = len(idle_hosts)
+        aggr_hosts = set(idle_hosts)
         min_estimated_time = inf
 
         for xjob in execution_list:
 
-            aggr_hosts += len(xjob.assigned_hosts)
+            aggr_hosts = aggr_hosts.union(xjob.assigned_hosts)
 
-            if aggr_hosts >= blocked_job.full_socket_nodes:
+            if len(aggr_hosts) >= blocked_job.half_socket_nodes:
                 min_estimated_time = xjob.wall_time - (self.cluster.makespan - xjob.start_time)
                 break
 
@@ -150,14 +155,23 @@ class RanksCoscheduler(Coscheduler, ABC):
 
             if b_job.wall_time <= min_estimated_time:
 
-                if self.compact_allocation(b_job):
+                # Colocate
+                if self.colocation(b_job, self.cluster.half_socket_allocation):
                     deployed = True
+                    self.after_deployment()
+                # Compact
+                elif super().compact_allocation(b_job):
+                    deployed = True
+                    self.after_deployment()
+                else:
+                    break
 
             else:
                 # No other job is capable to backfill based on time
                 break
         
         return deployed
+
     # def backfill(self) -> bool:
 
     #     deployed = False
