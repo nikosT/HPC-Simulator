@@ -24,5 +24,5 @@ class RandomRanksCoscheduler(RanksCoscheduler, ABC):
         # return float(randint(len(self.cluster.waiting_queue)))
 	    return 1.0
 
-    def coloc_condition(self, hostname: str, job: Job) -> float:
-        return 1.0
+   # def coloc_condition(self, hostname: str, job: Job) -> float:
+   #     return 1.0
