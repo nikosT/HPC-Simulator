@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from math import ceil
-from itertools import islice
 
 import os
 import sys
@@ -99,7 +98,7 @@ class Coscheduler(Scheduler, ABC):
                 sorted(suitable_hosts.items(), key=lambda it: self.coloc_condition(it[0], job), reverse=True)
         )
 
-        self.compeng.deploy_job_to_hosts(islice(suitable_hosts.items(), needed_hosts), job)
+        self.compeng.deploy_job_to_hosts(list(suitable_hosts.items())[:needed_hosts], job)
 
         return True
 

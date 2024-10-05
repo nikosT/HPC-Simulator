@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 import os
 import sys
 from functools import reduce
-from itertools import islice
 from typing import TYPE_CHECKING
 from math import ceil
 
@@ -99,7 +98,7 @@ class Scheduler(ABC):
 
         needed_ppn = sum(self.cluster.full_socket_allocation)
         needed_hosts = ceil(job.num_of_processes / needed_ppn)
-        self.compeng.deploy_job_to_hosts(islice(suitable_hosts.items(), needed_hosts), job)
+        self.compeng.deploy_job_to_hosts(list(suitable_hosts.items())[:needed_hosts], job)
 
         return True
 
