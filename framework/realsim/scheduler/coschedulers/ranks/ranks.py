@@ -160,9 +160,9 @@ class RanksCoscheduler(Coscheduler, ABC):
                     deployed = True
                     self.after_deployment()
                 # Compact
-               # elif super().compact_allocation(b_job):
-               #     deployed = True
-               #     self.after_deployment()
+                # elif super().compact_allocation(b_job):
+                #     deployed = True
+                #     self.after_deployment()
                 else:
                     break
 

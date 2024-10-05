@@ -36,7 +36,6 @@ class ComputeEngine:
         self.logger.cluster = self.cluster
         self.logger.scheduler = scheduler
 
-
     # Database preloaded queue setup
     def setup_preloaded_jobs(self) -> None:
         """Setup the preloaded jobs that are currently stored in the database
@@ -97,27 +96,26 @@ class ComputeEngine:
         for job in copy:
             if job.submit_time <= self.cluster.makespan:
                 # Infinite waiting queue size
-                if self.cluster.queue_size == -1:
-                    self.db.preloaded_queue.remove(job)
-                    self.cluster.waiting_queue.append(job)
+                # if self.cluster.queue_size == -1:
+                #     self.db.preloaded_queue.remove(job)
+                #     self.cluster.waiting_queue.append(job)
 
-                # Zero size waiting queue
-                elif self.cluster.queue_size == 0 and\
-                        len(self.cluster.waiting_queue) == 0 and\
-                        self.scheduler.find_suitable_nodes(job.num_of_processes, self.cluster.full_socket_allocation) != {}:
-                            self.db.preloaded_queue.remove(job)
-                            job.submit_time = self.cluster.makespan
-                            self.cluster.waiting_queue.append(job)
+                # # Zero size waiting queue
+                # elif self.cluster.queue_size == 0 and\
+                #         len(self.cluster.waiting_queue) == 0 and\
+                #         self.scheduler.find_suitable_nodes(job.num_of_processes, self.cluster.full_socket_allocation) != {}:
+                #             self.db.preloaded_queue.remove(job)
+                #             job.submit_time = self.cluster.makespan
+                #             self.cluster.waiting_queue.append(job)
 
-                # Finite waiting queue size but not 0
-                elif self.cluster.queue_size > 0 and len(self.cluster.waiting_queue) < self.cluster.queue_size:
-                        self.db.preloaded_queue.remove(job)
-                        job.submit_time = self.cluster.makespan
-                        self.cluster.waiting_queue.append(job)
+                # # Finite waiting queue size but not 0
+                # elif self.cluster.queue_size > 0 and len(self.cluster.waiting_queue) < self.cluster.queue_size:
+                self.db.preloaded_queue.remove(job)
+                job.submit_time = self.cluster.makespan
+                self.cluster.waiting_queue.append(job)
 
-                else:
-                    break
-
+                #else:
+                #    break
 
     # Job execution/deploying/cleaning computations
     def calculate_job_rem_time(self, job: Job) -> None:
@@ -169,7 +167,7 @@ class ComputeEngine:
     def deploy_job_to_host(self, hostname: str, job: Job, psets: list[ProcSet]) -> None:
 
         # Store hostname in job's registry
-        job.assigned_hosts.add(hostname)
+        job.assigned_hosts.append(hostname)
 
         # Add job signature to the host and the processor set it allocates
         self.cluster.hosts[hostname].jobs.update({
@@ -201,7 +199,6 @@ class ComputeEngine:
         # Add job to the executing list
         self.cluster.execution_list.append(job)
 
-
     def clean_job_from_hosts(self, job: Job) -> None:
 
         # Set the finish time of the job
@@ -223,17 +220,14 @@ class ComputeEngine:
             # Change state of host if nothing is executing
             if len(self.cluster.hosts[hostname].jobs.keys()) == 0:
                 self.cluster.hosts[hostname].state = Host.IDLE
-
-
-        # Remove job from the execution list of the cluster
-        # self.cluster.execution_list.remove(job)
-        
+ 
         # Log the event
         self.logger.log(evts.JobFinish, msg=f"{job.get_signature()}", job=job)
 
-
     # Simulation loop computations
     def goto_next_sim_state(self) -> None:
+
+        # print("1) ", self.cluster.execution_list)
 
         # Recalculate the remaining time of jobs
         for job in self.cluster.execution_list:
@@ -258,29 +252,13 @@ class ComputeEngine:
         assert min_rem_time > 0
 
         if min_rem_time == inf and (self.cluster.waiting_queue != [] or self.db.preloaded_queue != []):
+            print()
+            print(self.cluster.get_idle_cores())
             print("PREL", self.db.preloaded_queue)
             print("WAIT", self.cluster.waiting_queue)
+            print("EXEC", self.cluster.execution_list)
+            print()
             raise RuntimeError
-
-        # Schedulers' aging mechinsims
-        # TODO: CHECK THE CORRECTNESS OF CODE!!
-        # It was copied by the previous implementation but the complexity of the
-        # code may leave open difficult to understand issues
-        #####
-        # If there is an aging mechanism in the scheduling algorithm
-        # if self.scheduler.aging_enabled and len(self.cluster.waiting_queue) > 0 and self.cluster.waiting_queue[0].age < self.scheduler.age_threshold:
-        #     # Find the interval until the next scheduler step
-        #     scheduler_timer = int(self.cluster.makespan / self.scheduler.time_step) * self.scheduler.time_step
-        #     next_shd_step = (scheduler_timer + self.scheduler.time_step) - self.cluster.makespan
-        #     # Find how much time should pass for the head job to reach the
-        #     # maximum age for compact allocation
-        #     max_age_step = next_shd_step + (self.scheduler.age_threshold - (self.cluster.waiting_queue[0].age + 1)) * self.scheduler.time_step
-        #     # If the time it takes to reach is less than the min_rem_time then
-        #     # re-enact deployment
-        #     if max_age_step < min_rem_time:
-        #         min_rem_time = max_age_step
-        #         self.cluster.waiting_queue[0].age = self.scheduler.age_threshold
-        #         # print(self.cluster.waiting_queue[0].job_id, self.cluster.waiting_queue[0].job_name, self.makespan)
 
         # Forward the time of the execution
         self.cluster.makespan += min_rem_time
@@ -290,6 +268,8 @@ class ComputeEngine:
 
         # "Execute" the jobs
         execution_list: list[Job] = list()
+
+        # print("2) ", min_rem_time)
 
         # Remove/clean any jobs that finished execution
         for job in self.cluster.execution_list:
@@ -302,12 +282,11 @@ class ComputeEngine:
             else:
                 execution_list.append(job)
 
-        # Recalculate the remaining time of jobs if they are co-scheduled or spread
-        for job in execution_list:
-            self.calculate_job_rem_time(job)
-
         # Assign new execution list to cluster
         self.cluster.execution_list = execution_list
+
+        # print("3) ", self.cluster.execution_list)
+        # print()
 
     def sim_step(self) -> None:
 

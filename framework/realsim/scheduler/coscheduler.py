@@ -86,9 +86,12 @@ class Coscheduler(Scheduler, ABC):
         needed_ppn = sum(job.socket_conf)
         needed_hosts = ceil(job.num_of_processes / needed_ppn)
 
+        #print(socket_conf)
+
         # Get only the suitable hosts
         suitable_hosts = self.find_suitable_nodes(job.num_of_processes,
                                                   socket_conf)
+
         # If no suitable hosts where found
         if suitable_hosts == dict():
             return False
@@ -97,8 +100,18 @@ class Coscheduler(Scheduler, ABC):
         suitable_hosts = dict(
                 sorted(suitable_hosts.items(), key=lambda it: self.coloc_condition(it[0], job), reverse=True)
         )
+        #self.compeng.deploy_job_to_hosts(islice(suitable_hosts.items(), needed_hosts), job)
+        req_hosts = needed_hosts
+        req_hosts_psets = list()
+        for hostname, psets in suitable_hosts.items():
+            req_hosts_psets.append((hostname, psets))
+            req_hosts -= 1
+            if req_hosts == 0:
+                break
 
-        self.compeng.deploy_job_to_hosts(list(suitable_hosts.items())[:needed_hosts], job)
+        # print(job.get_signature(), socket_conf, req_hosts_psets)
+        
+        self.compeng.deploy_job_to_hosts(req_hosts_psets, job)
 
         return True
 

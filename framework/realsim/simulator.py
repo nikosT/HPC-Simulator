@@ -31,6 +31,12 @@ def run_sim(core):
     while database.preloaded_queue != [] or cluster.waiting_queue != [] or cluster.execution_list != []:
         compengine.sim_step()
 
+    print();print()
+    if cluster.get_idle_cores() != cluster.free_cores:
+        print(cluster.free_cores, cluster.get_idle_cores())
+        for name, host in cluster.hosts.items():
+            print(name, host.sockets)
+
     default_list = comm_queue.get()
     comm_queue.put(default_list)
 
@@ -168,6 +174,10 @@ class Simulation:
         # to become empty
         while self.default_database.preloaded_queue != [] or self.default_cluster.waiting_queue != [] or self.default_cluster.execution_list != []:
             self.default_compengine.sim_step()
+
+        print(self.default_database.preloaded_queue)
+        print(self.default_cluster.waiting_queue)
+        print(self.default_cluster.execution_list)
 
         # Submit to the shared list the results
         self.comm_queue.put([self.default_cluster.makespan, self.default_logger])

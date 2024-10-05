@@ -98,7 +98,15 @@ class Scheduler(ABC):
 
         needed_ppn = sum(self.cluster.full_socket_allocation)
         needed_hosts = ceil(job.num_of_processes / needed_ppn)
-        self.compeng.deploy_job_to_hosts(list(suitable_hosts.items())[:needed_hosts], job)
+
+        req_hosts = needed_hosts
+        req_hosts_psets = list()
+        for hostname, psets in suitable_hosts.items():
+            req_hosts_psets.append((hostname, psets))
+            req_hosts -= 1
+            if req_hosts == 0:
+                break
+        self.compeng.deploy_job_to_hosts(req_hosts_psets, job)
 
         return True
 
