@@ -1,11 +1,10 @@
 # Global libraries
 import abc
-from numpy.random import seed, randint, random_sample
+from numpy.random import seed
 from time import time_ns
-from typing import Any, TypeVar, Generic
+from typing import TypeVar, Generic
 from collections.abc import Callable
 
-from procset import ProcSet
 from .__init__ import *
 from math import inf
 
@@ -36,7 +35,7 @@ class AbstractGenerator(abc.ABC, Generic[T]):
         job =  Job(job_id=idx,
                    job_name=load.load_name,
                    num_of_processes=load.num_of_processes,
-                   assigned_hosts=set(),
+                   assigned_hosts=list(),
                    remaining_time=load.get_avg_time(),
                    submit_time=0,
                    waiting_time=0,
