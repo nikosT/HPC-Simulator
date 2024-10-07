@@ -30,8 +30,8 @@ def run_sim(core):
     while database.preloaded_queue != [] or cluster.waiting_queue != [] or cluster.execution_list != []:
         compengine.sim_step()
 
-    print();print()
     if cluster.get_idle_cores() != cluster.free_cores:
+        print();print()
         print(cluster.free_cores, cluster.get_idle_cores())
         for name, host in cluster.hosts.items():
             print(name, host.sockets)
@@ -55,6 +55,7 @@ def run_sim(core):
             "Jobs utilization": logger.get_jobs_utilization(default_logger),
             "Jobs throughput": logger.get_jobs_throughput(),
             "Waiting queue": logger.get_waiting_queue_graph(),
+            # "Cluster history": logger.get_animated_cluster(),
             
             # Extra metrics
             "Makespan speedup": default_cluster_makespan / cluster.makespan,
@@ -92,7 +93,7 @@ class Simulation:
                  # scheduler algorithms bundled with inputs
                  schedulers_bundle):
 
-        self.default = "FIFO Scheduler"
+        self.default = "Conservative Scheduler"
         self.executor = ProcessPoolExecutor()
 
         self.manager = Manager()
@@ -169,10 +170,6 @@ class Simulation:
         while self.default_database.preloaded_queue != [] or self.default_cluster.waiting_queue != [] or self.default_cluster.execution_list != []:
             self.default_compengine.sim_step()
 
-        print(self.default_database.preloaded_queue)
-        print(self.default_cluster.waiting_queue)
-        print(self.default_cluster.execution_list)
-
         # Submit to the shared list the results
         self.comm_queue.put([self.default_cluster.makespan, self.default_logger])
 
@@ -190,9 +187,12 @@ class Simulation:
                 "Jobs utilization": {},
                 "Jobs throughput": self.default_logger.get_jobs_throughput(),
                 "Waiting queue": self.default_logger.get_waiting_queue_graph(),
+                #"Cluster history": self.default_logger.get_animated_cluster(),
                 "Makespan speedup": 1.0,
                 "Workload": self.default_logger.get_workload()
         }
+
+        self.default_logger.get_animated_cluster()
 
         self.results[self.default] = data
 

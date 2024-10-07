@@ -11,6 +11,7 @@ sys.path.append(os.path.abspath(os.path.join(
 
 from realsim.jobs.jobs import Job
 from realsim.scheduler.coschedulers.ranks.ranks import RanksCoscheduler
+from realsim.cluster.host import Host
 
 
 class RandomRanksCoscheduler(RanksCoscheduler, ABC):
@@ -25,4 +26,4 @@ class RandomRanksCoscheduler(RanksCoscheduler, ABC):
 	    return 1.0
 
     def coloc_condition(self, hostname: str, job: Job) -> float:
-        return 1.0
+        return float(self.cluster.hosts[hostname].state == Host.IDLE)

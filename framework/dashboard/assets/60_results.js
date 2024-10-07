@@ -138,6 +138,18 @@ Object.assign(window.dash_clientside.clientside, {
 					}
 				}
 
+				let cluster_history_btn = {
+					'type': 'Button',
+					'namespace': 'dash_bootstrap_components',
+					'props': {
+						'children': 'Cluster history',
+						'style': {'width': '100%'},
+						'color': 'primary',
+						'outline': true,
+						'href': '#' + unique_id + '~cluster_history'
+					}
+				}
+
 				let jobs_throughput_btn = {
 					'type': 'Button',
 					'namespace': 'dash_bootstrap_components',
@@ -195,7 +207,8 @@ Object.assign(window.dash_clientside.clientside, {
 								gantt_btn,
 								// jobs_throughput_btn,
 								// waiting_queue_btn,
-								workload_download_btn
+								workload_download_btn,
+								cluster_history_btn
 							]
 						}
 					})
@@ -212,7 +225,8 @@ Object.assign(window.dash_clientside.clientside, {
 								jobs_utilization_btn,
 								// jobs_throughput_btn,
 								// waiting_queue_btn,
-								workload_download_btn
+								workload_download_btn,
+								cluster_history_btn
 							]
 						}
 					})
@@ -328,6 +342,9 @@ Object.assign(window.dash_clientside.clientside, {
 			}
 			else if (graph == "Waiting queue") {
 				this.graph_waiting_queue(scheduler, data[experiment][scheduler][graph])
+			}
+			else if (graph == "Cluster history") {
+				Plotly.newPlot("results-graph", JSON.parse(data[experiment][scheduler][graph]), {'displayModeBar': false})
 			}
 			else if (graph == "Jobs utilization") {
 

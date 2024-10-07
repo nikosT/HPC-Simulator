@@ -1,0 +1,39 @@
+{
+	"name": "Project Name",
+	"description": "Description [Optional]",
+	"workloads": [
+		{
+			"load-manager": "Path to a pickled and loaded LoadManager instance to build jobs from",
+			"heatmap": "Using a user specified heatmap (csv format) to overload the heatmap produce by a `load-manager` or `db` instances",
+			"db": "Database url",
+			"loads-machine": "Name of machine",
+			"loads-suite": "Name of suite",
+			"generator": {
+				"type": "Type of generator (or a path to a python file?)",
+				"arg": "Argument (for Random the number of jobs, for Dict the name and frequency of loads and for List the path to the file containing the list)",
+				"distribution": {
+					"type": "Type of the distribution or path to .py file",
+					"arg": "Argument to pass to distribution"
+				}
+			}
+		]
+	},
+	"schedulers": {
+		"default": "Sets the default scheduler from name or path to a .py file",
+		"others": [
+			"names or paths to other scheduling algorithms"
+		]
+	},
+	"actions": [
+		{
+			"type": "export-csv",
+			"workload": "all",
+			"scheduler": "all"
+		},
+		{
+			"type": "export-gantt",
+			"workload": 1,
+			"scheduler": "EASY Scheduler"
+		}
+	]
+}

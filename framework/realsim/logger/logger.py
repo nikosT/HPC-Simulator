@@ -256,3 +256,95 @@ class Logger(object):
             workload += f",,,\n"
 
         return header + workload
+
+    def get_animated_cluster(self):
+        """Animate the different jobs allocating cores in a cluster
+        """
+
+        hosts = list(sorted(self.cluster.hosts.keys(), key=lambda name: int(name.replace("host", ""))))
+        num_of_hosts = len(hosts)
+        ppn = sum(self.cluster.socket_conf)
+        cores = list(range(1, ppn+1))
+        core_ticks = [x for x in cores]
+        core_ticknames = [f"Core {x}" for x in cores]
+
+        num_of_jobs = len(self.job_events.keys())
+        jcolors = colors.sample_colorscale(self.scale, [n/(num_of_jobs - 1) for n in range(num_of_jobs)])
+
+        frames = []
+        for check in sorted(list(self.cluster_events["checkpoints"])):
+
+            cluster_flat = [-100] * (num_of_hosts * ppn)
+            jobnames_flat = [""] * (num_of_hosts * ppn)
+
+            for idx, [key, jevt] in enumerate(self.job_events.items()):
+
+                if jevt["start time"] <= check and jevt["finish time"] > check:
+                    idx, name = key.split(":")
+                    assigned_procs = list(jevt["assigned procs"])
+                    for proc in assigned_procs:
+                        cluster_flat[proc-1] = int(idx)
+                        jobnames_flat[proc-1] = f"{idx}:{name}"
+
+            cluster = list()
+            host = list()
+            cluster_text = list()
+            host_text = list()
+            for i, val in enumerate(cluster_flat):
+                host.append(val)
+                host_text.append(jobnames_flat[i])
+                if (i+1) % ppn == 0:
+                    cluster.append(host)
+                    host = list()
+                    cluster_text.append(host_text)
+                    host_text = list()
+
+            frames.append(
+                    go.Frame(data=[
+                        go.Heatmap(
+                            z=cluster, 
+                            x=cores, 
+                            y=hosts, 
+                            xgap=3, 
+                            ygap=3, 
+                            colorscale=jcolors, 
+                            zmin=0, 
+                            zmax=num_of_jobs-1, 
+                            text=cluster_text,
+                            hovertemplate="Job: %{text}<br>%{x}<br>%{y}<extra></extra>"
+                        )
+                    ])
+            )
+
+        fig = go.Figure(
+                data=[
+                    go.Heatmap(
+                        z=[[-100] * ppn] * num_of_hosts, 
+                        x=cores, 
+                        y=hosts, 
+                        xgap=3, 
+                        ygap=3, 
+                        colorscale=jcolors, 
+                        zmin=0, 
+                        zmax=num_of_jobs-1, 
+                        text=[[""] * ppn] * num_of_hosts,
+                        hovertemplate="Job: %{text}<br>%{x}<br>%{y}<extra></extra>"
+                    )
+                ],
+                layout=go.Layout(
+                    title=f"<b>Cluster history: {self.scheduler.name}",
+                    title_x=0.5,
+                    xaxis=dict(
+                        tickmode="array",
+                        tickvals=core_ticks,
+                        ticktext=core_ticknames
+                    ),
+                    updatemenus=[dict(
+                        type="buttons",
+                        buttons=[dict(label="Play", method="animate", args=[None])]
+                    )]
+                ),
+                frames=frames
+        )
+
+        return fig.to_json()
