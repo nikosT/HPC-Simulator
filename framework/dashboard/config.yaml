@@ -1,0 +1,21 @@
+datalogs-machine: aris.compute
+datalogs-suite: NAS
+generator-type: Random Generator
+generator-input: 10
+cluster-nodes: 420
+cluster-ppn: 20
+schedulers:
+  realsim.scheduler.coschedulers.ranks.random:
+    backfill_enabled: true
+    aging_enabled: true
+    speedup_threshold: 1
+    ranks_threshold: 1
+    system_utilization: 1
+  realsim.scheduler.schedulers.fifo: {}
+  realsim.scheduler.schedulers.easy: {}
+simulation-experiments: 1
+simulation-type: Static
+simulation-dynamic-condition:
+  distribution: Constant
+  generator-time: 0
+queue_size: -1
