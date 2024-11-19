@@ -138,6 +138,7 @@ class BatchCreator:
                 lm.import_from_db(host=workload["db"], dbname="storehouse")
             else:
                 raise RuntimeError("Couldn't provide a way to create a LoadManager")
+            self.lm = lm
 
             # Create a heatmap from the LoadManager instance or use a user-defined
             # if a path is provided
@@ -338,7 +339,7 @@ class BatchCreator:
             for sched_cls in self.__schedulers:
 
                 # Create a database instance
-                database = Database(workload, heatmap)
+                database = Database(workload, heatmap, lm=self.lm)
                 database.setup()
 
                 # Create a cluster instance
