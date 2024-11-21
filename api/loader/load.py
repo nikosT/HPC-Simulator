@@ -200,7 +200,7 @@ class Load:
 
             )
 
-    def get_med_time(self, co_load: Optional[T] = None) -> float:
+    def get_med_time(self, co_load: Optional[T] = None, policy='cmp') -> float:
         """Get the median execution time when compact or co-scheduled with
         another load
 

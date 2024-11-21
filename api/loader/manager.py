@@ -12,6 +12,7 @@ from functools import reduce
 from pandas import DataFrame
 from numpy import median as med
 from json import dumps, loads
+from functools import partial
 
 Heatmap = dict[str, dict[str, Optional[float]]]
 
@@ -167,20 +168,20 @@ class LoadManager:
         return sec
 
     @staticmethod
-    def init_compact(policy_dir) -> tuple[str, int, list[float]]:
-        return init_allocation_policy(policy_dir, policy="cmp")
+    def init_compact(policy_dir, mode="Time in seconds") -> tuple[str, int, list[float]]:
+        return LoadManager.init_allocation_policy(policy_dir, policy="cmp", mode=mode)
 
     @staticmethod
-    def init_spread(policy_dir) -> tuple[str, int, list[float]]:
-        return init_allocation_policy(policy_dir, policy="spd")
+    def init_spread(policy_dir, mode="Time in seconds") -> tuple[str, int, list[float]]:
+        return LoadManager.init_allocation_policy(policy_dir, policy="spd", mode=mode)
 
     @staticmethod
-    def init_allocation_policy(policy_dir, policy="cmp") -> tuple[str, int, list[float]]:
+    def init_allocation_policy(policy_dir, policy="cmp", mode="Time in seconds") -> tuple[str, int, list[float]]:
 
         """Gather all the necessary data from the compact/spread experiments,
         create each load and initialize their execution timelogs
 
-        ⟡ cmp_dir ⟡ the directory to which the output logs of the
+                    ⟡ policy_dir ⟡ the directory to which the output logs of the
         experiments are saved
         """
 
@@ -206,7 +207,7 @@ class LoadManager:
         for line in fd.readlines():
             if 'Total number of processes' in line or 'Total processes' in line:
                 num_of_processes = int(line.split()[-1])
-            if "Time in seconds" in line:
+            if mode in line:
                 time_logs.append(float(line.split()[-1]))
             if "Overall Time:" in line:
                 time_logs.append(LoadManager.to_seconds(line.split()[-1]))
@@ -216,7 +217,7 @@ class LoadManager:
         return load, num_of_processes, time_logs
 
     @staticmethod
-    def init_coschedule(cos_dir) -> list[tuple[str, str, list[float]]]:
+    def init_coschedule(cos_dir, mode="Time in seconds") -> list[tuple[str, str, list[float]]]:
         """Get the execution time logs of a load and coload in a coscheduled
         experiment. The function is static because it is called in parallel
         and also because logically it can be called beside's a LoadManager's
@@ -292,7 +293,7 @@ class LoadManager:
             logfile_times = list()
             with open(file) as fd:
                 for line in fd.readlines():
-                    if "Time in seconds" in line:
+                    if mode in line:
                         logfile_times.append(float(line.split()[-1]))
                     if "Overall Time:" in line:
                         logfile_times.append(LoadManager.to_seconds(line.split()[-1]))
@@ -304,7 +305,7 @@ class LoadManager:
             logfile_times = list()
             with open(file) as fd:
                 for line in fd.readlines():
-                    if "Time in seconds" in line:
+                    if mode in line:
                         logfile_times.append(float(line.split()[-1]))
                     if "Overall Time:" in line:
                         logfile_times.append(LoadManager.to_seconds(line.split()[-1]))
@@ -321,7 +322,7 @@ class LoadManager:
 
         return out
 
-    def init_loads(self, runs_dir=None) -> None:
+    def init_loads(self, runs_dir=None, mode='Time in seconds') -> None:
         """Create and initialize the time bundles of loads of a specified
         benchmark suite on a specific machine. Firstly, it creates the
         loads. Secondly, it populates their compact/spread execution time logs.
@@ -362,15 +363,15 @@ class LoadManager:
                     if "_spd" in dire and
                     reduce(lambda a, b: a or b, map(lambda d: dire.replace("_spd", "") in d, masks))
                 ])
-
         else:
-            # Get the compact/spread experiments' directories
+            # Get the compact experiments' directories
             compact_dirs = [
                 f"{runs_dir}/{self.machine}/{self.suite}/{dire}"
                 for dire in os.listdir(f"{runs_dir}/{self.machine}/{self.suite}")
                 if "_cmp" in dire
             ]
 
+            # Get the spread experiments' directories
             spread_dirs = [
                 f"{runs_dir}/{self.machine}/{self.suite}/{dire}"
                 for dire in os.listdir(f"{runs_dir}/{self.machine}/{self.suite}")
@@ -379,7 +380,8 @@ class LoadManager:
 
         # Gather all the data from the compact runs of each load
         with ProcessPoolExecutor() as pool:
-            res = pool.map(LoadManager.init_compact, compact_dirs)
+            init_compact = partial(LoadManager.init_compact, mode=mode)
+            res = pool.map(init_compact, compact_dirs)
             for name, num_of_processes, time_logs in res:
                 if time_logs != []:
                     self.loads[name] = Load(load_name=name,
@@ -389,10 +391,11 @@ class LoadManager:
 
                     self.loads[name].compact_timelogs = time_logs
 
-        # Gather all the data from the compact runs of each load
+        # Gather all the data from the spread runs of each load
         # if _spd exists but not _cmp exists, it might fail
         with ProcessPoolExecutor() as pool:
-            res = pool.map(LoadManager.init_spread, spread_dirs)
+            init_spread = partial(LoadManager.init_spread, mode=mode)
+            res = pool.map(init_spread, spread_dirs)
             for name, num_of_processes, time_logs in res:
                 if time_logs != []:
                     self.loads[name].spread_timelogs = time_logs
@@ -401,12 +404,13 @@ class LoadManager:
         coschedule_dirs = [
             f"{runs_dir}/{self.machine}/{self.suite}/{dire}"
             for dire in os.listdir(f"{runs_dir}/{self.machine}/{self.suite}")
-            if dire not in ['_cmp', '_spd', 'spare']
+            if "_cmp" not in dire and 'spare' not in dire and 'spd' not in dire
         ]
 
         # Gather all the data from the coscheduled runs of each load
         with ProcessPoolExecutor() as pool:
-            res = pool.map(LoadManager.init_coschedule, coschedule_dirs)
+            init_coschedule = partial(LoadManager.init_coschedule, mode=mode)
+            res = pool.map(init_coschedule, coschedule_dirs)
             for elem in res:
                 first_load_list, second_load_list = elem
                 first_load, first_coload, first_time_logs = first_load_list
@@ -731,7 +735,7 @@ class LoadManager:
                     name, 
                     load.num_of_processes,
                     load.get_med_time(),
-                    load.get_med_time(policy='spd'), 
+                    load.get_med_time(policy='spd'),
                     co_name, 
                     co_load.num_of_processes,
                     co_load.get_med_time(),
@@ -801,3 +805,4 @@ class LoadManager:
                     heatmap[name][co_name] = None
 
         return heatmap
+
