@@ -243,7 +243,7 @@ class Logger(object):
         header += "Number of Allocated Processors,Average CPU Time Used,Used Memory," # Used resources
         header += "Requested Number of Processors,Requested Time,Requested Memory," # Requested resources
         header += "Status,User ID,Group ID,Executable Number," # Assign job_name
-        header += "Queue Number,Partition Number,Preceding Job Number,Think Time from Preceding Job, Assigned Processors\n" # Irrelevant for us
+        header += "Queue Number,Partition Number,Preceding Job Number,Think Time from Preceding Job,Assigned Processors\n" # Irrelevant for us
 
         workload = ""
         for jevt_id, jevt in self.job_events.items():
