@@ -5,6 +5,7 @@ from time import time_ns
 from math import inf
 import os
 import sys
+from realsim.jobs.utils import deepcopy_list
 
 sys.path.append(os.path.abspath(os.path.join(
     os.path.dirname(__file__), "../../../../"
@@ -24,7 +25,7 @@ class UtilCoscheduler(RanksCoscheduler, ABC):
         # return float(randint(len(self.cluster.waiting_queue)))
 	    return 1.0
 
-    def coloc_condition(self, hostname: str, job: Job) -> (float,float):
+    def host_alloc_condition(self, hostname: str, job: Job) -> (float,float):
         """Condition on how to sort the hosts based on the speedup that the job
         will gain/lose. Always spread first
         """
@@ -47,3 +48,30 @@ class UtilCoscheduler(RanksCoscheduler, ABC):
         speedup_counts = len(jobs_with_speedup)
 
         return (avg_speedup, speedup_counts)
+
+    def deploy(self) -> bool:
+        # it uses the "waiting_queue_reorder"
+        # it uses the "allocation" which uses the "host_alloc_condition"
+        waiting_queue = deepcopy_list(self.cluster.waiting_queue[:self.queue_depth])
+        print(waiting_queue)
+
+        # 0. if old, you have to deploy it
+        # 1. compact vs co-sched
+        # a. get wait and exec queue
+        # b. create all possible subheatmaps (depth=3) wait+exec * wait+exec
+        # c. calc sf keep the best
+        # d. job can now be scheduled as compact or co-sched
+
+        # 2. how to co-sched
+        #   a. best fit (utilization)
+        
+
+
+
+        return super().deploy()
+
+    def backfill(self) -> bool:
+        return super().backfill()
+
+    def after_deployment(self, *args):
+        return super().after_deployment(*args)
