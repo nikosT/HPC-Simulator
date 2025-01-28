@@ -50,10 +50,18 @@ class UtilCoscheduler(RanksCoscheduler, ABC):
         return (avg_speedup, speedup_counts)
 
     def deploy(self) -> bool:
+        #self.queue_depth = 10
         # it uses the "waiting_queue_reorder"
         # it uses the "allocation" which uses the "host_alloc_condition"
         waiting_queue = deepcopy_list(self.cluster.waiting_queue[:self.queue_depth])
+        execution_list = deepcopy_list(self.cluster.execution_list)
+
+        heatmap_list = waiting_queue + execution_list
+
+        # 
+
         print(waiting_queue)
+        print(execution_list)
 
         # 0. if old, you have to deploy it
         # 1. compact vs co-sched
