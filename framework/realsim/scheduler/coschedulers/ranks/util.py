@@ -6,7 +6,7 @@ from math import inf
 import os
 import sys
 from realsim.jobs.utils import deepcopy_list
-from itertools import combinations
+from itertools import combinations, chain
 
 sys.path.append(os.path.abspath(os.path.join(
     os.path.dirname(__file__), "../../../../"
@@ -53,6 +53,11 @@ class UtilCoscheduler(RanksCoscheduler, ABC):
     def deploy(self) -> bool:
         # it uses the "waiting_queue_reorder"
         # it uses the "allocation" which uses the "host_alloc_condition"
+        def gen_subheatmaps(ids, depth=3):
+            combs = map(lambda i: combinations(ids, i), range(len(ids), len(ids)-depth, -1))
+            all_combs = chain.from_iterable(combs)
+            return list(all_combs)
+            
         def sf(values, k=1):
             return round(len(list(filter(lambda x: x > k, values)))/len(values), 2)
             
@@ -77,6 +82,11 @@ class UtilCoscheduler(RanksCoscheduler, ABC):
         execution_ids = list(map(lambda j: j.job_id, execution_list))
         heatmap_ids = waiting_ids + execution_ids
 
+        # find all subheatmaps to the maximum depth of k
+        sh_combs = gen_subheatmaps(heatmap_ids, depth=int(len(heatmap_ids)*0.75))
+        print(sh_combs)
+
+        
         h_combs = set(combinations(heatmap_ids, 2)) - set(combinations(execution_ids, 2))
 
         # calculate heatmap score
