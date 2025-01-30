@@ -7,6 +7,7 @@ import os
 import sys
 from realsim.jobs.utils import deepcopy_list
 from itertools import combinations, chain
+from numpy import mean
 
 sys.path.append(os.path.abspath(os.path.join(
     os.path.dirname(__file__), "../../../../"
@@ -71,6 +72,13 @@ class UtilCoscheduler(RanksCoscheduler, ABC):
                 return 1
             return (area1 * self.database.heatmap[j1.job_name][j2.job_name] +\
                     area2 * self.database.heatmap[j2.job_name][j1.job_name]) / (area1 + area2)
+
+        def calc_values(co_schedule_ids, heatmap_list):
+            values = []
+            for id in co_schedule_ids:
+                values.append(speedup_score(get_job(id, heatmap_list), get_job(id, heatmap_list)))
+            values += [1]*(len(heatmap_list)-len(co_schedule_ids))
+            return values
             
         self.queue_depth = 10
 
@@ -83,15 +91,19 @@ class UtilCoscheduler(RanksCoscheduler, ABC):
         heatmap_ids = waiting_ids + execution_ids
 
         # find all subheatmaps to the maximum depth of k
-        sh_combs = gen_subheatmaps(heatmap_ids, depth=int(len(heatmap_ids)*0.75))
-        print(sh_combs)
+        sub_heatmaps = gen_subheatmaps(heatmap_ids, depth=int(len(heatmap_ids)*0.5))
 
-        
-        h_combs = set(combinations(heatmap_ids, 2)) - set(combinations(execution_ids, 2))
+        scores = []
+        for sh_ids in sub_heatmaps:
+            pairs = set(combinations(sh_ids, 2)) - set(combinations(execution_ids, 2))
 
-        # calculate heatmap score
-        scores = list(map(lambda c: speedup_score(get_job(c[0], heatmap_list), get_job(c[1], heatmap_list)), h_combs))
-        print(sf(scores, 1))
+            values = []
+            for (id1, id2) in pairs:
+                values.append(speedup_score(get_job(id1, heatmap_list), get_job(id2, heatmap_list)))
+            values += [1]*(len(heatmap_list)-len(sh_ids))
+
+            scores.append((mean(values), sh_ids))
+        scores.sort(key=lambda x: -x[0])
 
         # 0. if old, you have to deploy it
         # 1. compact vs co-sched
@@ -103,10 +115,31 @@ class UtilCoscheduler(RanksCoscheduler, ABC):
         # 2. how to co-sched
         #   a. best fit (utilization)
         
+        deployed = False
+
+        # Update the rank of each job before scheduling them
+        # self.update_ranks()
+
+        while waiting_queue != []:
+
+            # Remove from the waiting queue
+            job = self.pop(waiting_queue)
+
+            if job.job_id in scores[0][1]:
+                policy=self.cluster.half_socket_allocation
+            else:
+                policy=self.cluster.full_socket_allocation 
+            # Colocate
+            if self.allocation(job, policy):
+                deployed = True
+                self.after_deployment()
+            else:
+                break
+
+        return deployed
 
 
-
-        return super().deploy()
+        #return super().deploy()
 
     def backfill(self) -> bool:
         return super().backfill()
