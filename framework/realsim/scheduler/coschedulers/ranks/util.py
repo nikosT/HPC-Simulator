@@ -22,39 +22,27 @@ class UtilCoscheduler(RanksCoscheduler, ABC):
 
     name = "Util Co-Scheduler"
     description = """Co-scheduling favoring Utilization filling"""
+    queue_depth = 100
 
-    def waiting_queue_reorder(self, job: Job) -> float:
-        # seed(time_ns() % (2 ** 32))
-        # return float(randint(len(self.cluster.waiting_queue)))
-	    return 1.0
-
-    def host_alloc_condition(self, hostname: str, job: Job) -> (float,float):
-        """Condition on how to sort the hosts based on the speedup that the job
-        will gain/lose. Always spread first
-        """
-        def get_job(name: str, jobs: list) -> Job:
-            return next((j for j in jobs if j.job_name == name), None)
-            
+    def waiting_queue_reorder(self, job: Job) -> float:          
         def speedup_score(j1: Job, j2: Job, compact=False) -> float:
             area1 = j1.num_of_processes * j1.remaining_time
             area2 = j2.num_of_processes * j2.remaining_time
             if compact:
                 return 1
             return (area1 * self.database.heatmap[j1.job_name][j2.job_name] +\
-                    area2 * self.database.heatmap[j2.job_name][j1.job_name]) / (area1 + area2)        
+                    area2 * self.database.heatmap[j2.job_name][j1.job_name]) / (area1 + area2)  
 
-        # get the jobs signatures that are assinged to the host
-        co_job_sigs = list(self.cluster.hosts[hostname].jobs.keys())
-
-        host_jobs = list(map(lambda sig: get_job(sig.split(":")[-1], self.cluster.execution_list), co_job_sigs))
-
-        if host_jobs:
-            return min(list(map(lambda j: speedup_score(job, j),host_jobs)))
+        if self.cluster.waiting_queue[:self.queue_depth]:
+            return min(list(map(lambda j: speedup_score(job, j),self.cluster.waiting_queue[:self.queue_depth])))
         else:
-            return -inf
-        # If no signatures then spread
-        #if co_job_sigs == []:
-        #    return (job.max_speedup, inf)
+            return inf
+
+    def host_alloc_condition(self, hostname: str, job: Job) -> (float,float):
+        """Condition on how to sort the hosts based on the speedup that the job
+        will gain/lose. Always spread first
+        """
+        return super().host_alloc_condition(hostname, job)
 
     def deploy(self) -> bool:
         return super().deploy()
