@@ -46,6 +46,8 @@ from realsim.scheduler.schedulers.easy import EASYScheduler
 from realsim.scheduler.schedulers.conservative import ConservativeScheduler
 from realsim.scheduler.coschedulers.ranks.random import RandomRanksCoscheduler
 from realsim.scheduler.coschedulers.ranks.util import UtilCoscheduler
+from realsim.scheduler.coschedulers.ranks.util2 import UtilCoscheduler2
+from realsim.scheduler.coschedulers.ranks.filler import FillerCoscheduler
 
 # Logger
 from realsim.logger.logger import Logger
@@ -90,7 +92,9 @@ class BatchCreator:
             EASYScheduler.name: EASYScheduler,
             ConservativeScheduler.name: ConservativeScheduler,
             RandomRanksCoscheduler.name: RandomRanksCoscheduler,
-            UtilCoscheduler.name: UtilCoscheduler
+            UtilCoscheduler.name: UtilCoscheduler,
+            UtilCoscheduler2.name: UtilCoscheduler2,
+            FillerCoscheduler.name: FillerCoscheduler,
         }
         
         # Load the configuration file

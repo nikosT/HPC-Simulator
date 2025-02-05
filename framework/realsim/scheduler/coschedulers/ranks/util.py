@@ -15,6 +15,7 @@ sys.path.append(os.path.abspath(os.path.join(
 )))
 
 from realsim.jobs.jobs import Job
+from realsim.cluster.host import Host
 from realsim.scheduler.coschedulers.ranks.ranks import RanksCoscheduler
 
 
@@ -24,28 +25,96 @@ class UtilCoscheduler(RanksCoscheduler, ABC):
     description = """Co-scheduling favoring Utilization filling"""
     queue_depth = 100
 
-    def waiting_queue_reorder(self, job: Job) -> float:          
-        def speedup_score(j1: Job, j2: Job, compact=False) -> float:
+    def waiting_queue_reorder(self, job: Job) -> float:
+        return super().waiting_queue_reorder(job)
+        
+        def pairea(j1: Job, j2: Job, compact=False) -> float:
+            "Atomic function"
             area1 = j1.num_of_processes * j1.remaining_time
             area2 = j2.num_of_processes * j2.remaining_time
-            if compact:
-                return 1
-            return (area1 * self.database.heatmap[j1.job_name][j2.job_name] +\
-                    area2 * self.database.heatmap[j2.job_name][j1.job_name]) / (area1 + area2)  
 
-        if self.cluster.waiting_queue[:self.queue_depth]:
-            return min(list(map(lambda j: speedup_score(job, j),self.cluster.waiting_queue[:self.queue_depth])))
-        else:
-            return inf
+            if compact:
+                s1 = s2 = 1
+            else:
+                s1 = self.database.heatmap[j1.job_name][j2.job_name]
+                s2 = self.database.heatmap[j2.job_name][j1.job_name]
+            
+            return area1 / s1 + area2 / s2
+                            
+    #    for w_job in self.cluster.waiting_queue[:self.queue_depth]:
+
+    #        paireas = list(map(lambda p,self.cluster.execution_list))
+    #        for e_job in self.cluster.execution_list:
+     #           pairea(w_job, e_job)
+
+       # if self.cluster.waiting_queue[:self.queue_depth]:
+       #     return min(list(map(lambda j: speedup_score(job, j),self.cluster.waiting_queue[:self.queue_depth])))
+       # else:
+       #     return inf
 
     def host_alloc_condition(self, hostname: str, job: Job) -> (float,float):
         """Condition on how to sort the hosts based on the speedup that the job
         will gain/lose. Always spread first
         """
-        return super().host_alloc_condition(hostname, job)
+        def get_job(name: int, jobs: list) -> Job:
+            return next((j for j in jobs if j.job_name == name), None)
+            
+        def pairea(j1: Job, j2: Job=None) -> float:
+            "Atomic function"
+            area1 = j1.num_of_processes * j1.remaining_time
+
+            if j2:
+                area2 = j2.num_of_processes * j2.remaining_time
+                s1 = self.database.heatmap[j1.job_name][j2.job_name]
+                s2 = self.database.heatmap[j2.job_name][j1.job_name]
+
+            else:
+                area2 = 0
+                s2 = 1 # does not matter
+                s1 = j1.max_speedup
+            
+            return area1 / s1 + area2 / s2
+
+        # if empty node
+        if self.cluster.hosts[hostname].state == Host.IDLE:
+            return pairea(job, None)
+            
+        else:
+            # get the jobs signatures that are assinged to the host
+            co_job_sigs = list(self.cluster.hosts[hostname].jobs.keys())
+            co_jobs = list(map(lambda sig: get_job(sig.split(":")[-1], self.cluster.execution_list), co_job_sigs))
+
+            paireas = list(map(lambda j: pairea(job, j),co_jobs))
+            return max(paireas)
+
+    
+        #return super().host_alloc_condition(hostname, job)
 
     def deploy(self) -> bool:
-        return super().deploy()
+
+        deployed = False
+
+        # Update the rank of each job before scheduling them
+        # self.update_ranks()
+
+        waiting_queue = deepcopy_list(self.cluster.waiting_queue[:self.queue_depth])
+        waiting_queue.sort(key=lambda job: self.waiting_queue_reorder(job),
+                           reverse=True)
+
+        while waiting_queue != []:
+
+            # Remove from the waiting queue
+            job = self.pop(waiting_queue)
+
+            # Colocate
+            if self.allocation(job, self.cluster.half_socket_allocation):
+                deployed = True
+                self.after_deployment()
+                break
+            else:
+                break
+
+        return deployed
 
     def backfill(self) -> bool:
         return super().backfill()
