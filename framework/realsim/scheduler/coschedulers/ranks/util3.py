@@ -19,11 +19,11 @@ from realsim.cluster.host import Host
 from realsim.scheduler.coschedulers.ranks.ranks import RanksCoscheduler
 
 
-class UtilCoscheduler2(RanksCoscheduler, ABC):
+class UtilCoscheduler3(RanksCoscheduler, ABC):
 
-    name = "Util Co-Scheduler2"
+    name = "Util Co-Scheduler3"
     description = """Co-scheduling favoring Utilization filling"""
-    queue_depth = 100
+    #queue_depth = 100
 
     def waiting_queue_reorder(self, job: Job) -> float:
         # The job that is closer to cover the gaps is more preferrable
@@ -65,6 +65,9 @@ class UtilCoscheduler2(RanksCoscheduler, ABC):
                 s1 = j1.max_speedup
             
             return -(area1 / s1 + area2 / s2)
+
+
+        return self.cluster.hosts[hostname].get_used_cores_num()
 
         # if empty node
         if self.cluster.hosts[hostname].state == Host.IDLE:
