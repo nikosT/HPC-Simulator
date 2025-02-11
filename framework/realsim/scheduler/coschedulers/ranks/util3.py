@@ -26,22 +26,12 @@ class UtilCoscheduler3(RanksCoscheduler, ABC):
     #queue_depth = 100
 
     def waiting_queue_reorder(self, job: Job) -> float:
-        # The job that is closer to cover the gaps is more preferrable
-        sys_free_cores = self.cluster.get_idle_cores()
-        if sys_free_cores > 0:
-            diff = sys_free_cores - job.num_of_processes
-            if diff > 0:
-                factor0 = 1 - (diff/sys_free_cores)
-            elif diff == 0:
-                factor0 = 1
-            else:
-                factor0 = -1
+
+        max_waiting_time = max(list(map(lambda j: j.waiting_time, self.cluster.waiting_queue)))
+        if not max_waiting_time:
+            return 0
         else:
-            factor0 = 1
-
-        factor1 = ((job.job_id + 1) / len(self.cluster.waiting_queue))
-
-        return factor0 / factor1
+            return job.waiting_time / max_waiting_time
 
     def host_alloc_condition(self, hostname: str, job: Job) -> (float,float):
         """Condition on how to sort the hosts based on the speedup that the job
@@ -67,7 +57,7 @@ class UtilCoscheduler3(RanksCoscheduler, ABC):
             return -(area1 / s1 + area2 / s2)
 
 
-        return self.cluster.hosts[hostname].get_used_cores_num()
+        #return self.cluster.hosts[hostname].get_used_cores_num()
 
         # if empty node
         if self.cluster.hosts[hostname].state == Host.IDLE:
