@@ -23,7 +23,7 @@ class UtilCoscheduler(RanksCoscheduler, ABC):
 
     name = "Util Co-Scheduler"
     description = """Co-scheduling favoring Utilization filling"""
-    queue_depth = 100
+    #queue_depth = 100
 
     def host_alloc_condition(self, hostname: str, job: Job) -> (float,float):
         """Condition on how to sort the hosts based on the speedup that the job

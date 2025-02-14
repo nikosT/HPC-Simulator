@@ -42,19 +42,22 @@ class UtilCoscheduler3(RanksCoscheduler, ABC):
             
         def pairea(j1: Job, j2: Job=None) -> float:
             "Atomic function"
-            area1 = j1.num_of_processes * j1.remaining_time
 
             if j2:
-                area2 = j2.num_of_processes * j2.remaining_time
                 s1 = self.database.heatmap[j1.job_name][j2.job_name]
                 s2 = self.database.heatmap[j2.job_name][j1.job_name]
 
+                if j2.remaining_time <= j1.remaining_time:
+                    score = j1.num_of_processes * ( (j2.remaining_time/s2)*(1-s1/j1.avg_speedup) + j1.remaining_time/j1.avg_speedup ) + j2.num_of_processes * (j2.remaining_time / s2)
+                else:
+                    score = j2.num_of_processes * ( (j1.remaining_time/s1)*(1-s2/j2.avg_speedup) + j2.remaining_time/j2.avg_speedup ) + j1.num_of_processes * (j1.remaining_time / s1)
+                return j1.remaining_time * j1.num_of_processes + j2.remaining_time * j2.num_of_processes - score
+
             else:
-                area2 = 0
-                s2 = 1 # does not matter
+                area1 = j1.num_of_processes * j1.remaining_time
                 s1 = j1.max_speedup
             
-            return -(area1 / s1 + area2 / s2)
+            return area1 - (area1/s1)
 
 
         #return self.cluster.hosts[hostname].get_used_cores_num()

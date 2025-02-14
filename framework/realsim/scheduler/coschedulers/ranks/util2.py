@@ -23,25 +23,15 @@ class UtilCoscheduler2(RanksCoscheduler, ABC):
 
     name = "Util Co-Scheduler2"
     description = """Co-scheduling favoring Utilization filling"""
-    queue_depth = 100
+    #queue_depth = 100
 
     def waiting_queue_reorder(self, job: Job) -> float:
-        # The job that is closer to cover the gaps is more preferrable
-        sys_free_cores = self.cluster.get_idle_cores()
-        if sys_free_cores > 0:
-            diff = sys_free_cores - job.num_of_processes
-            if diff > 0:
-                factor0 = 1 - (diff/sys_free_cores)
-            elif diff == 0:
-                factor0 = 1
-            else:
-                factor0 = -1
+
+        max_waiting_time = max(list(map(lambda j: j.waiting_time, self.cluster.waiting_queue)))
+        if not max_waiting_time:
+            return 0
         else:
-            factor0 = 1
-
-        factor1 = ((job.job_id + 1) / len(self.cluster.waiting_queue))
-
-        return factor0 / factor1
+            return job.waiting_time / max_waiting_time
 
     def host_alloc_condition(self, hostname: str, job: Job) -> (float,float):
         """Condition on how to sort the hosts based on the speedup that the job
@@ -52,19 +42,25 @@ class UtilCoscheduler2(RanksCoscheduler, ABC):
             
         def pairea(j1: Job, j2: Job=None) -> float:
             "Atomic function"
-            area1 = j1.num_of_processes * j1.remaining_time
 
             if j2:
-                area2 = j2.num_of_processes * j2.remaining_time
                 s1 = self.database.heatmap[j1.job_name][j2.job_name]
                 s2 = self.database.heatmap[j2.job_name][j1.job_name]
 
+                if j2.remaining_time <= j1.remaining_time:
+                    score = j1.num_of_processes * ( (j2.remaining_time/s2)*(1-s1/j1.avg_speedup) + j1.remaining_time/j1.avg_speedup ) + j2.num_of_processes * (j2.remaining_time / s2)
+                else:
+                    score = j2.num_of_processes * ( (j1.remaining_time/s1)*(1-s2/j2.avg_speedup) + j2.remaining_time/j2.avg_speedup ) + j1.num_of_processes * (j1.remaining_time / s1)
+                return (j1.remaining_time * j1.num_of_processes + j2.remaining_time * j2.num_of_processes - score ) * (self.cluster.hosts[hostname].get_idle_cores_num()/j1.num_of_processes)
+
             else:
-                area2 = 0
-                s2 = 1 # does not matter
+                area1 = j1.num_of_processes * j1.remaining_time
                 s1 = j1.max_speedup
             
-            return -(area1 / s1 + area2 / s2)
+            return (area1 - (area1/s1) ) * (self.cluster.hosts[hostname].get_idle_cores_num()/j1.num_of_processes)
+
+
+        #return self.cluster.hosts[hostname].get_used_cores_num()
 
         # if empty node
         if self.cluster.hosts[hostname].state == Host.IDLE:
