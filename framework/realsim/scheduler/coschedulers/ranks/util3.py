@@ -23,31 +23,57 @@ class UtilCoscheduler3(RanksCoscheduler, ABC):
 
     name = "Util Co-Scheduler3"
     description = """Co-scheduling favoring Utilization filling"""
-    #queue_depth = 100
 
     def waiting_queue_reorder(self, job: Job) -> float:
-
-        def age():
-            max_waiting_time = max(list(map(lambda j: j.waiting_time, self.cluster.waiting_queue)))
-            if not max_waiting_time:
-                return 0
+        # The job that is closer to cover the gaps is more preferrable
+        sys_free_cores = self.cluster.get_idle_cores()
+        if sys_free_cores > 0:
+            diff = sys_free_cores - job.num_of_processes
+            if diff > 0:
+                factor0 = 1 - (diff/sys_free_cores)
+            elif diff == 0:
+                factor0 = 1
             else:
-                return job.waiting_time / max_waiting_time
+                factor0 = -1
+        else:
+            factor0 = 1
 
-        def pairea():
-            score_vector = list(map(lambda h: self.host_alloc_condition(h, job),self.cluster.hosts.keys()))
-            idle_cores_vector = list(map(lambda h: self.cluster.hosts[h].get_idle_cores_num(),self.cluster.hosts.keys()))
-            vector = tuple(zip(list1, list2))
-            vector = tuple(sorted(vector, key=lambda x: x[0], reverse=True))
-            _sum = 0
-            filter_vector = list(filter(lambda x: (_sum := _sum + x[0]) <= job.num_of_processes, vector))
-            score = min(list(map(lambda x: x[0],filter_vector)))
-            return score
+        factor1 = ((job.job_id + 1) / len(self.cluster.waiting_queue))
 
+        return factor0 / factor1
 
-
-
-#        return age()    
+#    def waiting_queue_reorder(self, job: Job) -> float:
+#
+#        def age(self):
+#            max_waiting_time = max(list(map(lambda j: j.waiting_time, self.cluster.waiting_queue[:self.queue_depth])))
+#            if not max_waiting_time:
+#                return 0
+#            else:
+#                return job.waiting_time / max_waiting_time
+#
+#        def pairea(self, job):
+#            score_vector = list(map(lambda h: self.host_alloc_condition(h, job), self.cluster.hosts.keys()))
+#            idle_cores_vector = list(map(lambda h: self.cluster.hosts[h].get_idle_cores_num(), self.cluster.hosts.keys()))
+#            
+#            vector = list(zip(score_vector, idle_cores_vector))  # Correctly zipping the two lists
+#            vector.sort(key=lambda x: x[0], reverse=True)  # Sorting based on the first value (score)
+#
+#            _sum = 0
+#            filter_vector = []
+#            for x in vector:
+#                if _sum + x[0] <= job.num_of_processes:
+#                    filter_vector.append(x)
+#                    _sum += x[0]
+#                else:
+#                    break  # Stop if exceeding job.num_of_processes
+#
+#            if not filter_vector:
+#                return 0  # Edge case: avoid min() on an empty list
+#
+#            score = min(x[0] for x in filter_vector)  # Minimum score from filtered vector
+#            return score
+#
+#        return pairea(self, job)    
 
 
 
@@ -93,6 +119,7 @@ class UtilCoscheduler3(RanksCoscheduler, ABC):
         #return super().host_alloc_condition(hostname, job)
 
     def deploy(self) -> bool:
+        self.queue_depth = None # 10
 
         deployed = False
 
