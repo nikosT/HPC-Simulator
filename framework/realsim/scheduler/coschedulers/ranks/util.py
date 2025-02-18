@@ -60,7 +60,6 @@ class UtilCoscheduler(RanksCoscheduler, ABC):
             paireas = list(map(lambda j: pairea(job, j),co_jobs))
             return max(paireas)
 
-    
         #return super().host_alloc_condition(hostname, job)
 
     def deploy(self) -> bool:

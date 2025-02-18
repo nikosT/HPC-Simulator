@@ -27,11 +27,29 @@ class UtilCoscheduler3(RanksCoscheduler, ABC):
 
     def waiting_queue_reorder(self, job: Job) -> float:
 
-        max_waiting_time = max(list(map(lambda j: j.waiting_time, self.cluster.waiting_queue)))
-        if not max_waiting_time:
-            return 0
-        else:
-            return job.waiting_time / max_waiting_time
+        def age():
+            max_waiting_time = max(list(map(lambda j: j.waiting_time, self.cluster.waiting_queue)))
+            if not max_waiting_time:
+                return 0
+            else:
+                return job.waiting_time / max_waiting_time
+
+        def pairea():
+            score_vector = list(map(lambda h: self.host_alloc_condition(h, job),self.cluster.hosts.keys()))
+            idle_cores_vector = list(map(lambda h: self.cluster.hosts[h].get_idle_cores_num(),self.cluster.hosts.keys()))
+            vector = tuple(zip(list1, list2))
+            vector = tuple(sorted(vector, key=lambda x: x[0], reverse=True))
+            _sum = 0
+            filter_vector = list(filter(lambda x: (_sum := _sum + x[0]) <= job.num_of_processes, vector))
+            score = min(list(map(lambda x: x[0],filter_vector)))
+            return score
+
+
+
+
+#        return age()    
+
+
 
     def host_alloc_condition(self, hostname: str, job: Job) -> (float,float):
         """Condition on how to sort the hosts based on the speedup that the job
@@ -51,14 +69,12 @@ class UtilCoscheduler3(RanksCoscheduler, ABC):
                     score = j1.num_of_processes * ( (j2.remaining_time/s2)*(1-s1/j1.avg_speedup) + j1.remaining_time/j1.avg_speedup ) + j2.num_of_processes * (j2.remaining_time / s2)
                 else:
                     score = j2.num_of_processes * ( (j1.remaining_time/s1)*(1-s2/j2.avg_speedup) + j2.remaining_time/j2.avg_speedup ) + j1.num_of_processes * (j1.remaining_time / s1)
-                return j1.remaining_time * j1.num_of_processes + j2.remaining_time * j2.num_of_processes - score
+                return (j1.remaining_time * j1.num_of_processes + j2.remaining_time * j2.num_of_processes - score ) * (self.cluster.hosts[hostname].get_idle_cores_num()/j1.num_of_processes)
 
             else:
                 area1 = j1.num_of_processes * j1.remaining_time
                 s1 = j1.max_speedup
-            
-            return area1 - (area1/s1)
-
+                return (area1 - (area1/s1) ) * (self.cluster.hosts[hostname].get_idle_cores_num()/j1.num_of_processes)
 
         #return self.cluster.hosts[hostname].get_used_cores_num()
 
@@ -74,7 +90,6 @@ class UtilCoscheduler3(RanksCoscheduler, ABC):
             paireas = list(map(lambda j: pairea(job, j),co_jobs))
             return max(paireas)
 
-    
         #return super().host_alloc_condition(hostname, job)
 
     def deploy(self) -> bool:

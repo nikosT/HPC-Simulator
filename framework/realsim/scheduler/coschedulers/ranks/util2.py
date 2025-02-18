@@ -51,14 +51,12 @@ class UtilCoscheduler2(RanksCoscheduler, ABC):
                     score = j1.num_of_processes * ( (j2.remaining_time/s2)*(1-s1/j1.avg_speedup) + j1.remaining_time/j1.avg_speedup ) + j2.num_of_processes * (j2.remaining_time / s2)
                 else:
                     score = j2.num_of_processes * ( (j1.remaining_time/s1)*(1-s2/j2.avg_speedup) + j2.remaining_time/j2.avg_speedup ) + j1.num_of_processes * (j1.remaining_time / s1)
-                return (j1.remaining_time * j1.num_of_processes + j2.remaining_time * j2.num_of_processes - score ) * (self.cluster.hosts[hostname].get_idle_cores_num()/j1.num_of_processes)
+                return j1.remaining_time * j1.num_of_processes + j2.remaining_time * j2.num_of_processes - score
 
             else:
                 area1 = j1.num_of_processes * j1.remaining_time
                 s1 = j1.max_speedup
-            
-            return (area1 - (area1/s1) ) * (self.cluster.hosts[hostname].get_idle_cores_num()/j1.num_of_processes)
-
+                return area1 - (area1/s1)
 
         #return self.cluster.hosts[hostname].get_used_cores_num()
 
@@ -73,8 +71,7 @@ class UtilCoscheduler2(RanksCoscheduler, ABC):
 
             paireas = list(map(lambda j: pairea(job, j),co_jobs))
             return max(paireas)
-
-    
+  
         #return super().host_alloc_condition(hostname, job)
 
     def deploy(self) -> bool:
