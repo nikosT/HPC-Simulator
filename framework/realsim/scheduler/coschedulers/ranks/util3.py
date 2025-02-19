@@ -25,57 +25,65 @@ class UtilCoscheduler3(RanksCoscheduler, ABC):
     description = """Co-scheduling favoring Utilization filling"""
 
     def waiting_queue_reorder(self, job: Job) -> float:
-        # The job that is closer to cover the gaps is more preferrable
-        sys_free_cores = self.cluster.get_idle_cores()
-        if sys_free_cores > 0:
-            diff = sys_free_cores - job.num_of_processes
-            if diff > 0:
-                factor0 = 1 - (diff/sys_free_cores)
-            elif diff == 0:
-                factor0 = 1
+
+        def age():
+            """
+            score e [0,1]: 1: is better
+            """
+            _list = list(map(lambda j: j.waiting_time, self.cluster.waiting_queue[:self.queue_depth]))
+            if not _list:
+                return 0
             else:
-                factor0 = -1
-        else:
-            factor0 = 1
+                max_waiting_time = max(_list)
 
-        factor1 = ((job.job_id + 1) / len(self.cluster.waiting_queue))
+            if not max_waiting_time:
+                return 0
+            else:
+                return job.waiting_time / max_waiting_time
 
-        return factor0 / factor1
+        def frag():
+            """
+            score e [0,1]: 1: is better
+            """
+            free = self.cluster.get_idle_cores()
+            if not free:
+                return -1
+            if job.num_of_processes > free:
+                return -1
+            return job.num_of_processes/free
 
-#    def waiting_queue_reorder(self, job: Job) -> float:
-#
-#        def age(self):
-#            max_waiting_time = max(list(map(lambda j: j.waiting_time, self.cluster.waiting_queue[:self.queue_depth])))
-#            if not max_waiting_time:
-#                return 0
-#            else:
-#                return job.waiting_time / max_waiting_time
-#
-#        def pairea(self, job):
-#            score_vector = list(map(lambda h: self.host_alloc_condition(h, job), self.cluster.hosts.keys()))
-#            idle_cores_vector = list(map(lambda h: self.cluster.hosts[h].get_idle_cores_num(), self.cluster.hosts.keys()))
-#            
-#            vector = list(zip(score_vector, idle_cores_vector))  # Correctly zipping the two lists
-#            vector.sort(key=lambda x: x[0], reverse=True)  # Sorting based on the first value (score)
-#
-#            _sum = 0
-#            filter_vector = []
-#            for x in vector:
-#                if _sum + x[0] <= job.num_of_processes:
-#                    filter_vector.append(x)
-#                    _sum += x[0]
-#                else:
-#                    break  # Stop if exceeding job.num_of_processes
-#
-#            if not filter_vector:
-#                return 0  # Edge case: avoid min() on an empty list
-#
-#            score = min(x[0] for x in filter_vector)  # Minimum score from filtered vector
-#            return score
-#
-#        return pairea(self, job)    
+        w_age = 0.5
+        w_frag = 0.5
+
+        wmean = w_age * age() + w_frag * frag()
+
+        return wmean
 
 
+        def pairea(self, job):
+            """
+            NOT USED
+            """
+            score_vector = list(map(lambda h: self.host_alloc_condition(h, job), self.cluster.hosts.keys()))
+            idle_cores_vector = list(map(lambda h: self.cluster.hosts[h].get_idle_cores_num(), self.cluster.hosts.keys()))
+            
+            vector = list(zip(score_vector, idle_cores_vector))  # Correctly zipping the two lists
+            vector.sort(key=lambda x: x[0], reverse=True)  # Sorting based on the first value (score)
+
+            _sum = 0
+            filter_vector = []
+            for x in vector:
+                if _sum + x[0] <= job.num_of_processes:
+                    filter_vector.append(x)
+                    _sum += x[0]
+                else:
+                    break  # Stop if exceeding job.num_of_processes
+
+            if not filter_vector:
+                return 0  # Edge case: avoid min() on an empty list
+
+            score = min(x[0] for x in filter_vector)  # Minimum score from filtered vector
+            return score
 
     def host_alloc_condition(self, hostname: str, job: Job) -> (float,float):
         """Condition on how to sort the hosts based on the speedup that the job
