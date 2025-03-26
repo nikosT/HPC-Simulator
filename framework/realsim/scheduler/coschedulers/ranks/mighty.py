@@ -9,6 +9,7 @@ from realsim.jobs.utils import deepcopy_list
 from itertools import combinations, chain
 from numpy import mean
 from math import ceil
+import pandas as pd
 
 sys.path.append(os.path.abspath(os.path.join(
     os.path.dirname(__file__), "../../../../"
@@ -24,8 +25,15 @@ class MightyCoscheduler(RanksCoscheduler, ABC):
     name = "Mighty Co-Scheduler"
     description = """Relational Co-scheduling with score"""
     #queue_depth = 100
+    def __init__(self):
+        super().__init__()
+        self.queue_depth = 100
+        self.score = 0
 
     def host_alloc_condition(self, hostname: str, job: Job) -> (float,float):
+
+        return super().host_alloc_condition(hostname, job)
+
         """Condition on how to sort the hosts based on the speedup that the job
         will gain/lose. Always spread first
         """
@@ -60,14 +68,30 @@ class MightyCoscheduler(RanksCoscheduler, ABC):
             paireas = list(map(lambda j: pairea(job, j),co_jobs))
             return max(paireas)
 
-        #return super().host_alloc_condition(hostname, job)
+
 
     def deploy(self) -> bool:
+
+        def calc_score(waiting_queue: list[Job]) -> float:
+            # Calculate the score based on the waiting queue
+            # For now, we will just return a fixed value
+            weights = extract_weights(path, filters)
+            weights['area'] = (weights['procs']*weights['time']/5).round().astype(int)
+
+            queue = elise_df['Executable Number'].tolist()
+            multi = elise_df['Executable Number'].value_counts().sort_index()
+            data = pd.concat([weights, multi], axis=1, join='inner').fillna(0)
+            probx = calc_probability(data)
+            impactx = calc_impact(dictionary, probx)
+            score = impactx*probx
+            return float(score.sum().sum())
 
         deployed = False
 
         # Update the rank of each job before scheduling them
         # self.update_ranks()
+        self.queue_depth = 100
+        self.score = 0
 
         waiting_queue = deepcopy_list(self.cluster.waiting_queue[:self.queue_depth])
         waiting_queue.sort(key=lambda job: self.waiting_queue_reorder(job),
@@ -75,11 +99,20 @@ class MightyCoscheduler(RanksCoscheduler, ABC):
 
         while waiting_queue != []:
 
+            # calculate score
+            score = calc_score(waiting_queue)
+
             # Remove from the waiting queue
             job = self.pop(waiting_queue)
 
+            new_score = calc_score(waiting_queue)
+            if new_score > score:
+                alloc_policy = self.cluster.full_socket_allocation
+            else:
+                alloc_policy = self.cluster.half_socket_allocation
+
             # Colocate
-            if self.allocation(job, self.cluster.half_socket_allocation):
+            if self.allocation(job, alloc_policy):
                 deployed = True
                 self.after_deployment()
                 break # that's the only addon
