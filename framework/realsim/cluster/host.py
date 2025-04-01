@@ -34,7 +34,7 @@ class Host:
         return _sum
 
     def get_used_cores_num(self) -> int:
-        return sum(self.socket_conf) * len(self.sockets) - self.get_idle_cores_num()
+        return sum(self.socket_conf) - self.get_idle_cores_num()
 
 
 # Alias for Host class
