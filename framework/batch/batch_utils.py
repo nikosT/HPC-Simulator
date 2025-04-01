@@ -103,6 +103,7 @@ class BatchCreator:
             UtilCoscheduler_age.name: UtilCoscheduler_age,
             UtilCoscheduler_frag.name: UtilCoscheduler_frag,
             MightyCoscheduler.name: MightyCoscheduler,
+            MightyOrderedCoscheduler.name: MightyOrderedCoscheduler,
             FillerCoscheduler.name: FillerCoscheduler,
         }
         
