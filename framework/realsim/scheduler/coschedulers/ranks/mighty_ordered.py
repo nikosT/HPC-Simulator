@@ -182,7 +182,13 @@ class MightyOrderedCoscheduler(RanksCoscheduler, ABC):
 
     def host_alloc_condition(self, hostname: str, job: Job) -> (float,float):
 
-        return super().host_alloc_condition(hostname, job)
+#        cores_per_socket = job.num_of_processes // sum(self.cluster.hosts[hostname].socket_conf)
+
+#        idle_cores = self.cluster.hosts[hostname].get_idle_cores_num()
+
+        return self.cluster.hosts[hostname].get_used_cores_num()
+
+#        return super().host_alloc_condition(hostname, job)
 
         """Condition on how to sort the hosts based on the speedup that the job
         will gain/lose. Always spread first
