@@ -51,7 +51,7 @@ from realsim.scheduler.coschedulers.ranks.util3 import UtilCoscheduler3
 from realsim.scheduler.coschedulers.ranks.util_age import UtilCoscheduler_age
 from realsim.scheduler.coschedulers.ranks.util_frag import UtilCoscheduler_frag
 from realsim.scheduler.coschedulers.ranks.mighty import MightyCoscheduler
-from realsim.scheduler.coschedulers.ranks.mighty_ordered import MightyOrderedCoscheduler
+from realsim.scheduler.coschedulers.ranks.allmighty import AlmightyCoscheduler
 from realsim.scheduler.coschedulers.ranks.filler import FillerCoscheduler
 
 # Logger
@@ -103,7 +103,7 @@ class BatchCreator:
             UtilCoscheduler_age.name: UtilCoscheduler_age,
             UtilCoscheduler_frag.name: UtilCoscheduler_frag,
             MightyCoscheduler.name: MightyCoscheduler,
-            MightyOrderedCoscheduler.name: MightyOrderedCoscheduler,
+            AlmightyCoscheduler.name: AlmightyCoscheduler,
             FillerCoscheduler.name: FillerCoscheduler,
         }
         
