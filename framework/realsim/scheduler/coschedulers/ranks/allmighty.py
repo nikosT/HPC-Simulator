@@ -12,7 +12,7 @@ from math import ceil
 import pandas as pd
 import numpy as np
 import json
-import re
+import copy
 
 sys.path.append(os.path.abspath(os.path.join(
     os.path.dirname(__file__), "../../../../"
@@ -24,9 +24,9 @@ from realsim.scheduler.coschedulers.ranks.ranks import RanksCoscheduler
 from realsim.jobs.jobs import JobCharacterization
 
 
-class AllMightyCoscheduler(RanksCoscheduler, ABC):
+class AlmightyCoscheduler(RanksCoscheduler, ABC):
 
-    name = "AllMighty Co-Scheduler"
+    name = "Almighty Co-Scheduler"
     description = """Relational Co-scheduling with score in bulk assignment mode"""
     #queue_depth = 100
     def extract_weights(self, path, filters):
@@ -181,30 +181,16 @@ class AllMightyCoscheduler(RanksCoscheduler, ABC):
         self.dictionary = self.dictionary.replace('', np.nan)
         self.weights = self.extract_weights(path, self.filters)
         self.weights['area'] = self.weights['procs']*self.weights['time'].round().astype(int)
+        self.staging_list = []
+        self.backfill_enabled = False
 
     def host_alloc_condition(self, hostname: str, job: Job) -> (float,float):
         """Condition on how to sort the hosts"""
         return super().host_alloc_condition(hostname, job)
 
-    def waiting_queue_reorder(self, job: Job) -> float:
-        # The job that is closer to cover the gaps is more preferrable
-        sys_free_cores = self.cluster.get_idle_cores()
-        if sys_free_cores > 0:
-            diff = sys_free_cores - job.num_of_processes
-            if diff > 0:
-                factor0 = 1 - (diff/sys_free_cores)
-            elif diff == 0:
-                factor0 = 1
-            else:
-                factor0 = -1
-        else:
-            factor0 = 1
 
-        factor1 = ((job.job_id + 1) / len(self.cluster.waiting_queue))
 
-        return factor0 / factor1
-
-    def deploy(self) -> bool:
+    #def deploy(self) -> bool:
 
         def calc_score(waiting_queue: list[Job]) -> float:
             # Calculate the score of the waiting queue
@@ -249,6 +235,118 @@ class AllMightyCoscheduler(RanksCoscheduler, ABC):
                 break
 
         return deployed
+
+    def deploy(self):
+        # Get k jobs from the waiting list based on the number of idle cores in the system and put them in the staging list.
+        # Set score = 0
+        # Set spread-list = []
+        # Set compact-list = []
+        # Set leftovers = []
+        # For each job in staging-list(k):
+        # Pop job from staging-list
+        # If new score >= score:
+        # If job can fit as spread add it to spread-list
+        # If no: add it to leftovers list and continue the iteration
+        # If new score < score:
+        # If job can fit as compact add it to compact-list
+        # If no: add it to leftovers list and continue the iteration
+        # Sort spread-list by favor
+        # For each job in spread-list (which is <=k) deploy it as spread in sequential order. The hosts are given in beneficial order [like util] (or in sequential order).
+        # For each job in compact-list (which is <=k and also spread-list + compact-list = staging-list(k)), deploy it as compact.
+        # Set leftovers as the new staging-list. The new staging list now contains <=k jobs. It will be equal only if no job could make it to allocation previously.
+        # Go to 1 until leftovers (new staging-list) is empty.
+        def calc_score(waiting_queue: list[Job]) -> float:
+            # Calculate the score of the waiting queue
+            multi = pd.Series([job.job_name for job in waiting_queue]).value_counts().sort_index()
+            data = pd.concat([self.weights, multi], axis=1, join='inner').fillna(0)
+            probx = self.calc_probability(data)
+            impactx = self.calc_impact(self.dictionary, probx)
+            score = impactx*probx
+            return float(score.sum().sum())
+        
+        print('start')
+
+        if self.staging_list == []:
+
+            waiting_queue = copy.copy(self.cluster.waiting_queue[:self.queue_depth])
+            waiting_queue.sort(key=lambda job: self.waiting_queue_reorder(job),
+                            reverse=True)
+            print("waiting_queue", waiting_queue)
+        
+            # PHASE 1: Keep only the first k jobs that can be allocated
+
+            # get k jobs from the waiting list based on the number of idle cores in the system and put them in the staging list
+            available_cores = self.cluster.get_idle_cores()
+            requested_cores = 0
+
+            for job in waiting_queue:
+                requested_cores += job.num_of_processes
+                if requested_cores <= available_cores:
+                    self.staging_list.append(job)
+                else:
+                    break
+
+        # PHASE 2: Classify the jobs in the staging list by their allocation policy (tagging)
+
+        # staging_list now contains all jobs in order that theoritically can be allocated in terms of cores
+        # but not in terms of allocation policy
+        # internal variables
+        score = 0
+        compact_list = []
+        spread_list = []
+
+        # the loop will simulate a dry run of the allocations
+        # so leftover jobs will be added to the leftovers list
+        # and will be used as the new staging list
+        # after the actual allocation is completed
+        leftovers = []
+
+        temp_self = copy.deepcopy(self)
+
+        while self.staging_list != []:
+            job = self.pop(self.staging_list)
+
+            #new_score = calc_score(self.staging_list)
+            new_score = 10
+
+            if new_score >= score:
+                # Check if the job can be allocated in a spread manner
+                if temp_self.allocation(job, self.cluster.half_socket_allocation):
+                    spread_list.append(job)
+                else:
+                    leftovers.append(job)
+            else:
+                if temp_self.allocation(job, self.cluster.full_socket_allocation):
+                    compact_list.append(job)
+                else:
+                    leftovers.append(job)
+  
+        # PHASE 3: Allocate the jobs
+
+        # Sort the spread list by favor
+        #spread_list.sort(key=lambda job: self.waiting_queue_reorder(job),
+        #                 reverse=True)
+        for job in spread_list:
+            self.allocation(job, self.cluster.half_socket_allocation)
+        
+        for job in compact_list:
+            self.allocation(job, self.cluster.full_socket_allocation)
+
+        # PHASE 4: set the leftovers as the new staging list
+        self.staging_list = leftovers
+
+        print("spread_list", spread_list)
+        print("compact_list", compact_list)
+        print("leftovers", leftovers)
+        print(self.staging_list)
+        print(self.cluster.waiting_queue)
+        print("Execution list", self.cluster.execution_list)
+
+        if spread_list == [] and compact_list == []:
+            return False
+        
+        self.after_deployment()       
+        return True
 
     def backfill(self) -> bool:
         return False
