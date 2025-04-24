@@ -45,14 +45,11 @@ from realsim.scheduler.schedulers.fifo import FIFOScheduler
 from realsim.scheduler.schedulers.easy import EASYScheduler
 from realsim.scheduler.schedulers.conservative import ConservativeScheduler
 from realsim.scheduler.coschedulers.ranks.random import RandomRanksCoscheduler
-from realsim.scheduler.coschedulers.ranks.util import UtilCoscheduler
-from realsim.scheduler.coschedulers.ranks.util2 import UtilCoscheduler2
 from realsim.scheduler.coschedulers.ranks.util3 import UtilCoscheduler3
-from realsim.scheduler.coschedulers.ranks.util_age import UtilCoscheduler_age
-from realsim.scheduler.coschedulers.ranks.util_frag import UtilCoscheduler_frag
-from realsim.scheduler.coschedulers.ranks.mighty import MightyCoscheduler
+from realsim.scheduler.coschedulers.ranks.budget import BudgetCoscheduler
 from realsim.scheduler.coschedulers.ranks.allmighty import AlmightyCoscheduler
 from realsim.scheduler.coschedulers.ranks.filler import FillerCoscheduler
+from realsim.scheduler.coschedulers.ranks.bulk import BulkCoscheduler
 
 # Logger
 from realsim.logger.logger import Logger
@@ -97,14 +94,11 @@ class BatchCreator:
             EASYScheduler.name: EASYScheduler,
             ConservativeScheduler.name: ConservativeScheduler,
             RandomRanksCoscheduler.name: RandomRanksCoscheduler,
-            UtilCoscheduler.name: UtilCoscheduler,
-            UtilCoscheduler2.name: UtilCoscheduler2,
             UtilCoscheduler3.name: UtilCoscheduler3,
-            UtilCoscheduler_age.name: UtilCoscheduler_age,
-            UtilCoscheduler_frag.name: UtilCoscheduler_frag,
-            MightyCoscheduler.name: MightyCoscheduler,
+            BudgetCoscheduler.name: BudgetCoscheduler,
             AlmightyCoscheduler.name: AlmightyCoscheduler,
             FillerCoscheduler.name: FillerCoscheduler,
+            BulkCoscheduler.name: BulkCoscheduler
         }
         
         # Load the configuration file

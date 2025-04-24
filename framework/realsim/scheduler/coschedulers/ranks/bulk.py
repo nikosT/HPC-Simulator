@@ -19,10 +19,10 @@ from realsim.cluster.host import Host
 from realsim.scheduler.coschedulers.ranks.ranks import RanksCoscheduler
 
 
-class UtilCoscheduler3(RanksCoscheduler, ABC):
+class BulkCoscheduler(RanksCoscheduler, ABC):
 
-    name = "Util Co-Scheduler3"
-    description = """Co-scheduling favoring Utilization filling"""
+    name = "Bulk Co-Scheduler"
+    description = """Co-scheduling favoring Utilization filling for bulk jobs"""
 
     def waiting_queue_reorder(self, job: Job) -> float:
 
